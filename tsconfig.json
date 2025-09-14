@@ -8,6 +8,18 @@
     },
     {
       "path": "./apps/elimuconnect"
+    },
+    {
+      "path": "./api"
+    },
+    {
+      "path": "./shared/types"
+    },
+    {
+      "path": "./shared/utils"
+    },
+    {
+      "path": "./shared/constants"
     }
   ]
 }

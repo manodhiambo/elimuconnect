@@ -1,0 +1,9 @@
+// api/src/services/index.ts - Export all services
+export { AuthService } from './auth.service';
+export { UserService } from './user.service';
+export { SchoolService } from './school.service';
+export { BookService } from './book.service';
+export { EmailService } from './email.service';
+export { NotificationService } from './notification.service';
+export { AchievementService } from './achievement.service';
+export { BaseService } from './base.service';
