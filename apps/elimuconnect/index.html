@@ -1,54 +1,294 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="ElimuConnect - Kenyan Educational Platform connecting students, teachers, and resources" />
-    <meta name="keywords" content="Kenya, education, learning, students, teachers, KNEC, past papers" />
+    <meta name="description" content="ElimuConnect - A comprehensive educational platform connecting Kenyan students with learning resources, teachers, and peers." />
+    <meta name="keywords" content="education, Kenya, students, learning, KNEC, past papers, digital library" />
     <meta name="author" content="ElimuConnect Team" />
     
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="msapplication-TileColor" content="#2563eb" />
+    
+    <!-- Open Graph Meta Tags -->
     <meta property="og:title" content="ElimuConnect - Kenyan Educational Platform" />
-    <meta property="og:description" content="Connect with educational resources, past papers, and study groups in Kenya" />
+    <meta property="og:description" content="Connect with learning resources, teachers, and peers on Kenya's premier educational platform." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://elimuconnect.ke" />
     <meta property="og:image" content="/og-image.png" />
     
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:title" content="ElimuConnect - Kenyan Educational Platform" />
-    <meta property="twitter:description" content="Connect with educational resources, past papers, and study groups in Kenya" />
-    <meta property="twitter:image" content="/twitter-image.png" />
+    <!-- Twitter Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ElimuConnect - Kenyan Educational Platform" />
+    <meta name="twitter:description" content="Connect with learning resources, teachers, and peers on Kenya's premier educational platform." />
+    <meta name="twitter:image" content="/twitter-image.png" />
     
-    <!-- Preconnect to external domains -->
+    <!-- Favicon and Icons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png" />
+    
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/site.webmanifest" />
+    
+    <!-- Preconnect for Performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     
-    <!-- Favicon -->
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="manifest" href="/site.webmanifest" />
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    
+    <!-- CSS Variables for Theming -->
+    <style>
+      :root {
+        --primary-color: #2563eb;
+        --primary-dark: #1d4ed8;
+        --secondary-color: #64748b;
+        --success-color: #16a34a;
+        --warning-color: #ca8a04;
+        --error-color: #dc2626;
+        --background-color: #ffffff;
+        --surface-color: #f8fafc;
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
+        --border-color: #e2e8f0;
+      }
+      
+      [data-theme="dark"] {
+        --background-color: #0f172a;
+        --surface-color: #1e293b;
+        --text-primary: #f1f5f9;
+        --text-secondary: #94a3b8;
+        --border-color: #334155;
+      }
+      
+      * {
+        box-sizing: border-box;
+      }
+      
+      body {
+        margin: 0;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+          'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: var(--background-color);
+        color: var(--text-primary);
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+      
+      /* Loading screen styles */
+      .loading-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        transition: opacity 0.5s ease;
+      }
+      
+      .loading-logo {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 20px;
+        animation: pulse 2s infinite;
+      }
+      
+      .loading-text {
+        color: white;
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+      
+      .loading-subtitle {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 14px;
+      }
+      
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-top: 4px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-top: 20px;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+      }
+      
+      /* Hide loading screen when app loads */
+      .app-loaded .loading-screen {
+        opacity: 0;
+        pointer-events: none;
+      }
+      
+      /* Ensure smooth transitions */
+      .fade-in {
+        animation: fadeIn 0.5s ease-in;
+      }
+      
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      
+      /* Accessibility improvements */
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+      
+      /* Print styles */
+      @media print {
+        .no-print, .loading-screen {
+          display: none !important;
+        }
+      }
+    </style>
     
     <title>ElimuConnect - Kenyan Educational Platform</title>
   </head>
-  <body class="h-full bg-gray-50 dark:bg-gray-900">
-    <div id="root" class="h-full"></div>
-    <script type="module" src="/src/main.tsx"></script>
+  <body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loading-screen">
+      <div class="loading-logo">
+        <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="80" height="80" rx="16" fill="white" fill-opacity="0.1"/>
+          <path d="M20 25H60V35H20V25Z" fill="white"/>
+          <path d="M20 40H50V50H20V40Z" fill="white" fill-opacity="0.8"/>
+          <path d="M20 55H45V65H20V55Z" fill="white" fill-opacity="0.6"/>
+        </svg>
+      </div>
+      <div class="loading-text">ElimuConnect</div>
+      <div class="loading-subtitle">Connecting minds, inspiring futures</div>
+      <div class="loading-spinner"></div>
+    </div>
+    
+    <!-- Main App Container -->
+    <div id="root" class="fade-in"></div>
+    
+    <!-- No JavaScript Fallback -->
+    <noscript>
+      <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f3f4f6; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; font-family: Inter, sans-serif;">
+        <h1 style="color: #1f2937; margin-bottom: 16px;">JavaScript Required</h1>
+        <p style="color: #6b7280; max-width: 400px; line-height: 1.6;">
+          ElimuConnect requires JavaScript to function properly. Please enable JavaScript in your browser settings and refresh the page.
+        </p>
+        <button onclick="window.location.reload()" style="margin-top: 20px; background: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px;">
+          Refresh Page
+        </button>
+      </div>
+    </noscript>
+    
+    <!-- PWA Install Prompt (Hidden by default) -->
+    <div id="pwa-install-prompt" style="display: none; position: fixed; bottom: 20px; right: 20px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 300px; z-index: 1000;">
+      <div style="font-weight: 600; margin-bottom: 8px; color: #1e293b;">Install ElimuConnect</div>
+      <div style="font-size: 14px; color: #64748b; margin-bottom: 12px;">Add to your home screen for quick access and offline use.</div>
+      <div style="display: flex; gap: 8px;">
+        <button id="pwa-install-btn" style="background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; flex: 1;">Install</button>
+        <button id="pwa-dismiss-btn" style="background: #f1f5f9; color: #64748b; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;">Later</button>
+      </div>
+    </div>
+    
+    <!-- Analytics and Tracking (Only in production) -->
+    <script>
+      // Simple analytics tracking
+      if (window.location.hostname !== 'localhost') {
+        // Add your analytics code here
+        console.log('Analytics initialized for production');
+      }
+      
+      // PWA Install Prompt Logic
+      let deferredPrompt;
+      
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // Show install prompt after a delay
+        setTimeout(() => {
+          const promptEl = document.getElementById('pwa-install-prompt');
+          if (promptEl) {
+            promptEl.style.display = 'block';
+          }
+        }, 5000);
+      });
+      
+      document.addEventListener('DOMContentLoaded', () => {
+        const installBtn = document.getElementById('pwa-install-btn');
+        const dismissBtn = document.getElementById('pwa-dismiss-btn');
+        const promptEl = document.getElementById('pwa-install-prompt');
+        
+        if (installBtn) {
+          installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+              deferredPrompt.prompt();
+              const { outcome } = await deferredPrompt.userChoice;
+              console.log('Install prompt outcome:', outcome);
+              deferredPrompt = null;
+            }
+            if (promptEl) promptEl.style.display = 'none';
+          });
+        }
+        
+        if (dismissBtn && promptEl) {
+          dismissBtn.addEventListener('click', () => {
+            promptEl.style.display = 'none';
+          });
+        }
+        
+        // Hide loading screen when app loads
+        setTimeout(() => {
+          document.body.classList.add('app-loaded');
+        }, 1000);
+      });
+      
+      // Handle app install event
+      window.addEventListener('appinstalled', () => {
+        console.log('PWA installed successfully');
+        const promptEl = document.getElementById('pwa-install-prompt');
+        if (promptEl) promptEl.style.display = 'none';
+      });
+    </script>
     
     <!-- Service Worker Registration -->
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
+      if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+        window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js')
-            .then(function(registration) {
+            .then((registration) => {
               console.log('SW registered: ', registration);
             })
-            .catch(function(registrationError) {
+            .catch((registrationError) => {
               console.log('SW registration failed: ', registrationError);
             });
         });
       }
     </script>
+    
+    <!-- Module Script -->
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

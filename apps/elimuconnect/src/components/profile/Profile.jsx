@@ -1,0 +1,709 @@
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  BookOpen,
+  School,
+  Edit,
+  Camera,
+  Save,
+  X,
+  Award,
+  Target,
+  TrendingUp,
+  Users,
+  MessageCircle,
+  Star,
+  Clock,
+  Activity,
+  Eye,
+  EyeOff,
+  Share2,
+  Download,
+  Upload,
+  CheckCircle,
+  AlertCircle,
+  Shield,
+  Globe,
+  Lock,
+  Heart,
+  Flag,
+  MoreVertical
+} from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { api } from '../../utils/api';
+import { formatDistanceToNow } from 'date-fns';
+import LoadingSpinner from '../common/LoadingSpinner';
+
+const UserProfile = () => {
+  const { user, updateUser } = useAuth();
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [editForm, setEditForm] = useState({});
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  // Profile stats
+  const [stats, setStats] = useState({
+    totalPoints: 0,
+    streakDays: 0,
+    booksRead: 0,
+    testsCompleted: 0,
+    studyHours: 0,
+    achievements: 0,
+    groupsJoined: 0,
+    friendsCount: 0
+  });
+
+  // Recent activities
+  const [activities, setActivities] = useState([]);
+  const [achievements, setAchievements] = useState([]);
+
+  const subjects = [
+    'Mathematics', 'English', 'Kiswahili', 'Science', 'Social Studies',
+    'Physics', 'Chemistry', 'Biology', 'Geography', 'History',
+    'Computer Science', 'Business Studies'
+  ];
+
+  const levels = ['Class 4', 'Class 5', 'Class 6', 'Class 7', 'Class 8', 'Form 1', 'Form 2', 'Form 3', 'Form 4'];
+  const counties = [
+    'Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret', 'Thika', 'Malindi',
+    'Kitale', 'Garissa', 'Kakamega', 'Machakos', 'Meru', 'Nyeri', 'Kericho'
+  ];
+
+  // Load profile data
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const [profileRes, statsRes, activitiesRes, achievementsRes] = await Promise.all([
+          api.get('/profile'),
+          api.get('/profile/stats'),
+          api.get('/profile/activities'),
+          api.get('/profile/achievements')
+        ]);
+
+        setProfile(profileRes.data);
+        setStats(statsRes.data);
+        setActivities(activitiesRes.data);
+        setAchievements(achievementsRes.data);
+        setEditForm(profileRes.data);
+        setLoading(false);
+      } catch (error) {
+        console.error('Failed to load profile:', error);
+        setLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const response = await api.put('/profile', editForm);
+      setProfile(response.data);
+      updateUser(response.data);
+      setEditing(false);
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAvatarUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    setUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      const response = await api.post('/profile/avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      setProfile(prev => ({ ...prev, avatar: response.data.avatar }));
+      updateUser({ ...user, avatar: response.data.avatar });
+    } catch (error) {
+      console.error('Failed to upload avatar:', error);
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const getAchievementIcon = (type) => {
+    switch (type) {
+      case 'streak': return <Calendar className="w-5 h-5" />;
+      case 'score': return <Target className="w-5 h-5" />;
+      case 'books': return <BookOpen className="w-5 h-5" />;
+      case 'social': return <Users className="w-5 h-5" />;
+      default: return <Award className="w-5 h-5" />;
+    }
+  };
+
+  const getActivityIcon = (type) => {
+    switch (type) {
+      case 'quiz': return <Target className="w-4 h-4 text-blue-600" />;
+      case 'book': return <BookOpen className="w-4 h-4 text-green-600" />;
+      case 'group': return <Users className="w-4 h-4 text-purple-600" />;
+      case 'achievement': return <Award className="w-4 h-4 text-yellow-600" />;
+      case 'study': return <Clock className="w-4 h-4 text-indigo-600" />;
+      default: return <Activity className="w-4 h-4 text-gray-600" />;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-96">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto p-6">
+      {/* Profile Header */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-8 mb-6 text-white relative overflow-hidden">
+        <div className="relative z-10">
+          <div className="flex items-start justify-between mb-6">
+            <div className="flex items-center space-x-6">
+              {/* Avatar */}
+              <div className="relative">
+                <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg">
+                  {uploadingAvatar ? (
+                    <div className="w-full h-full bg-white bg-opacity-20 flex items-center justify-center">
+                      <LoadingSpinner size="sm" />
+                    </div>
+                  ) : (
+                    <img
+                      src={profile?.avatar || '/default-avatar.png'}
+                      alt={profile?.firstName}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </div>
+                
+                <button
+                  onClick={() => document.getElementById('avatar-upload').click()}
+                  className="absolute bottom-0 right-0 w-8 h-8 bg-white text-gray-700 rounded-full flex items-center justify-center shadow-lg hover:bg-gray-50"
+                >
+                  <Camera className="w-4 h-4" />
+                </button>
+                
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
+              </div>
+
+              {/* Basic Info */}
+              <div>
+                <h1 className="text-3xl font-bold mb-2">
+                  {profile?.firstName} {profile?.lastName}
+                </h1>
+                <p className="text-blue-100 mb-1">
+                  {profile?.level} Student • {profile?.school?.name}
+                </p>
+                <p className="text-blue-200 text-sm">
+                  Member since {new Date(profile?.createdAt).getFullYear()}
+                </p>
+                <div className="flex items-center space-x-4 mt-3">
+                  <div className="flex items-center space-x-1">
+                    <MapPin className="w-4 h-4" />
+                    <span className="text-sm">{profile?.school?.county}</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <Calendar className="w-4 h-4" />
+                    <span className="text-sm">
+                      Last active {formatDistanceToNow(new Date(profile?.lastActive), { addSuffix: true })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setEditing(!editing)}
+                className="px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg flex items-center"
+              >
+                {editing ? <X className="w-4 h-4 mr-2" /> : <Edit className="w-4 h-4 mr-2" />}
+                {editing ? 'Cancel' : 'Edit Profile'}
+              </button>
+              
+              <button className="p-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg">
+                <Share2 className="w-4 h-4" />
+              </button>
+              
+              <button className="p-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg">
+                <MoreVertical className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Stats Row */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold">{stats.totalPoints}</div>
+              <div className="text-blue-200 text-sm">Total Points</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{stats.streakDays}</div>
+              <div className="text-blue-200 text-sm">Day Streak</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{stats.testsCompleted}</div>
+              <div className="text-blue-200 text-sm">Tests Completed</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold">{stats.achievements}</div>
+              <div className="text-blue-200 text-sm">Achievements</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-4 right-4 w-32 h-32 border-2 border-white rounded-full"></div>
+          <div className="absolute bottom-4 left-4 w-24 h-24 border-2 border-white rounded-full"></div>
+        </div>
+      </div>
+
+      {/* Navigation Tabs */}
+      <div className="bg-white rounded-lg shadow-sm border mb-6">
+        <div className="flex space-x-1 p-1">
+          {[
+            { id: 'overview', label: 'Overview', icon: User },
+            { id: 'academic', label: 'Academic Info', icon: BookOpen },
+            { id: 'activity', label: 'Recent Activity', icon: Activity },
+            { id: 'achievements', label: 'Achievements', icon: Award }
+          ].map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`flex-1 px-4 py-3 rounded-md flex items-center justify-center transition-colors ${
+                activeTab === id
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              <Icon className="w-4 h-4 mr-2" />
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Content */}
+        <div className="lg:col-span-2">
+          {activeTab === 'overview' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              {/* Personal Information */}
+              <div className="bg-white rounded-lg shadow-sm border p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
+                  {!editing && (
+                    <button
+                      onClick={() => setEditing(true)}
+                      className="text-blue-600 hover:text-blue-700 text-sm flex items-center"
+                    >
+                      <Edit className="w-3 h-3 mr-1" />
+                      Edit
+                    </button>
+                  )}
+                </div>
+
+                {editing ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          First Name
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.firstName || ''}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, firstName: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Last Name
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.lastName || ''}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, lastName: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Bio
+                      </label>
+                      <textarea
+                        value={editForm.bio || ''}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, bio: e.target.value }))}
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Tell us about yourself..."
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Phone
+                        </label>
+                        <input
+                          type="tel"
+                          value={editForm.phone || ''}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Location
+                        </label>
+                        <select
+                          value={editForm.location || ''}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, location: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                          <option value="">Select county</option>
+                          {counties.map(county => (
+                            <option key={county} value={county}>{county}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end space-x-3">
+                      <button
+                        onClick={() => {
+                          setEditing(false);
+                          setEditForm(profile);
+                        }}
+                        className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                      >
+                        {saving ? (
+                          <LoadingSpinner size="sm" className="mr-2" />
+                        ) : (
+                          <Save className="w-4 h-4 mr-2" />
+                        )}
+                        Save Changes
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-center space-x-3">
+                        <Mail className="w-4 h-4 text-gray-400" />
+                        <div>
+                          <div className="text-sm text-gray-600">Email</div>
+                          <div className="font-medium">{profile?.email}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <Phone className="w-4 h-4 text-gray-400" />
+                        <div>
+                          <div className="text-sm text-gray-600">Phone</div>
+                          <div className="font-medium">{profile?.phone || 'Not provided'}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {profile?.bio && (
+                      <div>
+                        <div className="text-sm text-gray-600 mb-1">Bio</div>
+                        <p className="text-gray-900">{profile.bio}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Study Preferences */}
+              <div className="bg-white rounded-lg shadow-sm border p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Study Preferences</h3>
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-sm text-gray-600 mb-2">Favorite Subjects</div>
+                    <div className="flex flex-wrap gap-2">
+                      {profile?.subjects?.map((subject) => (
+                        <span
+                          key={subject}
+                          className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
+                        >
+                          {subject}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-sm text-gray-600">Study Time Preference</div>
+                      <div className="font-medium">{profile?.studyTimePreference || 'Not set'}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-600">Learning Style</div>
+                      <div className="font-medium">{profile?.learningStyle || 'Not set'}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'academic' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-lg shadow-sm border p-6"
+            >
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Academic Information</h3>
+              
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-3">
+                    <School className="w-4 h-4 text-gray-400" />
+                    <div>
+                      <div className="text-sm text-gray-600">School</div>
+                      <div className="font-medium">{profile?.school?.name}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <BookOpen className="w-4 h-4 text-gray-400" />
+                    <div>
+                      <div className="text-sm text-gray-600">Level</div>
+                      <div className="font-medium">{profile?.level}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Performance Overview */}
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-3">Performance Overview</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-600">{stats.studyHours}</div>
+                      <div className="text-sm text-blue-600">Study Hours</div>
+                    </div>
+                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                      <div className="text-2xl font-bold text-green-600">{stats.booksRead}</div>
+                      <div className="text-sm text-green-600">Books Read</div>
+                    </div>
+                    <div className="text-center p-4 bg-purple-50 rounded-lg">
+                      <div className="text-2xl font-bold text-purple-600">{stats.testsCompleted}</div>
+                      <div className="text-sm text-purple-600">Tests Completed</div>
+                    </div>
+                    <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                      <div className="text-2xl font-bold text-yellow-600">
+                        {profile?.averageScore || 'N/A'}%
+                      </div>
+                      <div className="text-sm text-yellow-600">Average Score</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Subject Performance */}
+                {profile?.subjectPerformance && (
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-3">Subject Performance</h4>
+                    <div className="space-y-3">
+                      {Object.entries(profile.subjectPerformance).map(([subject, score]) => (
+                        <div key={subject} className="flex items-center justify-between">
+                          <span className="text-sm text-gray-700">{subject}</span>
+                          <div className="flex items-center space-x-2">
+                            <div className="w-32 bg-gray-200 rounded-full h-2">
+                              <div
+                                className="bg-blue-600 h-2 rounded-full"
+                                style={{ width: `${score}%` }}
+                              ></div>
+                            </div>
+                            <span className="text-sm font-medium text-gray-900 w-12">
+                              {score}%
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'activity' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-lg shadow-sm border p-6"
+            >
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+              
+              <div className="space-y-4">
+                {activities.map((activity) => (
+                  <div key={activity.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-shrink-0 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm">
+                      {getActivityIcon(activity.type)}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-900">{activity.description}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {formatDistanceToNow(new Date(activity.createdAt), { addSuffix: true })}
+                      </p>
+                    </div>
+                    {activity.points && (
+                      <div className="text-sm font-medium text-blue-600">
+                        +{activity.points} pts
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'achievements' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-lg shadow-sm border p-6"
+            >
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Achievements</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+               {achievements.map((achievement) => (
+                  <div key={achievement.id} className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg">
+                    <div className="flex-shrink-0 w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                      {getAchievementIcon(achievement.type)}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900">{achievement.title}</h4
+                      <p className="text-sm text-gray-600">{achievement.description}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Earned {formatDistanceToNow(new Date(achievement.earnedAt), { addSuffix: true })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Qu Stats */}
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <h3 className="font-semibold text-gray-900 mb-4">Quick Stats</h3>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Study Groups</span>
+                <span className="font-medium">{stats.groupsJoined}</span>
+              </div>
+              <div className="flex items-center justify-between">
+             <span className="text-sm text-gray-600">Friends</span>
+                <span className="font-medium">{stats.friendsCount}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Current Streak</span>
+                <span className="font-medium">{stats.streakDays} days</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-6">Total Points</span>
+                <span className="font-medium text-blue-600">{stats.totalPoints}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Privacy Settings */}
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <h3 className="font-semibold text-gray-900 mb-4">Privacy</h3>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-700">Profibility</span>
+                <button className="text-blue-600 hover:text-blue-700">
+                  <Globe className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-700">Activity status</span>
+                <button className="text-green-600 hover:text-green-700">
+                  <Eye className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-700">Contact info</span>
+                <button className="text-yellow-600 hover:text-yellow-700">
+                  <Lock className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Achievements */}
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <h3 className="font-semibold text-gray-900 mb-4">Recent Achievemen3>
+            <div className="space-y-3">
+              {achievements.slice(0, 3).map((achievement) => (
+                <div key={achievement.id} className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                    <Award className="w-4 h-4 text-yellow-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">{achievement.tit</p>
+                    <p className="text-xs text-gray-500">
+                      {formatDistanceToNow(new Date(achievement.earnedAt), { addSuffix: true })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              
+              {achievements.length === 0 && (
+                <p className="text-sm text-gray-500 text-center py-4">
+                  No achievements yet. Keep studying to earn your first badge!
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default UserProfile;
