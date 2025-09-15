@@ -1,13 +1,19 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "composite": true,
+    "paths": {
+      "@elimuconnect/shared/utils": ["shared/utils/src/index.ts"],
+      "@elimuconnect/shared/constants": ["shared/constants/src/index.ts"],
+      "@elimuconnect/shared/types": ["shared/types/src/index.ts"]
+    },
     "declarationMap": true,
     "emitDeclarationOnly": true,
     "importHelpers": true,
     "isolatedModules": true,
     "lib": ["es2022"],
     "module": "esnext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "noEmitOnError": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
