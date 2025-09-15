@@ -1,13 +1,14 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { api } from '../utils/api';
-import { toast } from 'react-hot-toast';
+import { authAPI } from '../utils/api'; // Changed from 'api' to 'authAPI'
+import { STORAGE_KEYS } from '../utils/constants';
+import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
 
 const initialState = {
   user: null,
-  token: localStorage.getItem('token'),
-  isLoading: false,
+  token: localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN),
+  isLoading: true, // Changed to true initially to check auth status
   isAuthenticated: false,
   error: null,
 };
@@ -40,12 +41,18 @@ function authReducer(state, action) {
         user: null,
         token: null,
         isAuthenticated: false,
+        isLoading: false,
         error: null,
       };
     case 'UPDATE_USER':
       return {
         ...state,
         user: { ...state.user, ...action.payload },
+      };
+    case 'SET_LOADING':
+      return {
+        ...state,
+        isLoading: action.payload,
       };
     default:
       return state;
@@ -55,48 +62,50 @@ function authReducer(state, action) {
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Check if user is authenticated on app load
+  // Check authentication status on app load
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      getCurrentUser();
-    }
+    checkAuthStatus();
   }, []);
 
-  const getCurrentUser = async () => {
+  const checkAuthStatus = async () => {
     try {
-      dispatch({ type: 'AUTH_START' });
-      const response = await api.get('/auth/me');
-      dispatch({
-        type: 'AUTH_SUCCESS',
-        payload: {
-          user: response.data.user,
-          token: localStorage.getItem('token'),
-        },
-      });
+      const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+      const userData = localStorage.getItem(STORAGE_KEYS.USER_DATA);
+      
+      if (token && userData) {
+        const user = JSON.parse(userData);
+        dispatch({
+          type: 'AUTH_SUCCESS',
+          payload: { user, token },
+        });
+      } else {
+        dispatch({ type: 'SET_LOADING', payload: false });
+      }
     } catch (error) {
-      dispatch({ type: 'AUTH_ERROR', payload: error.response?.data?.message });
-      localStorage.removeItem('token');
-      delete api.defaults.headers.common['Authorization'];
+      console.error('Auth check failed:', error);
+      dispatch({ type: 'AUTH_ERROR', payload: 'Authentication check failed' });
+      // Clear invalid data
+      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.USER_DATA);
     }
   };
 
   const login = async (credentials) => {
     try {
       dispatch({ type: 'AUTH_START' });
-      const response = await api.post('/auth/login', credentials);
+      const response = await authAPI.login(credentials);
       const { user, token } = response.data;
 
-      localStorage.setItem('token', token);
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      // Store in localStorage
+      localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+      localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
 
       dispatch({
         type: 'AUTH_SUCCESS',
         payload: { user, token },
       });
 
-      toast.success(`Welcome back, ${user.profile.firstName}!`);
+      toast.success(`Welcome back, ${user.profile?.firstName || user.firstName}!`);
       return { success: true };
     } catch (error) {
       const message = error.response?.data?.message || 'Login failed';
@@ -109,7 +118,7 @@ export function AuthProvider({ children }) {
   const register = async (userData) => {
     try {
       dispatch({ type: 'AUTH_START' });
-      const response = await api.post('/auth/register', userData);
+      const response = await authAPI.register(userData);
       
       toast.success('Registration successful! Please verify your account.');
       return { success: true, data: response.data };
@@ -124,11 +133,11 @@ export function AuthProvider({ children }) {
   const verifyAccount = async (verificationData) => {
     try {
       dispatch({ type: 'AUTH_START' });
-      const response = await api.post('/auth/verify', verificationData);
+      const response = await authAPI.verifyAccount(verificationData);
       const { user, token } = response.data;
 
-      localStorage.setItem('token', token);
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+      localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
 
       dispatch({
         type: 'AUTH_SUCCESS',
@@ -145,16 +154,29 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    delete api.defaults.headers.common['Authorization'];
-    dispatch({ type: 'LOGOUT' });
-    toast.success('Logged out successfully');
+  const logout = async () => {
+    try {
+      await authAPI.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Clear localStorage
+      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+      
+      dispatch({ type: 'LOGOUT' });
+      toast.success('Logged out successfully');
+    }
   };
 
   const updateProfile = async (profileData) => {
     try {
-      const response = await api.put('/users/profile', profileData);
+      const response = await authAPI.updateProfile(profileData);
+      const updatedUser = { ...state.user, ...response.data.user };
+      
+      // Update localStorage
+      localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(updatedUser));
+      
       dispatch({ type: 'UPDATE_USER', payload: response.data.user });
       toast.success('Profile updated successfully');
       return { success: true };
@@ -167,9 +189,9 @@ export function AuthProvider({ children }) {
 
   const forgotPassword = async (email) => {
     try {
-      await api.post('/auth/forgot-password', { email });
+      const response = await authAPI.forgotPassword(email);
       toast.success('Password reset link sent to your email');
-      return { success: true };
+      return { success: true, message: response.data.message };
     } catch (error) {
       const message = error.response?.data?.message || 'Failed to send reset email';
       toast.error(message);
@@ -179,9 +201,9 @@ export function AuthProvider({ children }) {
 
   const resetPassword = async (resetData) => {
     try {
-      await api.post('/auth/reset-password', resetData);
+      const response = await authAPI.resetPassword(resetData.token, resetData.password);
       toast.success('Password reset successfully');
-      return { success: true };
+      return { success: true, message: response.data.message };
     } catch (error) {
       const message = error.response?.data?.message || 'Password reset failed';
       toast.error(message);
@@ -189,8 +211,22 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Add updateUser method for Settings component
+  const updateUser = (userData) => {
+    const updatedUser = { ...state.user, ...userData };
+    localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(updatedUser));
+    dispatch({ type: 'UPDATE_USER', payload: userData });
+  };
+
   const value = {
-    ...state,
+    // State
+    user: state.user,
+    token: state.token,
+    isLoading: state.isLoading,
+    isAuthenticated: state.isAuthenticated,
+    error: state.error,
+    
+    // Methods
     login,
     register,
     verifyAccount,
@@ -198,6 +234,8 @@ export function AuthProvider({ children }) {
     updateProfile,
     forgotPassword,
     resetPassword,
+    checkAuthStatus,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

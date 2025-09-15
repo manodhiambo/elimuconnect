@@ -3,51 +3,39 @@ import { Suspense, lazy, useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { HelmetProvider } from 'react-helmet-async';
 
-import { useAuth } from '@contexts/AuthContext';
-import { useTheme } from '@contexts/ThemeContext';
-import ErrorBoundary from '@components/common/ErrorBoundary';
-import LoadingSpinner from '@components/common/LoadingSpinner';
-import Navigation from '@components/common/Navigation';
-import ProtectedRoute from '@components/common/ProtectedRoute';
-import { ROUTES } from '@utils/constants';
+import { useAuth } from '../contexts/AuthContext'; // Fixed import path
+import ErrorBoundary from '../components/common/ErrorBoundary'; // Fixed import path
+import LoadingSpinner from '../components/common/LoadingSpinner'; // Fixed import path
+import Navigation from '../components/common/Navigation'; // Fixed import path
+import ProtectedRoute from '../components/common/ProtectedRoute'; // Fixed import path
+import { ROUTES } from '../utils/constants'; // Fixed import path
 
 // Lazy load components for better performance
-const Login = lazy(() => import('@components/auth/Login'));
-const Register = lazy(() => import('@components/auth/Register'));
-const ForgotPassword = lazy(() => import('@components/auth/ForgotPassword'));
-const VerifyAccount = lazy(() => import('@components/auth/VerifyAccount'));
+const Login = lazy(() => import('../components/auth/Login'));
+const Register = lazy(() => import('../components/auth/Register'));
+const ForgotPassword = lazy(() => import('../components/auth/ForgotPassword'));
+const VerifyAccount = lazy(() => import('../components/auth/VerifyAccount'));
 
-const StudentDashboard = lazy(() => import('@components/dashboard/StudentDashboard'));
-const TeacherDashboard = lazy(() => import('@components/dashboard/TeacherDashboard'));
-const AdminDashboard = lazy(() => import('@components/dashboard/AdminDashboard'));
+const StudentDashboard = lazy(() => import('../components/dashboard/StudentDashboard'));
+const TeacherDashboard = lazy(() => import('../components/dashboard/TeacherDashboard'));
+const AdminDashboard = lazy(() => import('../components/dashboard/AdminDashboard'));
 
-const Library = lazy(() => import('@components/library/Library'));
-const BookReader = lazy(() => import('@components/library/BookReader'));
-const PastPapers = lazy(() => import('@components/papers/PastPapers'));
-const Forums = lazy(() => import('@components/forums/Forums'));
-const Messages = lazy(() => import('@components/messages/Messages'));
-const Profile = lazy(() => import('@components/profile/Profile'));
-const Settings = lazy(() => import('@components/settings/Settings'));
+const Library = lazy(() => import('../components/library/Library'));
+const BookReader = lazy(() => import('../components/library/BookReader'));
+const PastPapers = lazy(() => import('../components/papers/PastPapers'));
+const Forums = lazy(() => import('../components/forums/Forums'));
+const Messages = lazy(() => import('../components/messages/Messages'));
+const Profile = lazy(() => import('../components/profile/Profile'));
+const Settings = lazy(() => import('../components/settings/Settings'));
 
 // Landing page
-const LandingPage = lazy(() => import('@components/common/LandingPage'));
+const LandingPage = lazy(() => import('../components/common/LandingPage'));
 
 // 404 page
-const NotFound = lazy(() => import('@components/common/NotFound'));
+const NotFound = lazy(() => import('../components/common/NotFound'));
 
 function App() {
-  const { user, isLoading: authLoading, checkAuthStatus } = useAuth();
-  const { theme } = useTheme();
-
-  useEffect(() => {
-    // Check authentication status on app load
-    checkAuthStatus();
-  }, [checkAuthStatus]);
-
-  useEffect(() => {
-    // Apply theme to document
-    document.documentElement.className = theme;
-  }, [theme]);
+  const { user, isLoading: authLoading, isAuthenticated } = useAuth(); // Removed checkAuthStatus call
 
   // Show loading spinner while checking authentication
   if (authLoading) {
@@ -79,10 +67,10 @@ function App() {
       <ErrorBoundary showErrorDetails={import.meta.env.DEV}>
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
           {/* Navigation - only show when user is authenticated */}
-          {user && <Navigation />}
+          {isAuthenticated && <Navigation />}
           
           {/* Main content */}
-          <main className={user ? 'pt-16' : ''}>
+          <main className={isAuthenticated ? 'pt-16' : ''}>
             <Suspense fallback={
               <div className="min-h-screen flex items-center justify-center">
                 <LoadingSpinner size="large" />
@@ -92,19 +80,19 @@ function App() {
                 {/* Public routes */}
                 <Route 
                   path={ROUTES.HOME} 
-                  element={user ? <Navigate to={ROUTES.DASHBOARD} replace /> : <LandingPage />} 
+                  element={isAuthenticated ? <Navigate to={ROUTES.DASHBOARD} replace /> : <LandingPage />} 
                 />
                 <Route 
                   path={ROUTES.LOGIN} 
-                  element={user ? <Navigate to={ROUTES.DASHBOARD} replace /> : <Login />} 
+                  element={isAuthenticated ? <Navigate to={ROUTES.DASHBOARD} replace /> : <Login />} 
                 />
                 <Route 
                   path={ROUTES.REGISTER} 
-                  element={user ? <Navigate to={ROUTES.DASHBOARD} replace /> : <Register />} 
+                  element={isAuthenticated ? <Navigate to={ROUTES.DASHBOARD} replace /> : <Register />} 
                 />
                 <Route 
                   path="/forgot-password" 
-                  element={user ? <Navigate to={ROUTES.DASHBOARD} replace /> : <ForgotPassword />} 
+                  element={isAuthenticated ? <Navigate to={ROUTES.DASHBOARD} replace /> : <ForgotPassword />} 
                 />
                 <Route 
                   path="/verify-account" 
