@@ -1,8 +1,8 @@
-import { Router } from 'express';
-import { AuthController } from '../controllers/auth.controller';
-import { authMiddleware } from '../middleware/auth.middleware';
-import { validationMiddleware } from '../middleware/validation.middleware';
-import { rateLimitMiddleware } from '../middleware/rateLimit.middleware';
+import { Router, Request, Response, NextFunction, RequestHandler } from "express";
+import { AuthController } from "../controllers/auth.controller";
+import { authMiddleware } from "../middleware/auth.middleware";
+import { validationMiddleware } from "../middleware/validation.middleware";
+import { rateLimitMiddleware } from "../middleware/rateLimit.middleware";
 import { 
   registerSchema, 
   loginSchema, 
@@ -10,66 +10,88 @@ import {
   resetPasswordSchema,
   verifyEmailSchema,
   refreshTokenSchema 
-} from '../schemas/auth.schemas';
+} from "../schemas/auth.schemas";
 
 const router = Router();
 const authController = new AuthController();
 
+/**
+ * Async wrapper to handle errors in async route handlers
+ * and ensure they match Express's RequestHandler type.
+ */
+const asyncHandler = (
+  fn: (req: Request, res: Response, next: NextFunction) => Promise<any>
+): RequestHandler => {
+  return (req, res, next) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+};
+
 // Public routes
-router.post('/register', 
+router.post(
+  "/register",
   rateLimitMiddleware.register,
   validationMiddleware(registerSchema),
-  authController.register
+  asyncHandler(authController.register.bind(authController))
 );
 
-router.post('/login', 
+router.post(
+  "/login",
   rateLimitMiddleware.login,
   validationMiddleware(loginSchema),
-  authController.login
+  asyncHandler(authController.login.bind(authController))
 );
 
-router.post('/verify-email', 
+router.post(
+  "/verify-email",
   validationMiddleware(verifyEmailSchema),
-  authController.verifyEmail
+  asyncHandler(authController.verifyEmail.bind(authController))
 );
 
-router.post('/forgot-password', 
+router.post(
+  "/forgot-password",
   rateLimitMiddleware.forgotPassword,
   validationMiddleware(forgotPasswordSchema),
-  authController.forgotPassword
+  asyncHandler(authController.forgotPassword.bind(authController))
 );
 
-router.post('/reset-password', 
+router.post(
+  "/reset-password",
   validationMiddleware(resetPasswordSchema),
-  authController.resetPassword
+  asyncHandler(authController.resetPassword.bind(authController))
 );
 
-router.post('/refresh-token', 
+router.post(
+  "/refresh-token",
   validationMiddleware(refreshTokenSchema),
-  authController.refreshToken
+  asyncHandler(authController.refreshToken.bind(authController))
 );
 
 // Protected routes
-router.post('/logout', 
+router.post(
+  "/logout",
   authMiddleware,
-  authController.logout
+  asyncHandler(authController.logout.bind(authController))
 );
 
-router.get('/me', 
+router.get(
+  "/me",
   authMiddleware,
-  authController.getCurrentUser
+  asyncHandler(authController.getCurrentUser.bind(authController))
 );
 
-router.post('/change-password', 
+router.post(
+  "/change-password",
   authMiddleware,
   validationMiddleware(resetPasswordSchema),
-  authController.changePassword
+  asyncHandler(authController.changePassword.bind(authController))
 );
 
-router.post('/resend-verification', 
+router.post(
+  "/resend-verification",
   authMiddleware,
   rateLimitMiddleware.resendVerification,
-  authController.resendVerificationEmail
+  asyncHandler(authController.resendVerificationEmail.bind(authController))
 );
 
 export default router;
