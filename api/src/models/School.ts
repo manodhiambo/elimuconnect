@@ -1,55 +1,72 @@
-// api/src/models/School.ts
 import { Schema, model, Document } from 'mongoose';
-import { School as ISchool, EducationLevel } from '@elimuconnect/shared/types';
+import { School as SchoolType, SchoolType as SchoolKind, EducationLevel, KenyanCounty } from '@elimuconnect/shared-types';
 
-export interface SchoolDocument extends Document, Omit<ISchool, '_id'> {}
+// Define the interface for MongoDB documents
+export interface SchoolDocument extends Document {
+  name: string;
+  nemisCode: string;
+  type?: SchoolKind;
+  educationLevels: EducationLevel[];
+  county: KenyanCounty;
+  district?: string;
+  location?: {
+    county?: string;
+    subcounty?: string;
+    ward?: string;
+    address?: string;
+    coordinates?: {
+      latitude?: number;
+      longitude?: number;
+    };
+  };
+  contactInfo?: {
+    phone?: string;
+    email?: string;
+    website?: string;
+    address?: string;
+  };
+  createdBy?: string;
+  isVerified: boolean;
+  verificationStatus?: 'pending' | 'verified' | 'rejected';
+  memberCount?: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-const schoolSchema = new Schema<SchoolDocument>({
-  name: {
-    type: String,
-    required: true,
-    trim: true
+const SchoolSchema = new Schema<SchoolDocument>(
+  {
+    name: { type: String, required: true },
+    nemisCode: { type: String, required: true, unique: true },
+    type: { type: String, enum: ['public', 'private', 'community', 'faith-based', 'special-needs', 'boarding', 'day', 'mixed'] },
+    educationLevels: {
+      type: [String],
+      enum: ['pre-primary', 'primary', 'secondary', 'tertiary', 'university', 'college', 'tvet'],
+      required: true,
+    },
+    county: { type: String, required: true },
+    district: { type: String },
+    location: {
+      county: String,
+      subcounty: String,
+      ward: String,
+      address: String,
+      coordinates: {
+        latitude: Number,
+        longitude: Number,
+      },
+    },
+    contactInfo: {
+      phone: String,
+      email: String,
+      website: String,
+      address: String,
+    },
+    createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    isVerified: { type: Boolean, default: false },
+    verificationStatus: { type: String, enum: ['pending', 'verified', 'rejected'], default: 'pending' },
+    memberCount: { type: Number, default: 0 },
   },
-  code: {
-    type: String,
-    required: true,
-    unique: true,
-    uppercase: true
-  },
-  level: [{
-    type: String,
-    enum: Object.values(EducationLevel),
-    required: true
-  }],
-  county: {
-    type: String,
-    required: true
-  },
-  district: {
-    type: String,
-    required: true
-  },
-  location: {
-    latitude: { type: Number },
-    longitude: { type: Number }
-  },
-  contact: {
-    phone: { type: String },
-    email: { type: String, lowercase: true },
-    address: { type: String }
-  },
-  verified: {
-    type: Boolean,
-    default: false
-  }
-}, {
-  timestamps: true
-});
+  { timestamps: true }
+);
 
-// Indexes
-schoolSchema.index({ code: 1 });
-schoolSchema.index({ county: 1 });
-schoolSchema.index({ level: 1 });
-schoolSchema.index({ verified: 1 });
-
-export const School = model<SchoolDocument>('School', schoolSchema);
+export const SchoolModel = model<SchoolDocument>('School', SchoolSchema);

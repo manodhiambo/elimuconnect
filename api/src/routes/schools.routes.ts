@@ -24,8 +24,8 @@ router.get('/search',
   schoolController.searchSchools
 );
 
-router.get('/:schoolId', schoolController.getSchoolById);
-router.get('/:schoolId/public-info', schoolController.getSchoolPublicInfo);
+router.get('/:id', schoolController.getSchoolById);
+router.get('/:id/public-info', schoolController.getSchoolPublicInfo);
 
 // County and region endpoints
 router.get('/counties/all', schoolController.getAllCounties);
@@ -46,59 +46,60 @@ router.post('/',
   schoolController.createSchool
 );
 
-router.put('/:schoolId', 
+router.put('/:id', 
   validationMiddleware(updateSchoolSchema),
   schoolController.updateSchool
 );
 
-router.delete('/:schoolId', schoolController.deleteSchool);
+router.delete('/:id', schoolController.deleteSchool);
 
 // School verification
-router.post('/:schoolId/verify', 
+router.post('/:id/verify', 
   validationMiddleware(verifySchoolSchema),
   schoolController.verifySchool
 );
 
-router.post('/:schoolId/request-verification', 
+router.post('/:id/request-verification', 
   schoolController.requestVerification
 );
 
 // School media
-router.post('/:schoolId/logo', 
+router.post('/:id/logo', 
   uploadMiddleware.single('logo'),
   schoolController.uploadSchoolLogo
 );
 
-router.post('/:schoolId/images', 
+router.post('/:id/images', 
   uploadMiddleware.array('images', 10),
   schoolController.uploadSchoolImages
 );
 
-router.delete('/:schoolId/images/:imageId', 
+router.delete('/:id/images/:imageId', 
   schoolController.deleteSchoolImage
 );
 
 // School membership
-router.post('/:schoolId/join', schoolController.joinSchool);
-router.delete('/:schoolId/leave', schoolController.leaveSchool);
-router.get('/:schoolId/members', schoolController.getSchoolMembers);
+router.post('/:id/join', schoolController.joinSchool);
+router.delete('/:id/leave', schoolController.leaveSchool);
+router.get('/:id/members', schoolController.getSchoolMembers);
 
 // School administration
-router.post('/:schoolId/admins', schoolController.addSchoolAdmin);
-router.delete('/:schoolId/admins/:userId', schoolController.removeSchoolAdmin);
-router.get('/:schoolId/admins', schoolController.getSchoolAdmins);
+router.post('/:id/admins', schoolController.addSchoolAdmin);
+router.delete('/:id/admins/:userId', schoolController.removeSchoolAdmin);
+router.get('/:id/admins', schoolController.getSchoolAdmins);
 
 // School resources
-router.get('/:schoolId/books', schoolController.getSchoolBooks);
-router.get('/:schoolId/papers', schoolController.getSchoolPapers);
-router.get('/:schoolId/discussions', schoolController.getSchoolDiscussions);
+router.get('/:id/books', schoolController.getSchoolBooks);
+router.get('/:id/papers', schoolController.getSchoolPapers);
+router.get('/:id/discussions', schoolController.getSchoolDiscussions);
 
 // School statistics
-router.get('/:schoolId/stats', schoolController.getSchoolStatistics);
-router.get('/:schoolId/performance', schoolController.getSchoolPerformance);
+router.get('/:id/stats', schoolController.getSchoolStatistics);
+router.get('/:id/performance', schoolController.getSchoolPerformance);
 
 // School settings (admin only)
-router.get('/:schoolId/settings', schoolController.getSchoolSettings);
-router.put('/:schoolId/settings', schoolController.updateSchoolSettings);
+router.get('/:id/settings', schoolController.getSchoolSettings);
+router.put('/:id/settings', schoolController.updateSchoolSettings);
 
 export default router;
+

@@ -11,13 +11,11 @@ export class SchoolController {
       const schoolData = req.body;
       const userId = req.user?.id;
 
-      // Check if school with same nemis code already exists (assuming your model uses nemisCode)
-      const existingSchool = await School.findOne({ nemisCode: schoolData.code || schoolData.nemisCode });
+      const existingSchool = await School.findOne({ nemisCode: schoolData.nemisCode });
       if (existingSchool) {
         throw new AppError('A school with this NEMIS code already exists', 409);
       }
 
-      // Create the school - adapt to your model structure
       const school = new School({
         ...schoolData,
         createdBy: userId,
@@ -34,8 +32,8 @@ export class SchoolController {
         school: {
           id: school.id,
           name: school.name,
-          nemisCode: school.nemisCode || school.code,
-          educationLevels: school.educationLevels || school.level,
+          nemisCode: school.nemisCode,
+          educationLevels: school.educationLevels,
           county: school.county,
           isVerified: school.isVerified,
           createdAt: school.createdAt
@@ -46,13 +44,8 @@ export class SchoolController {
     }
   };
 
-  // Get all schools (alias for getSchools)
+  // Get all schools
   getAllSchools = async (req: Request, res: Response, next: NextFunction) => {
-    return this.getSchools(req, res, next);
-  };
-
-  // Get all schools with search and filtering
-  getSchools = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { 
         q, 
@@ -64,7 +57,6 @@ export class SchoolController {
 
       const filter: Record<string, any> = {};
 
-      // Search by name or nemis code
       if (q) {
         filter.$or = [
           { name: { $regex: q, $options: 'i' } },
@@ -72,12 +64,10 @@ export class SchoolController {
         ];
       }
 
-      // Filter by county
       if (county) {
         filter.county = county;
       }
 
-      // Filter by education level
       if (level) {
         filter.educationLevels = { $in: [level] };
       }
@@ -118,17 +108,22 @@ export class SchoolController {
     }
   };
 
-  // Search schools (alias for getSchools with search functionality)
+  // Get schools (same as getAllSchools)
+  getSchools = async (req: Request, res: Response, next: NextFunction) => {
+    return this.getAllSchools(req, res, next);
+  };
+
+  // Search schools
   searchSchools = async (req: Request, res: Response, next: NextFunction) => {
-    return this.getSchools(req, res, next);
+    return this.getAllSchools(req, res, next);
   };
 
   // Get school by ID
   getSchoolById = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const { schoolId } = req.params;
       
-      const school = await School.findById(id);
+      const school = await School.findById(schoolId);
 
       if (!school) {
         throw new AppError('School not found', 404);
@@ -154,12 +149,12 @@ export class SchoolController {
     }
   };
 
-  // Get school public info (limited info for public access)
+  // Get school public info
   getSchoolPublicInfo = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const { schoolId } = req.params;
       
-      const school = await School.findById(id).select('name nemisCode educationLevels county location isVerified createdAt');
+      const school = await School.findById(schoolId).select('name nemisCode educationLevels county location isVerified createdAt');
 
       if (!school) {
         throw new AppError('School not found', 404);
@@ -210,25 +205,19 @@ export class SchoolController {
         .limit(limit as number);
 
       const total = await School.countDocuments({ county });
-      const totalPages = Math.ceil(total / (limit as number));
 
       res.json({
         success: true,
         county,
         schools,
-        pagination: {
-          page: page as number,
-          limit: limit as number,
-          total,
-          totalPages
-        }
+        total
       });
     } catch (error) {
       next(error);
     }
   };
 
-  // Get schools by region (alias for county)
+  // Get schools by region
   getSchoolsByRegion = async (req: Request, res: Response, next: NextFunction) => {
     return this.getSchoolsByCounty(req, res, next);
   };
@@ -247,7 +236,7 @@ export class SchoolController {
     }
   };
 
-  // Get school categories (alias for types)
+  // Get school categories
   getSchoolCategories = async (req: Request, res: Response, next: NextFunction) => {
     return this.getSchoolTypes(req, res, next);
   };
@@ -255,15 +244,14 @@ export class SchoolController {
   // Update school
   updateSchool = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const { schoolId } = req.params;
       const updateData = req.body;
 
-      const school = await School.findById(id);
+      const school = await School.findById(schoolId);
       if (!school) {
         throw new AppError('School not found', 404);
       }
 
-      // Check if user is authorized to update
       if (req.user?.role !== 'admin' && req.user?.role !== 'school_admin') {
         throw new AppError('Insufficient permissions to update school', 403);
       }
@@ -288,39 +276,17 @@ export class SchoolController {
   // Delete school
   deleteSchool = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const { schoolId } = req.params;
 
       if (req.user?.role !== 'admin') {
         throw new AppError('Insufficient permissions to delete school', 403);
       }
 
-      await School.findByIdAndDelete(id);
+      await School.findByIdAndDelete(schoolId);
 
       res.json({
         success: true,
         message: 'School deleted successfully'
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // Request verification
-  requestVerification = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { id } = req.params;
-      
-      const school = await School.findByIdAndUpdate(id, {
-        verificationStatus: 'pending'
-      });
-
-      if (!school) {
-        throw new AppError('School not found', 404);
-      }
-
-      res.json({
-        success: true,
-        message: 'Verification request submitted'
       });
     } catch (error) {
       next(error);
@@ -337,8 +303,7 @@ export class SchoolController {
       }
 
       const school = await School.findByIdAndUpdate(schoolId, {
-        isVerified: true,
-        verificationStatus: 'verified'
+        isVerified: true
       }, { new: true });
 
       if (!school) {
@@ -355,11 +320,29 @@ export class SchoolController {
     }
   };
 
+  // Request verification
+  requestVerification = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { schoolId } = req.params;
+      
+      const school = await School.findById(schoolId);
+
+      if (!school) {
+        throw new AppError('School not found', 404);
+      }
+
+      res.json({
+        success: true,
+        message: 'Verification request submitted'
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   // Upload school logo
   uploadSchoolLogo = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
-      
       res.json({
         success: true,
         message: 'Logo upload functionality not implemented yet'
@@ -372,8 +355,6 @@ export class SchoolController {
   // Upload school images
   uploadSchoolImages = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
-      
       res.json({
         success: true,
         message: 'Image upload functionality not implemented yet'
@@ -386,8 +367,6 @@ export class SchoolController {
   // Delete school image
   deleteSchoolImage = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id, imageId } = req.params;
-      
       res.json({
         success: true,
         message: 'Image deletion functionality not implemented yet'
@@ -400,7 +379,7 @@ export class SchoolController {
   // Join school
   joinSchool = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { schoolId } = req.body;
+      const { schoolId } = req.params;
       const userId = req.user?.id;
 
       const school = await School.findById(schoolId);
@@ -424,6 +403,7 @@ export class SchoolController {
   // Leave school
   leaveSchool = async (req: Request, res: Response, next: NextFunction) => {
     try {
+      const { schoolId } = req.params;
       const userId = req.user?.id;
 
       await User.findByIdAndUpdate(userId, {
@@ -433,6 +413,40 @@ export class SchoolController {
       res.json({
         success: true,
         message: 'Successfully left school'
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // Get school members
+  getSchoolMembers = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { schoolId } = req.params;
+      const { role, page = 1, limit = 20 } = req.query;
+
+      const filter: Record<string, any> = {
+        'profile.school': schoolId
+      };
+
+      if (role) {
+        filter.role = role;
+      }
+
+      const skip = ((page as number) - 1) * (limit as number);
+
+      const members = await User.find(filter)
+        .select('-password -verification')
+        .sort({ 'profile.firstName': 1 })
+        .skip(skip)
+        .limit(limit as number);
+
+      const total = await User.countDocuments(filter);
+
+      res.json({
+        success: true,
+        members,
+        total
       });
     } catch (error) {
       next(error);
@@ -466,9 +480,6 @@ export class SchoolController {
   // Get school admins
   getSchoolAdmins = async (req: Request, res: Response, next: NextFunction) => {
     try {
-  // Get school admins
-  getSchoolAdmins = async (req: Request, res: Response, next: NextFunction) => {
-    try {
       res.json({
         success: true,
         admins: []
@@ -478,40 +489,6 @@ export class SchoolController {
     }
   };
 
-  // Get school members
-  getSchoolMembers = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { id } = req.params;
-      const { role, page = 1, limit = 20 } = req.query;
-
-      const filter: Record<string, any> = {
-        'profile.school': id
-      };
-
-      if (role) {
-        filter.role = role;
-      }
-
-      const skip = ((page as number) - 1) * (limit as number);
-
-      const members = await User.find(filter)
-        .select('-password -verification')
-        .sort({ 'profile.firstName': 1 })
-        .skip(skip)
-        .limit(limit as number);
-
-      const total = await User.countDocuments(filter);
-
-      res.json({
-        success: true,
-        members,
-        total
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
   // Get school books
   getSchoolBooks = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -551,301 +528,15 @@ export class SchoolController {
   // Get school statistics
   getSchoolStatistics = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const { schoolId } = req.params;
       
       const totalStudents = await User.countDocuments({
-        'profile.school': id,
+        'profile.school': schoolId,
         role: 'student'
       });
 
       const totalTeachers = await User.countDocuments({
-        'profile.school': id,
-        role: 'teacher'
-      });
-
-      res.json({
-        success: true,
-        statistics: {
-          totalStudents,
-          totalTeachers,
-          totalMembers: totalStudents + totalTeachers
-        }
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // Get school performance
-  getSchoolPerformance = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      res.json({
-        success: true,
-        performance: {
-          averageScore: 0,
-          totalTests: 0,
-          improvementRate: 0
-        }
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // Get school settings
-  getSchoolSettings = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      res.json({
-        success: true,
-        settings: {}
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // Update school settings
-  updateSchoolSettings = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      res.json({
-        success: true,
-        message: 'Settings updated successfully'
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-}
-
-  // Get school members
-  getSchoolMembers = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { id } = req.params;
-      const { role, page = 1, limit = 20 } = req.query;
-
-      const filter: Record<string, any> = {
-        'profile.school': id
-      };
-
-      if (role) {
-        filter.role = role;
-      }
-
-      const skip = ((page as number) - 1) * (limit as number);
-
-      const members = await User.find(filter)
-        .select('-password -verification')
-        .sort({ 'profile.firstName': 1 })
-        .skip(skip)
-        .limit(limit as number);
-
-      const total = await User.countDocuments(filter);
-
-      res.json({
-        success: true,
-        members,
-        total
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // Get school books
-  getSchoolBooks = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      res.json({
-        success: true,
-        books: []
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // Get school papers
-  getSchoolPapers = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      res.json({
-        success: true,
-        papers: []
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // Get school discussions
-  getSchoolDiscussions = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      res.json({
-        success: true,
-        discussions: []
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // Get school statistics
-  getSchoolStatistics = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { id } = req.params;
-      
-      const totalStudents = await User.countDocuments({
-        'profile.school': id,
-        role: 'student'
-      });
-
-      const totalTeachers = await User.countDocuments({
-        'profile.school': id,
-        role: 'teacher'
-      });
-
-      res.json({
-        success: true,
-        statistics: {
-          totalStudents,
-          totalTeachers,
-          totalMembers: totalStudents + totalTeachers
-        }
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // Get school performance
-  getSchoolPerformance = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      res.json({
-        success: true,
-        performance: {
-          averageScore: 0,
-          totalTests: 0,
-          improvementRate: 0
-        }
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // Get school settings
-  getSchoolSettings = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      res.json({
-        success: true,
-        settings: {}
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // Update school settings
-  updateSchoolSettings = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      res.json({
-        success: true,
-        message: 'Settings updated successfully'
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-}
-      res.json({
-        success: true,
-        admins: []
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // Get school members
-  getSchoolMembers = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { id } = req.params;
-      const { role, page = 1, limit = 20 } = req.query;
-
-      const filter: Record<string, any> = {
-        'profile.school': id
-      };
-
-      if (role) {
-        filter.role = role;
-      }
-
-      const skip = ((page as number) - 1) * (limit as number);
-
-      const members = await User.find(filter)
-        .select('-password -verification')
-        .sort({ 'profile.firstName': 1 })
-        .skip(skip)
-        .limit(limit as number);
-
-      const total = await User.countDocuments(filter);
-
-      res.json({
-        success: true,
-        members,
-        total
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // Get school books
-  getSchoolBooks = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      res.json({
-        success: true,
-        books: []
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // Get school papers
-  getSchoolPapers = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      res.json({
-        success: true,
-        papers: []
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // Get school discussions
-  getSchoolDiscussions = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      res.json({
-        success: true,
-        discussions: []
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // Get school statistics
-  getSchoolStatistics = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { id } = req.params;
-      
-      const totalStudents = await User.countDocuments({
-        'profile.school': id,
-        role: 'student'
-      });
-
-      const totalTeachers = await User.countDocuments({
-        'profile.school': id,
+        'profile.school': schoolId,
         role: 'teacher'
       });
 

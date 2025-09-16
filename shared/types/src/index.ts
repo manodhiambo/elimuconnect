@@ -16,7 +16,7 @@ export interface User {
 
 export type UserRole = 'student' | 'teacher' | 'admin' | 'school_admin';
 
-export type EducationLevel = 
+export type EducationLevel =
   | 'pre-primary'
   | 'primary'
   | 'secondary'
@@ -25,35 +25,40 @@ export type EducationLevel =
   | 'college'
   | 'tvet';
 
-// School Types
+// School Types (aligned to model + controller)
 export interface School {
   id: string;
   name: string;
-  type: SchoolType;
-  level: EducationLevel[];
+  nemisCode: string; // added to align with model/controller
+  type?: SchoolType;
+  educationLevels: EducationLevel[]; // renamed from `level` to `educationLevels`
   county: KenyanCounty;
-  location: {
-    county: string;
+  district?: string;
+  location?: {
+    county?: string;
     subcounty?: string;
     ward?: string;
     address?: string;
     coordinates?: {
-      latitude: number;
-      longitude: number;
+      latitude?: number;
+      longitude?: number;
     };
   };
-  contactInfo: {
+  contactInfo?: {
     phone?: string;
     email?: string;
     website?: string;
+    address?: string;
   };
+  createdBy?: string; // user id who created the school
   isVerified: boolean;
-  memberCount: number;
+  verificationStatus?: 'pending' | 'verified' | 'rejected';
+  memberCount?: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export type SchoolType = 
+export type SchoolType =
   | 'public'
   | 'private'
   | 'community'
@@ -134,7 +139,7 @@ export interface Discussion {
   updatedAt: Date;
 }
 
-export type DiscussionCategory = 
+export type DiscussionCategory =
   | 'general'
   | 'academic'
   | 'homework-help'
@@ -221,7 +226,7 @@ export interface Achievement {
   earnedAt: Date;
 }
 
-export type AchievementType = 
+export type AchievementType =
   | 'milestone'
   | 'streak'
   | 'performance'
@@ -451,6 +456,3 @@ export interface ErrorResponse {
     details?: any;
   };
 }
-
-// Export all types as a namespace for convenience
-export * as Types from './index';
