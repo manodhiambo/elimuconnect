@@ -2,9 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { User } from '../models/User';
 import { logger } from '../utils/logger';
 import { AppError } from '../utils/errors';
-import jwt, { Secret, JwtPayload, TokenExpiredError, JsonWebTokenError } from 'jsonwebtoken';
+import jwt, { Secret, JwtPayload, TokenExpiredError, JsonWebTokenError, SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
 
 export class AuthController {
   register = async (req: Request, res: Response, next: NextFunction) => {
@@ -108,7 +107,8 @@ export class AuthController {
   verifyEmail = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { token } = req.body;
-      const decoded = jwt.verify(token, (process.env.JWT_SECRET || 'your-secret-key') as Secret) as JwtPayload;
+
+      const decoded = jwt.verify(token, (process.env.JWT_SECRET || 'your-secret-key') as Secret) as any;
 
       if (decoded.type !== 'email_verification') {
         throw new AppError('Invalid token type', 400);
@@ -133,10 +133,12 @@ export class AuthController {
   forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { email } = req.body;
-      const user = await User.findOne({ email });
 
+      const user = await User.findOne({ email });
       if (!user) {
-        return res.json({ message: 'If an account with that email exists, a password reset link has been sent.' });
+        return res.json({
+          message: 'If an account with that email exists, a password reset link has been sent.'
+        });
       }
 
       const resetToken = this.generatePasswordResetToken(user.id);
@@ -155,7 +157,8 @@ export class AuthController {
   resetPassword = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { token, newPassword } = req.body;
-      const decoded = jwt.verify(token, (process.env.JWT_SECRET || 'your-secret-key') as Secret) as JwtPayload;
+
+      const decoded = jwt.verify(token, (process.env.JWT_SECRET || 'your-secret-key') as Secret) as any;
 
       if (decoded.type !== 'password_reset') {
         throw new AppError('Invalid token type', 400);
@@ -183,7 +186,8 @@ export class AuthController {
   refreshToken = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { refreshToken } = req.body;
-      const decoded = jwt.verify(refreshToken, (process.env.JWT_REFRESH_SECRET || 'refresh-secret') as Secret) as JwtPayload;
+
+      const decoded = jwt.verify(refreshToken, (process.env.JWT_REFRESH_SECRET || 'refresh-secret') as Secret) as any;
 
       const user = await User.findById(decoded.userId);
       if (!user || !user.isActive) {
@@ -288,27 +292,25 @@ export class AuthController {
     }
   };
 
-  // ==================
-  // Helper methods
-  // ==================
+  // === Helpers ===
   private generateTokens(userId: string, rememberMe: boolean = false) {
     const payload = { userId, sessionId: this.generateSessionId() };
 
     const accessToken = jwt.sign(
       payload,
       (process.env.JWT_SECRET || 'your-secret-key') as Secret,
-      { expiresIn: process.env.JWT_ACCESS_EXPIRY || '1h' }
+      { expiresIn: process.env.JWT_ACCESS_EXPIRY || '1h' } as SignOptions
     );
 
     const refreshTokenExpiry = rememberMe ? '30d' : '7d';
     const refreshToken = jwt.sign(
       payload,
       (process.env.JWT_REFRESH_SECRET || 'refresh-secret') as Secret,
-      { expiresIn: refreshTokenExpiry }
+      { expiresIn: refreshTokenExpiry } as SignOptions
     );
 
     const decoded = jwt.decode(accessToken) as JwtPayload;
-    const expiresIn = decoded.exp ? decoded.exp - Math.floor(Date.now() / 1000) : 0;
+    const expiresIn = decoded?.exp ? decoded.exp - Math.floor(Date.now() / 1000) : 0;
 
     return { accessToken, refreshToken, expiresIn };
   }
@@ -319,7 +321,7 @@ export class AuthController {
     return jwt.sign(
       payload,
       (process.env.JWT_SECRET || 'your-secret-key') as Secret,
-      { expiresIn: '24h' }
+      { expiresIn: '24h' } as SignOptions
     );
   }
 
@@ -329,11 +331,12 @@ export class AuthController {
     return jwt.sign(
       payload,
       (process.env.JWT_SECRET || 'your-secret-key') as Secret,
-      { expiresIn: '1h' }
+      { expiresIn: '1h' } as SignOptions
     );
   }
 
   private generateSessionId(): string {
-    return crypto.randomBytes(32).toString('hex');
+    return require('crypto').randomBytes(32).toString('hex');
   }
 }
+

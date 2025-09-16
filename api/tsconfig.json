@@ -31,7 +31,12 @@
       "@/config/*": ["src/config/*"],
       "@/controllers/*": ["src/controllers/*"],
       "@/schemas/*": ["src/schemas/*"],
-      "@/sockets/*": ["src/sockets/*"]
+      "@/sockets/*": ["src/sockets/*"],
+
+      // ✅ Add shared aliases
+      "@elimuconnect/shared/constants": ["../shared/constants/src"],
+      "@elimuconnect/shared/types": ["../shared/types/src"],
+      "@elimuconnect/shared/utils": ["../shared/utils/src"]
     }
   },
   "include": [
