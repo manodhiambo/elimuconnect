@@ -140,11 +140,9 @@ const memoryStorage = multer.memoryStorage();
 const createFileFilter = (allowedTypes: string[] = []) => {
   return (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     try {
-      // Check file extension
       const fileExtension = path.extname(file.originalname).toLowerCase();
       const mimeType = file.mimetype.toLowerCase();
 
-      // If specific types are allowed, check against them
       if (allowedTypes.length > 0) {
         const isAllowedType = allowedTypes.some(type => {
           const typeConfig = FILE_TYPES[type as keyof typeof FILE_TYPES];
@@ -157,31 +155,27 @@ const createFileFilter = (allowedTypes: string[] = []) => {
         }
       }
 
-      // Security checks
-      // Prevent dangerous file extensions
       const dangerousExtensions = ['.exe', '.bat', '.cmd', '.com', '.pif', '.scr', '.vbs', '.js', '.jar', '.php', '.asp', '.jsp'];
       if (dangerousExtensions.includes(fileExtension)) {
         return cb(new AppError('File type not allowed for security reasons', 400));
       }
 
-      // Check for double extensions (e.g., .jpg.exe)
       const allExtensions = file.originalname.match(/\.[^.]+/g) || [];
       if (allExtensions.length > 1) {
-        const hassDangerousExtension = allExtensions.some(ext => 
+        const hasDangerousExtension = allExtensions.some(ext => 
           dangerousExtensions.includes(ext.toLowerCase())
         );
-        if (hassDangerousExtension) {
+        if (hasDangerousExtension) {
           return cb(new AppError('File with multiple extensions not allowed', 400));
         }
       }
 
-      // Check filename for suspicious patterns
       const suspiciousPatterns = [
-        /[<>:"/\\|?*]/,  // Windows reserved characters
-        /^\./,           // Hidden files
-        /\x00/,          // Null bytes
-        /__MACOSX/,      // Mac system files
-        /\.(htaccess|htpasswd)$/i  // Apache config files
+        /[<>:"/\\|?*]/,
+        /^\./,
+        /\x00/,
+        /__MACOSX/,
+        /\.(htaccess|htpasswd)$/i
       ];
 
       if (suspiciousPatterns.some(pattern => pattern.test(file.originalname))) {
@@ -223,11 +217,7 @@ const createMulterConfig = (options: {
 
 // Specific upload middleware configurations
 export const uploadMiddleware = {
-  // Single file upload
-  single: (fieldName: string, options: {
-    allowedTypes?: string[];
-    maxFileSize?: number;
-  } = {}) => {
+  single: (fieldName: string, options: { allowedTypes?: string[]; maxFileSize?: number } = {}) => {
     const upload = createMulterConfig({
       allowedTypes: options.allowedTypes,
       maxFileSize: options.maxFileSize
@@ -235,11 +225,7 @@ export const uploadMiddleware = {
     return upload.single(fieldName);
   },
 
-  // Multiple files upload
-  array: (fieldName: string, maxCount: number = 10, options: {
-    allowedTypes?: string[];
-    maxFileSize?: number;
-  } = {}) => {
+  array: (fieldName: string, maxCount: number = 10, options: { allowedTypes?: string[]; maxFileSize?: number } = {}) => {
     const upload = createMulterConfig({
       allowedTypes: options.allowedTypes,
       maxFileSize: options.maxFileSize,
@@ -248,11 +234,7 @@ export const uploadMiddleware = {
     return upload.array(fieldName, maxCount);
   },
 
-  // Multiple fields upload
-  fields: (fields: { name: string; maxCount: number }[], options: {
-    allowedTypes?: string[];
-    maxFileSize?: number;
-  } = {}) => {
+  fields: (fields: { name: string; maxCount: number }[], options: { allowedTypes?: string[]; maxFileSize?: number } = {}) => {
     const upload = createMulterConfig({
       allowedTypes: options.allowedTypes,
       maxFileSize: options.maxFileSize
@@ -260,65 +242,57 @@ export const uploadMiddleware = {
     return upload.fields(fields);
   },
 
-  // Avatar upload (single image)
   avatar: createMulterConfig({
     allowedTypes: ['images'],
-    maxFileSize: 2 * 1024 * 1024, // 2MB
+    maxFileSize: 2 * 1024 * 1024,
     maxFiles: 1
   }).single('avatar'),
 
-  // Book cover upload
   bookCover: createMulterConfig({
     allowedTypes: ['images'],
-    maxFileSize: 3 * 1024 * 1024, // 3MB
+    maxFileSize: 3 * 1024 * 1024,
     maxFiles: 1
   }).single('cover'),
 
-  // Book file upload
   bookFile: createMulterConfig({
     allowedTypes: ['documents'],
-    maxFileSize: 100 * 1024 * 1024, // 100MB
+    maxFileSize: 100 * 1024 * 1024,
     maxFiles: 1
   }).single('book'),
 
-  // Past paper upload
   paperUpload: createMulterConfig({
     allowedTypes: ['documents'],
-    maxFileSize: 50 * 1024 * 1024, // 50MB
+    maxFileSize: 50 * 1024 * 1024,
     maxFiles: 2
   }).fields([
     { name: 'paper', maxCount: 1 },
     { name: 'markingScheme', maxCount: 1 }
   ]),
 
-  // Assignment submission
   assignmentSubmission: createMulterConfig({
     allowedTypes: ['documents', 'images'],
-    maxFileSize: 25 * 1024 * 1024, // 25MB
+    maxFileSize: 25 * 1024 * 1024,
     maxFiles: 5
   }).array('files', 5),
 
-  // Discussion attachments
   discussionAttachments: createMulterConfig({
     allowedTypes: ['images', 'documents'],
-    maxFileSize: 10 * 1024 * 1024, // 10MB
+    maxFileSize: 10 * 1024 * 1024,
     maxFiles: 3
   }).array('attachments', 3),
 
-  // General file upload
   general: createMulterConfig({
-    maxFileSize: 20 * 1024 * 1024, // 20MB
+    maxFileSize: 20 * 1024 * 1024,
     maxFiles: 5
   }).array('files', 5),
 
-  // Memory storage for temporary processing
   memory: createMulterConfig({
     storage: 'memory',
-    maxFileSize: 10 * 1024 * 1024 // 10MB
+    maxFileSize: 10 * 1024 * 1024
   }).single('file')
 };
 
-// Error handling middleware for multer errors
+// Error handling middleware
 export const handleUploadError = (error: any, req: Request, res: any, next: any) => {
   if (error instanceof multer.MulterError) {
     let message = 'File upload error';
@@ -338,16 +312,13 @@ export const handleUploadError = (error: any, req: Request, res: any, next: any)
         message = 'Too many parts';
         break;
       case 'LIMIT_FIELD_KEY':
-        message = 'Field name too long';
+        message = 'Invalid or missing field name';
         break;
       case 'LIMIT_FIELD_VALUE':
         message = 'Field value too long';
         break;
       case 'LIMIT_FIELD_COUNT':
         message = 'Too many fields';
-        break;
-      case 'MISSING_FIELD_NAME':
-        message = 'Missing field name';
         break;
     }
 
@@ -382,7 +353,7 @@ export const cleanupTempFiles = (files: Express.Multer.File[]) => {
   });
 };
 
-// File validation after upload
+// File validation utility
 export const validateUploadedFile = (file: Express.Multer.File, options: {
   minSize?: number;
   maxSize?: number;
@@ -391,7 +362,6 @@ export const validateUploadedFile = (file: Express.Multer.File, options: {
 }) => {
   const { minSize, maxSize, allowedMimeTypes, allowedExtensions } = options;
 
-  // Size validation
   if (minSize && file.size < minSize) {
     throw new AppError(`File too small. Minimum size: ${minSize} bytes`, 400);
   }
@@ -400,12 +370,10 @@ export const validateUploadedFile = (file: Express.Multer.File, options: {
     throw new AppError(`File too large. Maximum size: ${maxSize} bytes`, 400);
   }
 
-  // MIME type validation
   if (allowedMimeTypes && !allowedMimeTypes.includes(file.mimetype)) {
     throw new AppError(`Invalid file type. Allowed types: ${allowedMimeTypes.join(', ')}`, 400);
   }
 
-  // Extension validation
   if (allowedExtensions) {
     const fileExtension = path.extname(file.originalname).toLowerCase();
     if (!allowedExtensions.includes(fileExtension)) {
@@ -416,7 +384,7 @@ export const validateUploadedFile = (file: Express.Multer.File, options: {
   return true;
 };
 
-// Get file info utility
+// File info utility
 export const getFileInfo = (file: Express.Multer.File) => ({
   originalName: file.originalname,
   filename: file.filename,

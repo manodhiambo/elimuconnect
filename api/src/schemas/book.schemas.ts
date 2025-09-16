@@ -1,161 +1,306 @@
-/ api/src/schemas/book.schemas.ts
-import Joi from 'joi';
-import { EducationLevel } from '@elimuconnect/shared/types';
+import { z } from 'zod';
 
-export const bookSchemas = {
-  create: Joi.object({
-    title: Joi.string()
-      .trim()
-      .min(3)
-      .max(200)
-      .required()
-      .messages({
-        'string.min': 'Title must be at least 3 characters',
-        'string.max': 'Title must not exceed 200 characters',
-        'any.required': 'Title is required'
-      }),
-    
-    author: Joi.string()
-      .trim()
-      .min(2)
-      .max(100)
-      .required()
-      .messages({
-        'string.min': 'Author must be at least 2 characters',
-        'string.max': 'Author must not exceed 100 characters',
-        'any.required': 'Author is required'
-      }),
-    
-    publisher: Joi.string()
-      .trim()
-      .min(2)
-      .max(100)
-      .required()
-      .messages({
-        'string.min': 'Publisher must be at least 2 characters',
-        'string.max': 'Publisher must not exceed 100 characters',
-        'any.required': 'Publisher is required'
-      }),
-    
-    isbn: Joi.string()
-      .pattern(/^(?:ISBN(?:-1[03])?:? )?(?=[0-9X]{10}$|(?=(?:[0-9]+[- ]){3})[- 0-9X]{13}$|97[89][0-9]{10}$|(?=(?:[0-9]+[- ]){4})[- 0-9]{17}$)(?:97[89][- ]?)?[0-9]{1,5}[- ]?[0-9]+[- ]?[0-9]+[- ]?[0-9X]$/)
-      .optional()
-      .messages({
-        'string.pattern.base': 'Please enter a valid ISBN'
-      }),
-    
-    level: Joi.string()
-      .valid(...Object.values(EducationLevel))
-      .required()
-      .messages({
-        'any.only': 'Education level must be primary or secondary',
-        'any.required': 'Education level is required'
-      }),
-    
-    grade: Joi.string()
-      .required()
-      .messages({
-        'any.required': 'Grade is required'
-      }),
-    
-    subject: Joi.string()
-      .trim()
-      .min(2)
-      .max(50)
-      .required()
-      .messages({
-        'string.min': 'Subject must be at least 2 characters',
-        'string.max': 'Subject must not exceed 50 characters',
-        'any.required': 'Subject is required'
-      }),
-    
-    description: Joi.string()
-      .trim()
-      .min(10)
-      .max(1000)
-      .required()
-      .messages({
-        'string.min': 'Description must be at least 10 characters',
-        'string.max': 'Description must not exceed 1000 characters',
-        'any.required': 'Description is required'
-      }),
-    
-    pages: Joi.number()
-      .integer()
-      .min(1)
-      .required()
-      .messages({
-        'number.min': 'Pages must be at least 1',
-        'any.required': 'Number of pages is required'
-      }),
-    
-    language: Joi.string()
-      .valid('en', 'sw')
-      .default('en')
-      .optional(),
-    
-    tags: Joi.array()
-      .items(Joi.string().trim().min(2).max(30))
-      .max(10)
-      .optional()
-      .messages({
-        'array.max': 'Maximum 10 tags allowed'
-      })
-  }),
+// Create book schema
+export const createBookSchema = z.object({
+  title: z.string()
+    .trim()
+    .min(1, 'Book title is required')
+    .max(200, 'Book title must not exceed 200 characters'),
+  
+  authors: z.array(z.string().trim().min(1, 'Author name cannot be empty'))
+    .min(1, 'At least one author is required'),
+  
+  isbn: z.string()
+    .regex(/^(?:ISBN(?:-1[03])?:? )?(?=[0-9X]{10}$|(?=(?:[0-9]+[- ]){3})[- 0-9X]{13}$|97[89][0-9]{10}$|(?=(?:[0-9]+[- ]){4})[- 0-9]{17}$)(?:97[89][- ]?)?[0-9]{1,5}[- ]?[0-9]+[- ]?[0-9]+[- ]?[0-9X]$/, 'Invalid ISBN format')
+    .optional(),
+  
+  publisher: z.string()
+    .trim()
+    .min(1, 'Publisher is required')
+    .max(100, 'Publisher name must not exceed 100 characters'),
+  
+  publishedYear: z.number()
+    .int('Published year must be a whole number')
+    .min(1000, 'Published year must be valid')
+    .max(new Date().getFullYear() + 1, 'Published year cannot be in the future'),
+  
+  description: z.string()
+    .trim()
+    .min(10, 'Description must be at least 10 characters')
+    .max(2000, 'Description must not exceed 2000 characters'),
+  
+  category: z.enum([
+    'textbook',
+    'reference',
+    'fiction',
+    'non-fiction',
+    'educational',
+    'children',
+    'academic',
+    'other'
+  ]),
+  
+  subject: z.string()
+    .trim()
+    .min(1, 'Subject is required')
+    .max(50, 'Subject must not exceed 50 characters'),
+  
+  educationLevel: z.enum([
+    'pre-primary',
+    'primary',
+    'secondary',
+    'tertiary',
+    'university',
+    'college',
+    'tvet',
+    'all-levels'
+  ]),
+  
+  grade: z.string()
+    .trim()
+    .optional(),
+  
+  language: z.enum(['english', 'swahili', 'french', 'arabic', 'other'])
+    .default('english'),
+  
+  pageCount: z.number()
+    .int('Page count must be a whole number')
+    .min(1, 'Page count must be at least 1')
+    .optional(),
+  
+  coverImageUrl: z.string()
+    .url('Invalid cover image URL')
+    .optional(),
+  
+  pdfUrl: z.string()
+    .url('Invalid PDF URL')
+    .optional(),
+  
+  tags: z.array(z.string().trim().min(1))
+    .max(10, 'Maximum 10 tags allowed')
+    .optional()
+});
 
-  search: Joi.object({
-    q: Joi.string()
-      .trim()
-      .min(2)
-      .optional(),
-    
-    subject: Joi.string()
-      .trim()
-      .optional(),
-    
-    level: Joi.string()
-      .valid(...Object.values(EducationLevel))
-      .optional(),
-    
-    grade: Joi.string()
-      .optional(),
-    
-    author: Joi.string()
-      .trim()
-      .optional(),
-    
-    publisher: Joi.string()
-      .trim()
-      .optional(),
-    
-    language: Joi.string()
-      .valid('en', 'sw')
-      .optional(),
-    
-    verified: Joi.boolean()
-      .optional(),
-    
-    sort: Joi.string()
-      .valid('title', 'author', 'createdAt', 'downloads', 'rating')
-      .default('createdAt')
-      .optional(),
-    
-    order: Joi.string()
-      .valid('asc', 'desc')
-      .default('desc')
-      .optional(),
-    
-    page: Joi.number()
-      .integer()
-      .min(1)
-      .default(1)
-      .optional(),
-    
-    limit: Joi.number()
-      .integer()
-      .min(1)
-      .max(50)
-      .default(12)
-      .optional()
-  })
-};
+// Update book schema
+export const updateBookSchema = z.object({
+  title: z.string()
+    .trim()
+    .min(1, 'Book title is required')
+    .max(200, 'Book title must not exceed 200 characters')
+    .optional(),
+  
+  authors: z.array(z.string().trim().min(1))
+    .min(1, 'At least one author is required')
+    .optional(),
+  
+  isbn: z.string()
+    .regex(/^(?:ISBN(?:-1[03])?:? )?(?=[0-9X]{10}$|(?=(?:[0-9]+[- ]){3})[- 0-9X]{13}$|97[89][0-9]{10}$|(?=(?:[0-9]+[- ]){4})[- 0-9]{17}$)(?:97[89][- ]?)?[0-9]{1,5}[- ]?[0-9]+[- ]?[0-9]+[- ]?[0-9X]$/, 'Invalid ISBN format')
+    .optional(),
+  
+  publisher: z.string()
+    .trim()
+    .min(1, 'Publisher is required')
+    .max(100, 'Publisher name must not exceed 100 characters')
+    .optional(),
+  
+  publishedYear: z.number()
+    .int('Published year must be a whole number')
+    .min(1000, 'Published year must be valid')
+    .max(new Date().getFullYear() + 1, 'Published year cannot be in the future')
+    .optional(),
+  
+  description: z.string()
+    .trim()
+    .min(10, 'Description must be at least 10 characters')
+    .max(2000, 'Description must not exceed 2000 characters')
+    .optional(),
+  
+  category: z.enum([
+    'textbook',
+    'reference',
+    'fiction',
+    'non-fiction',
+    'educational',
+    'children',
+    'academic',
+    'other'
+  ]).optional(),
+  
+  subject: z.string()
+    .trim()
+    .min(1, 'Subject is required')
+    .max(50, 'Subject must not exceed 50 characters')
+    .optional(),
+  
+  educationLevel: z.enum([
+    'pre-primary',
+    'primary',
+    'secondary',
+    'tertiary',
+    'university',
+    'college',
+    'tvet',
+    'all-levels'
+  ]).optional(),
+  
+  grade: z.string()
+    .trim()
+    .optional(),
+  
+  language: z.enum(['english', 'swahili', 'french', 'arabic', 'other'])
+    .optional(),
+  
+  pageCount: z.number()
+    .int('Page count must be a whole number')
+    .min(1, 'Page count must be at least 1')
+    .optional(),
+  
+  coverImageUrl: z.string()
+    .url('Invalid cover image URL')
+    .optional(),
+  
+  pdfUrl: z.string()
+    .url('Invalid PDF URL')
+    .optional(),
+  
+  tags: z.array(z.string().trim().min(1))
+    .max(10, 'Maximum 10 tags allowed')
+    .optional()
+});
+
+// Book search schema
+export const bookSearchSchema = z.object({
+  q: z.string()
+    .trim()
+    .min(1, 'Search query is required')
+    .optional(),
+  
+  category: z.enum([
+    'textbook',
+    'reference',
+    'fiction',
+    'non-fiction',
+    'educational',
+    'children',
+    'academic',
+    'other'
+  ]).optional(),
+  
+  subject: z.string().trim().optional(),
+  
+  educationLevel: z.enum([
+    'pre-primary',
+    'primary',
+    'secondary',
+    'tertiary',
+    'university',
+    'college',
+    'tvet',
+    'all-levels'
+  ]).optional(),
+  
+  grade: z.string().trim().optional(),
+  
+  language: z.enum(['english', 'swahili', 'french', 'arabic', 'other']).optional(),
+  
+  publisher: z.string().trim().optional(),
+  
+  author: z.string().trim().optional(),
+  
+  publishedYear: z.string()
+    .transform((val) => parseInt(val, 10))
+    .refine((val) => val >= 1000 && val <= new Date().getFullYear() + 1, 'Invalid year')
+    .optional(),
+  
+  page: z.string()
+    .transform((val) => parseInt(val, 10))
+    .refine((val) => val > 0, 'Page must be positive')
+    .optional(),
+  
+  limit: z.string()
+    .transform((val) => parseInt(val, 10))
+    .refine((val) => val > 0 && val <= 100, 'Limit must be between 1 and 100')
+    .optional(),
+  
+  sortBy: z.enum(['title', 'author', 'publishedYear', 'createdAt', 'rating'])
+    .optional(),
+  
+  sortOrder: z.enum(['asc', 'desc'])
+    .optional()
+});
+
+// Book review schema
+export const bookReviewSchema = z.object({
+  rating: z.number()
+    .int('Rating must be a whole number')
+    .min(1, 'Rating must be at least 1')
+    .max(5, 'Rating cannot exceed 5'),
+  
+  comment: z.string()
+    .trim()
+    .min(10, 'Review comment must be at least 10 characters')
+    .max(1000, 'Review comment must not exceed 1000 characters'),
+  
+  anonymous: z.boolean()
+    .default(false)
+});
+
+// Book request schema
+export const bookRequestSchema = z.object({
+  title: z.string()
+    .trim()
+    .min(1, 'Book title is required')
+    .max(200, 'Book title must not exceed 200 characters'),
+  
+  authors: z.array(z.string().trim().min(1))
+    .min(1, 'At least one author is required'),
+  
+  isbn: z.string()
+    .regex(/^(?:ISBN(?:-1[03])?:? )?(?=[0-9X]{10}$|(?=(?:[0-9]+[- ]){3})[- 0-9X]{13}$|97[89][0-9]{10}$|(?=(?:[0-9]+[- ]){4})[- 0-9]{17}$)(?:97[89][- ]?)?[0-9]{1,5}[- ]?[0-9]+[- ]?[0-9]+[- ]?[0-9X]$/, 'Invalid ISBN format')
+    .optional(),
+  
+  publisher: z.string()
+    .trim()
+    .optional(),
+  
+  subject: z.string()
+    .trim()
+    .min(1, 'Subject is required'),
+  
+  educationLevel: z.enum([
+    'pre-primary',
+    'primary',
+    'secondary',
+    'tertiary',
+    'university',
+    'college',
+    'tvet',
+    'all-levels'
+  ]),
+  
+  grade: z.string()
+    .trim()
+    .optional(),
+  
+  reason: z.string()
+    .trim()
+    .min(10, 'Reason must be at least 10 characters')
+    .max(500, 'Reason must not exceed 500 characters'),
+  
+  priority: z.enum(['low', 'medium', 'high'])
+    .default('medium')
+});
+
+// Book bookmark schema
+export const bookmarkBookSchema = z.object({
+  bookId: z.string()
+    .min(1, 'Book ID is required')
+});
+
+// Book rating schema
+export const rateBookSchema = z.object({
+  rating: z.number()
+    .int('Rating must be a whole number')
+    .min(1, 'Rating must be at least 1')
+    .max(5, 'Rating cannot exceed 5')
+});
