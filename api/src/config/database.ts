@@ -1,43 +1,47 @@
 import mongoose from 'mongoose';
-import { logger } from '@elimuconnect/shared/utils';
+import { logger } from '../utils/logger';
 
-export async function connectDatabase(): Promise<void> {
+const connectDatabase = async (): Promise<void> => {
   try {
     const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/elimuconnect';
     
-    await mongoose.connect(mongoUri, {
-      maxPoolSize: 10,
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-      maxIdleTimeMS: 30000,
-      retryWrites: true,
-      writeConcern: { w: 'majority' }
+    const options = {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      maxPoolSize: 10, // Maintain up to 10 socket connections
+      serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
+      socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+      bufferCommands: false, // Disable mongoose buffering
+      bufferMaxEntries: 0, // Disable mongoose buffering
+    };
+
+    await mongoose.connect(mongoUri, options);
+
+    // Connection event listeners
+    mongoose.connection.on('connected', () => {
+      logger.info('MongoDB connected successfully');
     });
 
-    logger.info('📊 MongoDB connected successfully');
-    logger.info(`📍 Database: ${mongoUri.replace(/\/\/.*@/, '//***:***@')}`);
-
-    // Handle connection events
     mongoose.connection.on('error', (error) => {
       logger.error('MongoDB connection error:', error);
     });
 
     mongoose.connection.on('disconnected', () => {
-      logger.warn('📊 MongoDB disconnected');
-    });
-
-    mongoose.connection.on('reconnected', () => {
-      logger.info('📊 MongoDB reconnected');
+      logger.warn('MongoDB disconnected');
     });
 
     // Graceful shutdown
     process.on('SIGINT', async () => {
       await mongoose.connection.close();
-      logger.info('📊 MongoDB connection closed through app termination');
+      logger.info('MongoDB connection closed due to app termination');
+      process.exit(0);
     });
 
+    logger.info('Database connection established');
   } catch (error) {
     logger.error('Database connection failed:', error);
-    throw error;
+    process.exit(1);
   }
-}
+};
+
+export { connectDatabase };

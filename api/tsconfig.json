@@ -19,13 +19,19 @@
     "emitDecoratorMetadata": true,
     "strictPropertyInitialization": false,
     "baseUrl": "./",
+    "typeRoots": ["./node_modules/@types", "./src/types"],
     "paths": {
       "@/*": ["src/*"],
       "@/models/*": ["src/models/*"],
       "@/routes/*": ["src/routes/*"],
       "@/middleware/*": ["src/middleware/*"],
       "@/services/*": ["src/services/*"],
-      "@/utils/*": ["src/utils/*"]
+      "@/utils/*": ["src/utils/*"],
+      "@/types/*": ["src/types/*"],
+      "@/config/*": ["src/config/*"],
+      "@/controllers/*": ["src/controllers/*"],
+      "@/schemas/*": ["src/schemas/*"],
+      "@/sockets/*": ["src/sockets/*"]
     }
   },
   "include": [
@@ -33,6 +39,19 @@
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ],
+  "references": [
+    {
+      "path": "../shared/constants"
+    },
+    {
+      "path": "../shared/types"
+    },
+    {
+      "path": "../shared/utils"
+    }
   ]
 }

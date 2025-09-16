@@ -1,3 +1,5 @@
+// This file should be saved as: api/src/sockets/socketHandlers.ts
+
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { logger } from '../utils/logger';
