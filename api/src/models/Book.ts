@@ -1,10 +1,24 @@
 // api/src/models/Book.ts
 import { Schema, model, Document } from 'mongoose';
-import { Book as IBook, EducationLevel } from '@elimuconnect/shared/types';
+import { Book as IBook } from '@elimuconnect/shared/types';
 
-export interface BookDocument extends Document, Omit<IBook, '_id'> {}
+// Fix the interface to avoid the id conflict
+export interface BookDocument extends Document, Omit<IBook, '_id' | 'id'> {}
 
-const bookSchema = new Schema<BookDocument>({
+// Define education levels as runtime values
+const educationLevels = [
+  'early-childhood',
+  'primary',
+  'secondary', 
+  'tertiary',
+  'vocational',
+  'adult-education'
+] as const;
+
+// Define language values as runtime array
+const languages = ['en', 'sw'] as const;
+
+const bookSchema = new Schema({
   title: {
     type: String,
     required: true,
@@ -27,7 +41,7 @@ const bookSchema = new Schema<BookDocument>({
   },
   level: {
     type: String,
-    enum: Object.values(EducationLevel),
+    enum: educationLevels,
     required: true
   },
   grade: {
@@ -61,7 +75,7 @@ const bookSchema = new Schema<BookDocument>({
   },
   language: {
     type: String,
-    enum: ['en', 'sw'],
+    enum: languages,
     default: 'en'
   },
   tags: [{ type: String }],
