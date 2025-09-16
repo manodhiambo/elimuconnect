@@ -8,25 +8,25 @@ import bcrypt from 'bcryptjs';
 export class AuthController {
   register = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { email, password, firstName, lastName, school, role } = req.body;
+      const { email, password, firstName, lastName, school, role, level, grade } = req.body;
 
       const existingUser = await User.findOne({ email });
       if (existingUser) {
         throw new AppError('User with this email already exists', 409);
       }
 
-      const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '12');
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
-
       const user = new User({
         email,
-        password: hashedPassword,
-        firstName,
-        lastName,
-        school,
+        password, // Password will be hashed by pre-save middleware
         role: role || 'student',
-        isEmailVerified: false,
-        isActive: true
+        verified: false, // Changed from isEmailVerified
+        profile: {
+          firstName,
+          lastName,
+          school,
+          level: level || 'primary',
+          grade: grade || '1'
+        }
       });
 
       await user.save();
@@ -40,10 +40,10 @@ export class AuthController {
         user: {
           id: user.id,
           email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
+          firstName: user.profile.firstName,
+          lastName: user.profile.lastName,
           role: user.role,
-          isEmailVerified: user.isEmailVerified
+          isEmailVerified: user.verified
         },
         tokens
       });
@@ -56,23 +56,28 @@ export class AuthController {
     try {
       const { email, password, rememberMe } = req.body;
 
-      const user = await User.findOne({ email });
+      // Find user with password included
+      const user = await User.findOne({ email }).select('+password');
       if (!user) {
         throw new AppError('Invalid email or password', 401);
       }
 
-      if (!user.isActive) {
-        throw new AppError('Account is deactivated. Please contact support.', 403);
+      // Check if user is active (check last activity manually)
+      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      if (user.lastActive <= oneWeekAgo) {
+        throw new AppError('Account is inactive. Please contact support.', 403);
       }
 
-      const isPasswordValid = await bcrypt.compare(password, user.password);
+      // Use the instance method to compare password
+      const isPasswordValid = await user.comparePassword(password);
       if (!isPasswordValid) {
         throw new AppError('Invalid email or password', 401);
       }
 
       const tokens = this.generateTokens(user.id, rememberMe);
 
-      await User.findByIdAndUpdate(user.id, { lastLoginAt: new Date() });
+      // Update last active time
+      await User.findByIdAndUpdate(user.id, { lastActive: new Date() });
 
       logger.info(`User logged in: ${user.email}`);
 
@@ -81,11 +86,11 @@ export class AuthController {
         user: {
           id: user.id,
           email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
+          firstName: user.profile.firstName,
+          lastName: user.profile.lastName,
           role: user.role,
-          isEmailVerified: user.isEmailVerified,
-          profilePicture: user.profilePicture
+          isEmailVerified: user.verified,
+          profilePicture: user.profile.avatar
         },
         tokens
       });
@@ -114,7 +119,7 @@ export class AuthController {
         throw new AppError('Invalid token type', 400);
       }
 
-      await User.findByIdAndUpdate(decoded.userId, { isEmailVerified: true });
+      await User.findByIdAndUpdate(decoded.userId, { verified: true });
 
       logger.info(`Email verified for user: ${decoded.userId}`);
 
@@ -164,10 +169,8 @@ export class AuthController {
         throw new AppError('Invalid token type', 400);
       }
 
-      const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '12');
-      const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
-
-      await User.findByIdAndUpdate(decoded.userId, { password: hashedPassword });
+      // Password will be hashed by pre-save middleware
+      await User.findByIdAndUpdate(decoded.userId, { password: newPassword });
 
       logger.info(`Password reset completed for user: ${decoded.userId}`);
 
@@ -190,7 +193,13 @@ export class AuthController {
       const decoded = jwt.verify(refreshToken, (process.env.JWT_REFRESH_SECRET || 'refresh-secret') as Secret) as any;
 
       const user = await User.findById(decoded.userId);
-      if (!user || !user.isActive) {
+      if (!user) {
+        throw new AppError('User not found or inactive', 401);
+      }
+
+      // Check if user is active manually
+      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      if (user.lastActive <= oneWeekAgo) {
         throw new AppError('User not found or inactive', 401);
       }
 
@@ -224,12 +233,12 @@ export class AuthController {
         user: {
           id: user.id,
           email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
+          firstName: user.profile.firstName,
+          lastName: user.profile.lastName,
           role: user.role,
-          isEmailVerified: user.isEmailVerified,
-          profilePicture: user.profilePicture,
-          school: user.school,
+          isEmailVerified: user.verified,
+          profilePicture: user.profile.avatar,
+          school: user.profile.school,
           createdAt: user.createdAt
         }
       });
@@ -243,20 +252,19 @@ export class AuthController {
       const { currentPassword, newPassword } = req.body;
       const userId = req.user?.id;
 
-      const user = await User.findById(userId);
+      const user = await User.findById(userId).select('+password');
       if (!user) {
         throw new AppError('User not found', 404);
       }
 
-      const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+      const isCurrentPasswordValid = await user.comparePassword(currentPassword);
       if (!isCurrentPasswordValid) {
         throw new AppError('Current password is incorrect', 400);
       }
 
-      const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '12');
-      const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
-
-      await User.findByIdAndUpdate(userId, { password: hashedPassword });
+      // Password will be hashed by pre-save middleware
+      user.password = newPassword;
+      await user.save();
 
       logger.info(`Password changed for user: ${userId}`);
 
@@ -275,7 +283,7 @@ export class AuthController {
         throw new AppError('User not found', 404);
       }
 
-      if (user.isEmailVerified) {
+      if (user.verified) {
         throw new AppError('Email is already verified', 400);
       }
 
@@ -339,4 +347,3 @@ export class AuthController {
     return require('crypto').randomBytes(32).toString('hex');
   }
 }
-

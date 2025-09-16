@@ -1,6 +1,6 @@
-import { Schema, model, Document, Types } from 'mongoose';
+import { Schema, model, Document, Types, Model } from 'mongoose';
 import bcrypt from 'bcryptjs';
-import type { User, UserRole, EducationLevel } from '@elimuconnect/shared/types';
+import type { User as UserType, UserRole, EducationLevel } from '@elimuconnect/shared/types';
 
 // User document interface for MongoDB
 export interface IUser extends Document {
@@ -48,7 +48,19 @@ export interface IUser extends Document {
   
   // Instance methods
   comparePassword(candidatePassword: string): Promise<boolean>;
-  fullName: string; // Virtual field
+  
+  // Virtual fields
+  fullName: string;
+  initials: string;
+  isActive: boolean;
+}
+
+// Static methods interface
+export interface IUserModel extends Model<IUser> {
+  findByEmail(email: string): Promise<IUser | null>;
+  findVerified(): Promise<IUser[]>;
+  findByRole(role: UserRole): Promise<IUser[]>;
+  findBySchool(schoolId: string): Promise<IUser[]>;
 }
 
 const userSchema = new Schema<IUser>(
@@ -240,7 +252,7 @@ userSchema.statics.findBySchool = function(schoolId: string) {
 };
 
 // Create and export the model
-export const User = model<IUser>('User', userSchema);
+export const User = model<IUser, IUserModel>('User', userSchema);
 export default User;
 
 // Export types for use in other files

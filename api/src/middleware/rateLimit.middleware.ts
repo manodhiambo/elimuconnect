@@ -1,5 +1,5 @@
 import rateLimit from 'express-rate-limit';
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
@@ -85,7 +85,7 @@ const createRateLimitMessage = (retryAfter: number, context?: string) => ({
 // Custom key generator for rate limiting
 const createKeyGenerator = (includeUser: boolean = false) => {
   return (req: Request): string => {
-    const baseKey = req.ip;
+    const baseKey = req.ip || 'unknown';
     const userKey = includeUser && req.user?.id ? req.user.id : '';
     const routeKey = req.route?.path || req.path;
     return `${baseKey}:${userKey}:${routeKey}`;
@@ -97,27 +97,31 @@ const skipSuccessfulRequests = (req: Request, res: Response): boolean => {
   return res.statusCode < 400;
 };
 
-// Enhanced error handler
-const onLimitReached = (req: Request, res: Response, next: Function) => {
-  logger.warn('Rate limit exceeded', {
-    ip: req.ip,
-    userAgent: req.get('User-Agent'),
-    route: req.route?.path,
-    method: req.method,
-    userId: req.user?.id
-  });
+// Enhanced error handler using handler instead of deprecated onLimitReached
+const createRateLimitHandler = (context?: string) => {
+  return (req: Request, res: Response) => {
+    logger.warn(`Rate limit exceeded${context ? ` for ${context}` : ''}`, {
+      ip: req.ip,
+      userAgent: req.get('User-Agent'),
+      route: req.route?.path,
+      method: req.method,
+      userId: req.user?.id
+    });
+    
+    const retryAfter = Math.ceil(15 * 60); // Default 15 minutes
+    return res.status(429).json(createRateLimitMessage(retryAfter, context));
+  };
 };
 
 // General API rate limiter
 export const generalRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 1000, // limit each IP to 1000 requests per windowMs
-  message: createRateLimitMessage(15 * 60, 'general API access'),
+  handler: createRateLimitHandler('general API access'),
   keyGenerator: createKeyGenerator(),
   standardHeaders: true,
   legacyHeaders: false,
-  store: store as any,
-  onLimitReached
+  store: store as any
 });
 
 // Authentication specific rate limiters
@@ -126,199 +130,184 @@ export const rateLimitMiddleware = {
   login: rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 5, // limit each IP to 5 login requests per windowMs
-    message: createRateLimitMessage(15 * 60, 'login attempts'),
-    skipSuccessfulRequests: true,
-    standardHeaders: true,
-    legacyHeaders: false,
-    store: store as any,
-    keyGenerator: (req: Request) => `login:${req.ip}`,
-    onLimitReached: (req: Request) => {
+    handler: (req: Request, res: Response) => {
       logger.warn('Login rate limit exceeded', {
         ip: req.ip,
         userAgent: req.get('User-Agent'),
         email: req.body?.email
       });
-    }
+      return res.status(429).json(createRateLimitMessage(15 * 60, 'login attempts'));
+    },
+    skipSuccessfulRequests: true,
+    standardHeaders: true,
+    legacyHeaders: false,
+    store: store as any,
+    keyGenerator: (req: Request) => `login:${req.ip || 'unknown'}`
   }),
 
   // Registration attempts
   register: rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 3, // limit each IP to 3 registration requests per hour
-    message: createRateLimitMessage(60 * 60, 'registration attempts'),
+    handler: createRateLimitHandler('registration attempts'),
     standardHeaders: true,
     legacyHeaders: false,
     store: store as any,
-    keyGenerator: (req: Request) => `register:${req.ip}`,
-    onLimitReached
+    keyGenerator: (req: Request) => `register:${req.ip || 'unknown'}`
   }),
 
   // Password reset attempts
   forgotPassword: rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 3, // limit each IP to 3 password reset requests per hour
-    message: createRateLimitMessage(60 * 60, 'password reset attempts'),
+    handler: createRateLimitHandler('password reset attempts'),
     standardHeaders: true,
     legacyHeaders: false,
     store: store as any,
-    keyGenerator: (req: Request) => `forgot:${req.ip}`,
-    onLimitReached
+    keyGenerator: (req: Request) => `forgot:${req.ip || 'unknown'}`
   }),
 
   // Email verification resend
   resendVerification: rateLimit({
     windowMs: 5 * 60 * 1000, // 5 minutes
     max: 2, // limit each IP to 2 resend requests per 5 minutes
-    message: createRateLimitMessage(5 * 60, 'verification email requests'),
+    handler: createRateLimitHandler('verification email requests'),
     standardHeaders: true,
     legacyHeaders: false,
     store: store as any,
-    keyGenerator: (req: Request) => `verify:${req.ip}`,
-    onLimitReached
+    keyGenerator: (req: Request) => `verify:${req.ip || 'unknown'}`
   }),
 
   // File upload rate limiting
   fileUpload: rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 50, // limit each IP to 50 file uploads per hour
-    message: createRateLimitMessage(60 * 60, 'file uploads'),
+    handler: createRateLimitHandler('file uploads'),
     standardHeaders: true,
     legacyHeaders: false,
     store: store as any,
-    keyGenerator: createKeyGenerator(true),
-    onLimitReached
+    keyGenerator: createKeyGenerator(true)
   }),
 
   // Image upload rate limiting
   imageUpload: rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 20, // limit each IP to 20 image uploads per hour
-    message: createRateLimitMessage(60 * 60, 'image uploads'),
+    handler: createRateLimitHandler('image uploads'),
     standardHeaders: true,
     legacyHeaders: false,
     store: store as any,
-    keyGenerator: createKeyGenerator(true),
-    onLimitReached
+    keyGenerator: createKeyGenerator(true)
   }),
 
   // Document upload rate limiting
   documentUpload: rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 30, // limit each IP to 30 document uploads per hour
-    message: createRateLimitMessage(60 * 60, 'document uploads'),
+    handler: createRateLimitHandler('document uploads'),
     standardHeaders: true,
     legacyHeaders: false,
     store: store as any,
-    keyGenerator: createKeyGenerator(true),
-    onLimitReached
+    keyGenerator: createKeyGenerator(true)
   }),
 
   // Avatar upload rate limiting
   avatarUpload: rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 5, // limit each IP to 5 avatar uploads per hour
-    message: createRateLimitMessage(60 * 60, 'avatar uploads'),
+    handler: createRateLimitHandler('avatar uploads'),
     standardHeaders: true,
     legacyHeaders: false,
     store: store as any,
-    keyGenerator: createKeyGenerator(true),
-    onLimitReached
+    keyGenerator: createKeyGenerator(true)
   }),
 
   // Audio upload rate limiting
   audioUpload: rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 10, // limit each IP to 10 audio uploads per hour
-    message: createRateLimitMessage(60 * 60, 'audio uploads'),
+    handler: createRateLimitHandler('audio uploads'),
     standardHeaders: true,
     legacyHeaders: false,
     store: store as any,
-    keyGenerator: createKeyGenerator(true),
-    onLimitReached
+    keyGenerator: createKeyGenerator(true)
   }),
 
   // Video upload rate limiting
   videoUpload: rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 5, // limit each IP to 5 video uploads per hour
-    message: createRateLimitMessage(60 * 60, 'video uploads'),
+    handler: createRateLimitHandler('video uploads'),
     standardHeaders: true,
     legacyHeaders: false,
     store: store as any,
-    keyGenerator: createKeyGenerator(true),
-    onLimitReached
+    keyGenerator: createKeyGenerator(true)
   }),
 
   // Temporary upload rate limiting
   tempUpload: rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 20, // limit each IP to 20 temp uploads per 15 minutes
-    message: createRateLimitMessage(15 * 60, 'temporary uploads'),
+    handler: createRateLimitHandler('temporary uploads'),
     standardHeaders: true,
     legacyHeaders: false,
     store: store as any,
-    keyGenerator: createKeyGenerator(true),
-    onLimitReached
+    keyGenerator: createKeyGenerator(true)
   }),
 
   // Search rate limiting
   search: rateLimit({
     windowMs: 60 * 1000, // 1 minute
     max: 30, // limit each IP to 30 search requests per minute
-    message: createRateLimitMessage(60, 'search requests'),
+    handler: createRateLimitHandler('search requests'),
     standardHeaders: true,
     legacyHeaders: false,
     store: store as any,
-    keyGenerator: createKeyGenerator(true),
-    onLimitReached
+    keyGenerator: createKeyGenerator(true)
   }),
 
   // API endpoint rate limiting
   api: rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 1000, // limit each IP to 1000 API requests per windowMs
-    message: createRateLimitMessage(15 * 60, 'API requests'),
+    handler: createRateLimitHandler('API requests'),
     standardHeaders: true,
     legacyHeaders: false,
     store: store as any,
-    keyGenerator: createKeyGenerator(true),
-    onLimitReached
+    keyGenerator: createKeyGenerator(true)
   }),
 
   // Message sending rate limiting
   messageSend: rateLimit({
     windowMs: 60 * 1000, // 1 minute
     max: 10, // limit each user to 10 messages per minute
-    message: createRateLimitMessage(60, 'message sending'),
+    handler: createRateLimitHandler('message sending'),
     standardHeaders: true,
     legacyHeaders: false,
     store: store as any,
-    keyGenerator: (req: Request) => `message:${req.user?.id || req.ip}`,
-    onLimitReached
+    keyGenerator: (req: Request) => `message:${req.user?.id || req.ip || 'unknown'}`
   }),
 
   // Discussion post rate limiting
   discussionPost: rateLimit({
     windowMs: 5 * 60 * 1000, // 5 minutes
     max: 5, // limit each user to 5 posts per 5 minutes
-    message: createRateLimitMessage(5 * 60, 'discussion posts'),
+    handler: createRateLimitHandler('discussion posts'),
     standardHeaders: true,
     legacyHeaders: false,
     store: store as any,
-    keyGenerator: (req: Request) => `discussion:${req.user?.id || req.ip}`,
-    onLimitReached
+    keyGenerator: (req: Request) => `discussion:${req.user?.id || req.ip || 'unknown'}`
   }),
 
   // Quiz attempt rate limiting
   quizAttempt: rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 50, // limit each user to 50 quiz attempts per hour
-    message: createRateLimitMessage(60 * 60, 'quiz attempts'),
+    handler: createRateLimitHandler('quiz attempts'),
     standardHeaders: true,
     legacyHeaders: false,
     store: store as any,
-    keyGenerator: (req: Request) => `quiz:${req.user?.id || req.ip}`,
-    onLimitReached
+    keyGenerator: (req: Request) => `quiz:${req.user?.id || req.ip || 'unknown'}`
   })
 };
 
@@ -335,25 +324,23 @@ export const progressiveRateLimit = rateLimit({
     if (violationHistory >= 1) return 100; // Slightly stricter for first violation
     return 200; // Normal limit for clean users
   },
-  message: (req: Request) => {
-    const violationHistory = 0; // Placeholder
-    return createRateLimitMessage(
-      15 * 60,
-      `rate limiting (violation level: ${violationHistory})`
-    );
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  store: store as any,
-  keyGenerator: createKeyGenerator(true),
-  onLimitReached: (req: Request) => {
+  handler: (req: Request, res: Response) => {
+    const violationHistory = 0; // Placeholder - would be fetched from database
     logger.warn('Progressive rate limit exceeded', {
       ip: req.ip,
       userId: req.user?.id,
       route: req.route?.path,
-      violationHistory: 0 // Would be fetched from database
+      violationHistory
     });
-  }
+    return res.status(429).json(createRateLimitMessage(
+      15 * 60,
+      `rate limiting (violation level: ${violationHistory})`
+    ));
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: store as any,
+  keyGenerator: createKeyGenerator(true)
 });
 
 // User-specific rate limiting (requires authentication)
@@ -366,15 +353,16 @@ export const createUserRateLimit = (
   return rateLimit({
     windowMs,
     max,
-    message: createRateLimitMessage(windowMs / 1000, context || message),
+    handler: (req: Request, res: Response) => {
+      return res.status(429).json(createRateLimitMessage(windowMs / 1000, context || message));
+    },
     keyGenerator: (req: Request) => {
       // Use user ID if authenticated, otherwise fall back to IP
-      return req.user?.id || req.ip;
+      return req.user?.id || req.ip || 'unknown';
     },
     standardHeaders: true,
     legacyHeaders: false,
-    store: store as any,
-    onLimitReached
+    store: store as any
   });
 };
 
@@ -392,15 +380,14 @@ export const roleBasedRateLimit = (limits: {
       const userRole = req.user?.role || 'default';
       return limits[userRole as keyof typeof limits] || limits.default || 100;
     },
-    message: (req: Request) => {
+    handler: (req: Request, res: Response) => {
       const userRole = req.user?.role || 'guest';
-      return createRateLimitMessage(15 * 60, `${userRole} access`);
+      return res.status(429).json(createRateLimitMessage(15 * 60, `${userRole} access`));
     },
     keyGenerator: createKeyGenerator(true),
     standardHeaders: true,
     legacyHeaders: false,
-    store: store as any,
-    onLimitReached
+    store: store as any
   });
 };
 
@@ -409,7 +396,7 @@ export const bypassRateLimit = (
   baseRateLimit: any,
   bypassCondition: (req: Request) => boolean
 ) => {
-  return (req: Request, res: Response, next: Function) => {
+  return (req: Request, res: Response, next: NextFunction) => {
     if (bypassCondition(req)) {
       logger.debug('Rate limit bypassed', {
         ip: req.ip,
@@ -431,7 +418,7 @@ export const slidingWindowRateLimit = (
 ) => {
   const windows = new Map<string, number[]>();
   
-  return (req: Request, res: Response, next: Function) => {
+  return (req: Request, res: Response, next: NextFunction) => {
     const key = createKeyGenerator(true)(req);
     const now = Date.now();
     const windowStart = now - windowMs;
@@ -465,8 +452,8 @@ export const ipFilterRateLimit = (
   blacklist: string[] = [],
   baseRateLimit: any
 ) => {
-  return (req: Request, res: Response, next: Function) => {
-    const clientIp = req.ip;
+  return (req: Request, res: Response, next: NextFunction) => {
+    const clientIp = req.ip || 'unknown';
     
     // Block blacklisted IPs immediately
     if (blacklist.includes(clientIp)) {
@@ -491,8 +478,8 @@ export const ipFilterRateLimit = (
 // Rate limit analytics and monitoring
 export const getRateLimitStats = () => {
   return {
-    totalKeys: store['hits']?.size || 0,
-    activeConnections: store['hits']?.size || 0,
+    totalKeys: (store as any).hits?.size || 0,
+    activeConnections: (store as any).hits?.size || 0,
     memoryUsage: process.memoryUsage(),
     uptime: process.uptime()
   };
@@ -505,7 +492,7 @@ export const clearRateLimit = (key: string) => {
 };
 
 // Middleware to add rate limit info to response headers
-export const addRateLimitHeaders = (req: Request, res: Response, next: Function) => {
+export const addRateLimitHeaders = (req: Request, res: Response, next: NextFunction) => {
   const key = createKeyGenerator(true)(req);
   const hits = store.getHits(key);
   

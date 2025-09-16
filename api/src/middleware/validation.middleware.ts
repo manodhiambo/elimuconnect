@@ -29,9 +29,7 @@ export const validationMiddleware = (
         const errorMessages = error.errors.map(err => ({
           field: err.path.join('.') || 'root',
           message: err.message,
-          code: err.code,
-          expected: err.expected,
-          received: err.received
+          code: err.code
         }));
         
         logger.warn('Validation failed', {
@@ -50,7 +48,7 @@ export const validationMiddleware = (
         (validationError as any).details = {
           property,
           errors: errorMessages,
-          receivedData: dataToValidate
+          receivedData: req[property]
         };
         
         return next(validationError);
@@ -84,9 +82,7 @@ export const validateMultiple = (schemas: {
               location: 'body',
               field: err.path.join('.'),
               message: err.message,
-              code: err.code,
-              expected: err.expected,
-              received: err.received
+              code: err.code
             })));
           }
         }
@@ -102,9 +98,7 @@ export const validateMultiple = (schemas: {
               location: 'query',
               field: err.path.join('.'),
               message: err.message,
-              code: err.code,
-              expected: err.expected,
-              received: err.received
+              code: err.code
             })));
           }
         }
@@ -120,9 +114,7 @@ export const validateMultiple = (schemas: {
               location: 'params',
               field: err.path.join('.'),
               message: err.message,
-              code: err.code,
-              expected: err.expected,
-              received: err.received
+              code: err.code
             })));
           }
         }
@@ -132,21 +124,17 @@ export const validateMultiple = (schemas: {
       if (schemas.headers) {
         try {
           // Extract relevant headers for validation
-          const headersToValidate = Object.keys(schemas.headers.shape || {}).reduce((acc, key) => {
-            acc[key] = req.headers[key.toLowerCase()];
-            return acc;
-          }, {} as any);
+          const headersToValidate: any = {};
           
-          schemas.headers.parse(headersToValidate);
+          // We can't use shape property directly, so we'll try parsing and catch errors
+          schemas.headers.parse(req.headers);
         } catch (error) {
           if (error instanceof ZodError) {
             errors.push(...error.errors.map(err => ({
               location: 'headers',
               field: err.path.join('.'),
               message: err.message,
-              code: err.code,
-              expected: err.expected,
-              received: err.received
+              code: err.code
             })));
           }
         }

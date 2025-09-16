@@ -1,12 +1,16 @@
 import { Router } from 'express';
 import { UserController } from '../controllers/user.controller';
-import { authMiddleware } from '../middleware/auth.middleware';
+import { authMiddleware, requireEmailVerification } from '../middleware/auth.middleware';
 import { validationMiddleware } from '../middleware/validation.middleware';
-import { uploadMiddleware } from '../middleware/upload.middleware';
+import { rateLimitMiddleware } from '../middleware/rateLimit.middleware';
 import { 
-  updateProfileSchema, 
+  updateProfileSchema,
   updateSettingsSchema,
-  updatePreferencesSchema 
+  updatePreferencesSchema,
+  userSearchSchema,
+  changePasswordSchema,
+  deleteAccountSchema,
+  blockUserSchema
 } from '../schemas/user.schemas';
 
 const router = Router();
@@ -15,64 +19,88 @@ const userController = new UserController();
 // All routes require authentication
 router.use(authMiddleware);
 
-// Profile routes
-router.get('/profile', userController.getProfile);
-router.put('/profile', 
+// Get current user profile
+router.get('/profile', 
+  userController.getProfile
+);
+
+// Update user profile
+router.put('/profile',
+  requireEmailVerification,
   validationMiddleware(updateProfileSchema),
   userController.updateProfile
 );
 
-router.post('/profile/avatar', 
-  uploadMiddleware.single('avatar'),
-  userController.uploadAvatar
-);
-
-router.delete('/profile/avatar', userController.deleteAvatar);
-
-// Settings routes
-router.get('/settings', userController.getSettings);
-router.put('/settings', 
+// Update user settings
+router.put('/settings',
   validationMiddleware(updateSettingsSchema),
   userController.updateSettings
 );
 
-// Preferences routes
-router.get('/preferences', userController.getPreferences);
-router.put('/preferences', 
+// Update user preferences
+router.put('/preferences',
   validationMiddleware(updatePreferencesSchema),
   userController.updatePreferences
 );
 
-// Progress and achievements
-router.get('/progress', userController.getProgress);
-router.get('/achievements', userController.getAchievements);
-router.get('/statistics', userController.getStatistics);
+// Change password
+router.post('/change-password',
+  rateLimitMiddleware.api,
+  validationMiddleware(changePasswordSchema),
+  userController.changePassword
+);
 
-// Follow/Unfollow functionality
-router.post('/follow/:userId', userController.followUser);
-router.delete('/follow/:userId', userController.unfollowUser);
-router.get('/followers', userController.getFollowers);
-router.get('/following', userController.getFollowing);
+// Delete account
+router.delete('/account',
+  rateLimitMiddleware.api,
+  validationMiddleware(deleteAccountSchema),
+  userController.deleteAccount
+);
 
-// Study groups
-router.get('/study-groups', userController.getUserStudyGroups);
-router.post('/study-groups/:groupId/join', userController.joinStudyGroup);
-router.delete('/study-groups/:groupId/leave', userController.leaveStudyGroup);
+// Get user by ID
+router.get('/:userId',
+  userController.getUserById
+);
 
-// Bookmarks and favorites
-router.get('/bookmarks', userController.getBookmarks);
-router.post('/bookmarks', userController.addBookmark);
-router.delete('/bookmarks/:bookmarkId', userController.removeBookmark);
+// Search users
+router.get('/',
+  validationMiddleware(userSearchSchema, 'query'),
+  userController.searchUsers
+);
 
-// Notifications
-router.get('/notifications', userController.getNotifications);
-router.put('/notifications/:notificationId/read', userController.markNotificationAsRead);
-router.put('/notifications/read-all', userController.markAllNotificationsAsRead);
-router.delete('/notifications/:notificationId', userController.deleteNotification);
+// Block user
+router.post('/:userId/block',
+  requireEmailVerification,
+  validationMiddleware(blockUserSchema),
+  userController.blockUser
+);
 
-// Account management
-router.delete('/account', userController.deleteAccount);
-router.post('/account/deactivate', userController.deactivateAccount);
-router.post('/account/reactivate', userController.reactivateAccount);
+// Unblock user
+router.delete('/:userId/block',
+  requireEmailVerification,
+  userController.unblockUser
+);
+
+// Follow user
+router.post('/:userId/follow',
+  requireEmailVerification,
+  userController.followUser
+);
+
+// Unfollow user
+router.delete('/:userId/follow',
+  requireEmailVerification,
+  userController.unfollowUser
+);
+
+// Get user's followers
+router.get('/:userId/followers',
+  userController.getFollowers
+);
+
+// Get user's following
+router.get('/:userId/following',
+  userController.getFollowing
+);
 
 export default router;
