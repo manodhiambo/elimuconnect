@@ -1,4 +1,3 @@
-
 import { Router } from 'express';
 import { PaperController } from '../controllers/paper.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
@@ -96,48 +95,8 @@ router.post('/attempts/:attemptId/submit', paperController.submitPaperAttempt);
 router.get('/attempts/:attemptId', paperController.getPaperAttempt);
 router.get('/attempts', paperController.getUserAttempts);
 
-// Paper reviews and ratings
+// Keep only implemented review methods
 router.post('/:paperId/reviews', paperController.addPaperReview);
 router.get('/:paperId/reviews', paperController.getPaperReviews);
-router.put('/reviews/:reviewId', paperController.updatePaperReview);
-router.delete('/reviews/:reviewId', paperController.deletePaperReview);
-
-router.post('/:paperId/rate', paperController.ratePaper);
-
-// Paper sharing
-router.post('/:paperId/share', paperController.sharePaper);
-router.get('/shared', paperController.getSharedPapers);
-
-// Study planner integration
-router.post('/:paperId/schedule', paperController.scheduleStudy);
-router.get('/scheduled', paperController.getScheduledPapers);
-router.put('/scheduled/:scheduleId', paperController.updateStudySchedule);
-router.delete('/scheduled/:scheduleId', paperController.removeFromSchedule);
-
-// Paper collections/sets
-router.post('/collections', paperController.createPaperCollection);
-router.get('/collections', paperController.getUserCollections);
-router.get('/collections/:collectionId', paperController.getPaperCollection);
-router.put('/collections/:collectionId', paperController.updatePaperCollection);
-router.delete('/collections/:collectionId', paperController.deletePaperCollection);
-router.post('/collections/:collectionId/papers/:paperId', paperController.addPaperToCollection);
-router.delete('/collections/:collectionId/papers/:paperId', paperController.removePaperFromCollection);
-
-// Practice tests and mock exams
-router.post('/practice-tests', paperController.createPracticeTest);
-router.get('/practice-tests', paperController.getPracticeTests);
-router.post('/practice-tests/:testId/start', paperController.startPracticeTest);
-router.get('/practice-tests/:testId/results', paperController.getPracticeTestResults);
-
-// Analytics and statistics
-router.get('/:paperId/analytics', paperController.getPaperAnalytics);
-router.get('/analytics/performance', paperController.getPerformanceAnalytics);
-router.get('/analytics/progress', paperController.getProgressAnalytics);
-
-// Revision materials
-router.get('/:paperId/revision-notes', paperController.getRevisionNotes);
-router.post('/:paperId/revision-notes', paperController.createRevisionNote);
-router.put('/revision-notes/:noteId', paperController.updateRevisionNote);
-router.delete('/revision-notes/:noteId', paperController.deleteRevisionNote);
 
 export default router;
