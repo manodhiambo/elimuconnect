@@ -616,6 +616,145 @@ export class SchoolController {
     }
   };
 }
+
+  // Get school members
+  getSchoolMembers = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const { role, page = 1, limit = 20 } = req.query;
+
+      const filter: Record<string, any> = {
+        'profile.school': id
+      };
+
+      if (role) {
+        filter.role = role;
+      }
+
+      const skip = ((page as number) - 1) * (limit as number);
+
+      const members = await User.find(filter)
+        .select('-password -verification')
+        .sort({ 'profile.firstName': 1 })
+        .skip(skip)
+        .limit(limit as number);
+
+      const total = await User.countDocuments(filter);
+
+      res.json({
+        success: true,
+        members,
+        total
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // Get school books
+  getSchoolBooks = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      res.json({
+        success: true,
+        books: []
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // Get school papers
+  getSchoolPapers = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      res.json({
+        success: true,
+        papers: []
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // Get school discussions
+  getSchoolDiscussions = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      res.json({
+        success: true,
+        discussions: []
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // Get school statistics
+  getSchoolStatistics = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      
+      const totalStudents = await User.countDocuments({
+        'profile.school': id,
+        role: 'student'
+      });
+
+      const totalTeachers = await User.countDocuments({
+        'profile.school': id,
+        role: 'teacher'
+      });
+
+      res.json({
+        success: true,
+        statistics: {
+          totalStudents,
+          totalTeachers,
+          totalMembers: totalStudents + totalTeachers
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // Get school performance
+  getSchoolPerformance = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      res.json({
+        success: true,
+        performance: {
+          averageScore: 0,
+          totalTests: 0,
+          improvementRate: 0
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // Get school settings
+  getSchoolSettings = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      res.json({
+        success: true,
+        settings: {}
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  // Update school settings
+  updateSchoolSettings = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      res.json({
+        success: true,
+        message: 'Settings updated successfully'
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+}
       res.json({
         success: true,
         admins: []
