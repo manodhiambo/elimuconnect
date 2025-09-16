@@ -223,8 +223,8 @@ export class PaperController {
 
   getPaperById = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
-      const paper = papers.find(p => p.id === id);
+      const { paperId } = req.params;
+      const paper = papers.find(p => p.id === paperId);
       
       if (!paper) {
         return res.status(404).json({ success: false, message: 'Paper not found' });
@@ -238,8 +238,8 @@ export class PaperController {
 
   getPaperPreview = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
-      const paper = papers.find(p => p.id === id);
+      const { paperId } = req.params;
+      const paper = papers.find(p => p.id === paperId);
       
       if (!paper) {
         return res.status(404).json({ success: false, message: 'Paper not found' });
@@ -417,8 +417,8 @@ export class PaperController {
 
   updatePaper = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
-      const paperIndex = papers.findIndex(p => p.id === id);
+      const { paperId } = req.params;
+      const paperIndex = papers.findIndex(p => p.id === paperId);
       
       if (paperIndex === -1) {
         return res.status(404).json({ success: false, message: 'Paper not found' });
@@ -433,8 +433,8 @@ export class PaperController {
 
   deletePaper = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
-      const paperIndex = papers.findIndex(p => p.id === id);
+      const { paperId } = req.params;
+      const paperIndex = papers.findIndex(p => p.id === paperId);
       
       if (paperIndex === -1) {
         return res.status(404).json({ success: false, message: 'Paper not found' });
@@ -469,7 +469,7 @@ export class PaperController {
 
   deletePaperFile = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const { paperId } = req.params;
       res.status(200).json({ success: true, message: 'File deleted successfully' });
     } catch (error) {
       res.status(500).json({ success: false, message: 'Error deleting file', error });
@@ -478,8 +478,8 @@ export class PaperController {
 
   downloadPaper = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
-      const paper = papers.find(p => p.id === id);
+      const { paperId } = req.params;
+      const paper = papers.find(p => p.id === paperId);
       
       if (!paper) {
         return res.status(404).json({ success: false, message: 'Paper not found' });
@@ -510,7 +510,7 @@ export class PaperController {
   // Favorites
   favoritePaper = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const { paperId } = req.params;
       res.status(200).json({ success: true, message: 'Paper added to favorites' });
     } catch (error) {
       res.status(500).json({ success: false, message: 'Error adding to favorites', error });
@@ -519,7 +519,7 @@ export class PaperController {
 
   unfavoritePaper = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const { paperId } = req.params;
       res.status(200).json({ success: true, message: 'Paper removed from favorites' });
     } catch (error) {
       res.status(500).json({ success: false, message: 'Error removing from favorites', error });
@@ -537,10 +537,10 @@ export class PaperController {
   // Paper Attempts
   startPaperAttempt = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const { paperId } = req.params;
       const newAttempt: PaperAttempt = {
         id: (paperAttempts.length + 1).toString(),
-        paperId: id,
+        paperId: paperId,
         userId: req.body.userId || 'user1',
         startedAt: new Date(),
         answers: [],
@@ -605,7 +605,7 @@ export class PaperController {
 
   getUserAttempts = async (req: Request, res: Response) => {
     try {
-      const { userId } = req.params;
+      const { userId } = req.query;
       const userAttempts = paperAttempts.filter(a => a.userId === userId);
       res.status(200).json({ success: true, data: userAttempts });
     } catch (error) {
@@ -616,10 +616,10 @@ export class PaperController {
   // Reviews and Ratings
   addPaperReview = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const { paperId } = req.params;
       const newReview: PaperReview = {
         id: (paperReviews.length + 1).toString(),
-        paperId: id,
+        paperId: paperId,
         userId: req.body.userId || 'user1',
         rating: req.body.rating,
         comment: req.body.comment,
@@ -635,8 +635,8 @@ export class PaperController {
 
   getPaperReviews = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
-      const reviews = paperReviews.filter(r => r.paperId === id);
+      const { paperId } = req.params;
+      const reviews = paperReviews.filter(r => r.paperId === paperId);
       res.status(200).json({ success: true, data: reviews });
     } catch (error) {
       res.status(500).json({ success: false, message: 'Error fetching reviews', error });
@@ -677,10 +677,10 @@ export class PaperController {
 
   ratePaper = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const { paperId } = req.params;
       const { rating } = req.body;
       
-      const paper = papers.find(p => p.id === id);
+      const paper = papers.find(p => p.id === paperId);
       if (!paper) {
         return res.status(404).json({ success: false, message: 'Paper not found' });
       }
@@ -698,8 +698,8 @@ export class PaperController {
   // Sharing
   sharePaper = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
-      const shareUrl = `${req.protocol}://${req.get('host')}/papers/${id}`;
+      const { paperId } = req.params;
+      const shareUrl = `${req.protocol}://${req.get('host')}/papers/${paperId}`;
       res.status(200).json({ success: true, shareUrl });
     } catch (error) {
       res.status(500).json({ success: false, message: 'Error sharing paper', error });
@@ -717,10 +717,10 @@ export class PaperController {
   // Study Scheduling
   scheduleStudy = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const { paperId } = req.params;
       const newSchedule: StudySchedule = {
         id: (studySchedules.length + 1).toString(),
-        paperId: id,
+        paperId: paperId,
         userId: req.body.userId || 'user1',
         scheduledFor: new Date(req.body.scheduledFor),
         completed: false,
@@ -798,7 +798,7 @@ export class PaperController {
 
   getUserCollections = async (req: Request, res: Response) => {
     try {
-      const { userId } = req.params;
+      const { userId } = req.query;
       const collections = paperCollections.filter(c => c.userId === userId);
       res.status(200).json({ success: true, data: collections });
     } catch (error) {
@@ -817,7 +817,7 @@ export class PaperController {
       
       res.status(200).json({ success: true, data: collection });
     } catch (error) {
-      resstatus(500).json({ success: false, message: 'Error fetching collection', error });
+      res.status(500).json({ success: false, message: 'Error fetching collection', error });
     }
   };
 
@@ -827,10 +827,10 @@ export class PaperController {
       const collectionIndex = paperCollections.findIndex(c => c.id === collectionId);
       
       if (collectionIndex === -1) {
-        return res.status(404).json({ success: false, message: 'Collection not found' });
+        return res.status(404).json({ success: false, message: 'Collectin not found' });
       }
       
-      paperCollections[collectionIndex] = { ...paperCollectionsctionIndex], ...req.body };
+      paperCollections[collectionIndex] = { ...paperCollections[collectionIndex], ...req.body };
       res.status(200).json({ success: true, data: paperCollections[collectionIndex] });
     } catch (error) {
       res.status(500).json({ success: false, message: 'Error updating collection', error });
@@ -840,10 +840,10 @@ export class PaperController {
   deletePaperCollection = async (req: Request, res: Response) => {
     try {
       const { collectionId } = req.params;
-      const collectionIndex = paperCollections.findIndex(c => c.id === collectionId);
+      const collectionIndex = paperCollections.fdex(c => c.id === collectionId);
       
       if (collectionIndex === -1) {
-        return res.ss(404).json({ success: false, message: 'Collection not found' });
+        return res.status(404).json({ success: false, message: 'Collection not found' });
       }
       
       const deletedCollection = paperCollections.splice(collectionIndex, 1)[0];
@@ -853,10 +853,10 @@ export class PaperController {
     }
   };
 
-  addPaperToCollection = async (req: Request, res: Response) => {
+  addPaperToCollection = async (req: Request, res: Rsponse) => {
     try {
       const { collectionId, paperId } = req.params;
-      const collection =paperCollections.find(c => c.id === collectionId);
+      const collection = paperCollections.find(c => c.id === collectionId);
       
       if (!collection) {
         return res.status(404).json({ success: false, message: 'Collection not found' });
@@ -868,11 +868,11 @@ export class PaperController {
       
       res.status(200).json({ success: true, data: collection });
     } catch (error) {
-      res.status(500).json({ success: false, message: 'Error adding paper to collection', error });
+      res.status(500).json( success: false, message: 'Error adding paper to collection', error });
     }
   };
 
-  removePaperFrection = async (req: Request, res: Response) => {
+  removePaperFromCollection = async (req: Request, res: Response) => {
     try {
       const { collectionId, paperId } = req.params;
       const collection = paperCollections.find(c => c.id === collectionId);
@@ -882,9 +882,9 @@ export class PaperController {
       }
       
       collection.paperIds = collection.paperIds.filter(id => id !== paperId);
-      res.status(200).json({ success: true, data: collection });
+    status(200).json({ success: true, data: collection });
     } catch (error) {
-      res.status(500).n({ success: false, message: 'Error removing paper from collection', error });
+      res.status(500).json({ success: false, message: 'Error removing paper from collection', error });
     }
   };
 
@@ -896,12 +896,12 @@ export class PaperController {
         name: req.body.name,
         paperIds: req.body.paperIds || [],
         userId: req.body.userId || 'user1',
-        timeLimit: req.body.timeLimit,
+        timeLimit: r.body.timeLimit,
         createdAt: new Date()
       };
       
       practiceTests.push(newTest);
-  es.status(201).json({ success: true, data: newTest });
+      res.status(201).json({ success: true, data: newTest });
     } catch (error) {
       res.status(500).json({ success: false, message: 'Error creating practice test', error });
     }
@@ -911,9 +911,9 @@ export class PaperController {
     try {
       const { userId } = req.query;
       const tests = practiceTests.filter(t => t.userId === userId);
-      res.status(200).json({ success: true, data: tests });
+      res.status(200).json({ success: true, da tests });
     } catch (error) {
-      res.status(500).json({ success: false, message: 'Error fetchingpractice tests', error });
+      res.status(500).json({ success: false, message: 'Error fetching practice tests', error });
     }
   };
 
@@ -928,12 +928,12 @@ export class PaperController {
       
       res.status(200).json({ 
         success: true, 
-        data: { 
+        dat: { 
           testId,
           startTime: new Date(),
           timeLimit: test.timeLimit
         }
-    });
+      });
     } catch (error) {
       res.status(500).json({ success: false, message: 'Error starting practice test', error });
     }
@@ -948,11 +948,11 @@ export class PaperController {
         score: 85,
         totalQuestions: 50,
         correctAnswers: 42,
-        timeTaken: '45 minutes',
+        timeTaken:45 minutes',
         completedAt: new Date()
       };
       
-      res.status(200).json({ success: trudata: results });
+      res.status(200).json({ success: true, data: results });
     } catch (error) {
       res.status(500).json({ success: false, message: 'Error fetching test results', error });
     }
@@ -961,16 +961,16 @@ export class PaperController {
   // Analytics
   getPaperAnalytics = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
-      const paper = papers.find(p => p.id === id);
+      const { paperId } = req.params;
+      const paper = papers.find(p => p.id === paperId);
       
       if (!paper) {
-        return res.status(404).json({ success: false, message: 'Paper not found' });
+        return res.status(404).json({ success: falsage: 'Paper not found' });
       }
       
       const analytics = {
-        paperId: id,
-        totalDownlo: paper.downloadCount,
+        paperId: paperId,
+        totalDownloads: paper.downloadCount,
         averageRating: paper.rating,
         totalReviews: paper.ratingCount,
         viewCount: Math.floor(Math.random() * 1000) + paper.downloadCount,
@@ -979,13 +979,13 @@ export class PaperController {
       
       res.status(200).json({ success: true, data: analytics });
     } catch (error) {
-      res.status(500).json({ success: false, message: 'Error fetching paper analytics', error });
+      res.status(500).json({ success: false, message: 'Errching paper analytics', error });
     }
   };
 
-  getPerformanceAnalytics = async (req: Request, res: Response) {
+  getPerformanceAnalytics = async (req: Request, res: Response) => {
     try {
-      const { userId } = req.params;
+      const { userId } = req.query;
       const analytics = {
         userId,
         totalAttempts: paperAttempts.filter(a => a.userId === userId).length,
@@ -996,15 +996,15 @@ export class PaperController {
         studyStreak: 7
       };
       
-      res.status(200).json({ success: true, data: analytics });
+      res.status(200).json({ succss: true, data: analytics });
     } catch (error) {
-      res.status(500).json({ success: false, message: 'Erroing performance analytics', error });
+      res.status(500).json({ success: false, message: 'Error fetching performance analytics', error });
     }
   };
 
   getProgressAnalytics = async (req: Request, res: Response) => {
     try {
-      const { userId } = req.params;
+      const { userId } = req.query;
       const progress = {
         userId,
         completedPapers: 25,
@@ -1012,7 +1012,7 @@ export class PaperController {
         completionRate: 50,
         weeklyProgress: [
           { week: 'Week 1', completed: 3 },
-          { week: 'Week 2', completed: 5 },
+          { week: 'Week 2', complete },
           { week: 'Week 3', completed: 4 },
           { week: 'Week 4', completed: 6 }
         ]
@@ -1026,23 +1026,23 @@ export class PaperController {
   // Revision Notes
   getRevisionNotes = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
-      const notes = revisionNotes.filter(n => n.paperId === id);
-      res.status(200).json({ success: true, data: notes });
+      const { paperId } = req.params;
+      const notes = revisionNotes.filter(n => n.paperId === paperId);
+    tatus(200).json({ success: true, data: notes });
     } catch (error) {
-      res.status(500).json({ success: false, age: 'Error fetching revision notes', error });
+      res.status(500).json({ success: false, message: 'Error fetching revision notes', error });
     }
   };
 
   createRevisionNote = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const { paperId } = req.params;
       const newNote: RevisionNote = {
         id: (revisionNotes.length + 1).toString(),
-        paperId: id,
+        paperId: paperId,
         userId: req.body.userId || 'user1',
         title: req.body.title,
-        content: req.body.content,
+        content: req.body.cont
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -1059,11 +1059,11 @@ export class PaperController {
       const { noteId } = req.params;
       const noteIndex = revisionNotes.findIndex(n => n.id === noteId);
       
-      if (noteIndex === -1) {
+      if (noteInde=== -1) {
         return res.status(404).json({ success: false, message: 'Revision note not found' });
       }
       
-      ionNotes[noteIndex] = { 
+      revisionNotes[noteIndex] = { 
         ...revisionNotes[noteIndex], 
         ...req.body, 
         updatedAt: new Date() 
@@ -1074,7 +1074,7 @@ export class PaperController {
     }
   };
 
-  deleteRevisionNote = async (req: Request, res: Response) => {
+  deleteRevisionNote = async (req: Request, res: esponse) => {
     try {
       const { noteId } = req.params;
       const noteIndex = revisionNotes.findIndex(n => n.id === noteId);
@@ -1086,11 +1086,11 @@ export class PaperController {
       const deletedNote = revisionNotes.splice(noteIndex, 1)[0];
       res.status(200).json({ success: true, data: deletedNote });
     } catch (error) {
-      res.status(500).json({ success: false, message: 'Error deleting revision note', error });
+      res.status(500).json({ success: false, message: 'Error deleting revision not error });
     }
   };
 }
 
 // Export both the class and an instance
 export const paperController = new PaperController();
-exporault PaperController;
+export default PaperController;
