@@ -1,5 +1,5 @@
 import { Schema, model, Document } from 'mongoose';
-import { School as SchoolType, SchoolType as SchoolKind, EducationLevel, KenyanCounty } from '@elimuconnect/shared-types';
+import { School as SchoolType, SchoolType as SchoolKind, EducationLevel, KenyanCounty } from '@elimuconnect/shared/types';
 
 // Define the interface for MongoDB documents
 export interface SchoolDocument extends Document {
@@ -69,4 +69,4 @@ const SchoolSchema = new Schema<SchoolDocument>(
   { timestamps: true }
 );
 
-export const SchoolModel = model<SchoolDocument>('School', SchoolSchema);
+export const School = model<SchoolDocument>('School', SchoolSchema);

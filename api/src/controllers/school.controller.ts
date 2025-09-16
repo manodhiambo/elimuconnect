@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { School } from '../models/School';
+import { School, SchoolDocument } from '../models/School';
 import { User } from '../models/User';
 import { AppError } from '../utils/errors';
 import { logger } from '../utils/logger';
