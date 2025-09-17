@@ -331,8 +331,9 @@ export class ForumController {
       res.status(500).json({ message: 'Internal server error' });
     }
   }
+}
 
-  // Categories and Tags
+// Categories and tags
   async getAllCategories(req: Request, res: Response) {
     try {
       const { includeStats = false } = req.query;
@@ -349,8 +350,197 @@ export class ForumController {
       res.status(500).json({ message: 'Internal server error' });
     }
   }
-}
-// Protected routes - Discussion management
+
+  async getDiscussionsByCategory(req: Request, res: Response) {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const { categoryId } = req.params;
+      const { page = 1, limit = 20, sort = 'recent' } = req.query;
+      
+      const filters: any = { categoryId };
+
+      let sortOptions: any = {};
+      switch (sort) {
+        case 'recent':
+          sortOptions = { createdAt: -1 };
+          break;
+        case 'popular':
+          sortOptions = { viewCount: -1, likeCount: -1 };
+          break;
+        case 'replies':
+          sortOptions = { replyCount: -1 };
+          break;
+        default:
+          sortOptions = { createdAt: -1 };
+      }
+
+      const discussions = await Discussion.findWithPagination(filters, {
+        page: Number(page),
+        limit: Number(limit),
+        sort: sortOptions,
+        populate: ['author', 'category']
+      });
+      
+      const total = await Discussion.countDocuments(filters);
+      
+      res.json({ 
+        discussions: discussions.map(d => d.toSafeObject()),
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          pages: Math.ceil(total / Number(limit))
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching discussions by category:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  }
+
+  async getAllTags(req: Request, res: Response) {
+    try {
+      const { popular = false, limit = 50 } = req.query;
+      
+      let tags;
+      if (popular === 'true') {
+        tags = await Tag.findPopular(Number(limit));
+      } else {
+        tags = await Tag.findAll();
+      }
+      
+      res.json({ 
+        tags: tags.map(t => t.toSafeObject())
+      });
+    } catch (error) {
+      console.error('Error fetching tags:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  }
+
+  async getDiscussionsByTag(req: Request, res: Response) {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const { tag } = req.params;
+      const { page = 1, limit = 20, sort = 'recent' } = req.query;
+      
+      const filters: any = { tags: { $in: [tag] } };
+
+      let sortOptions: any = {};
+      switch (sort) {
+        case 'recent':
+          sortOptions = { createdAt: -1 };
+          break;
+        case 'popular':
+          sortOptions = { viewCount: -1, likeCount: -1 };
+          break;
+        case 'replies':
+          sortOptions = { replyCount: -1 };
+          break;
+        default:
+          sortOptions = { createdAt: -1 };
+      }
+
+      const discussions = await Discussion.findWithPagination(filters, {
+        page: Number(page),
+        limit: Number(limit),
+        sort: sortOptions,
+        populate: ['author', 'category']
+      });
+      
+      const total = await Discussion.countDocuments(filters);
+      
+      res.json({ 
+        discussions: discussions.map(d => d.toSafeObject()),
+        tag,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          pages: Math.ceil(total / Number(limit))
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching discussions by tag:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  }
+
+  // Subject-specific forums
+  async getAllSubjects(req: Request, res: Response) {
+    try {
+      const subjects = await Discussion.distinct('subject');
+      
+      res.json({ 
+        subjects: subjects.filter(Boolean)
+      });
+    } catch (error) {
+      console.error('Error fetching subjects:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  }
+
+  async getDiscussionsBySubject(req: Request, res: Response) {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const { subject } = req.params;
+      const { page = 1, limit = 20, sort = 'recent' } = req.query;
+      
+      const filters: any = { subject };
+
+      let sortOptions: any = {};
+      switch (sort) {
+        case 'recent':
+          sortOptions = { createdAt: -1 };
+          break;
+        case 'popular':
+          sortOptions = { viewCount: -1, likeCount: -1 };
+          break;
+        case 'replies':
+          sortOptions = { replyCount: -1 };
+          break;
+        default:
+          sortOptions = { createdAt: -1 };
+      }
+
+      const discussions = await Discussion.findWithPagination(filters, {
+        page: Number(page),
+        limit: Number(limit),
+        sort: sortOptions,
+        populate: ['author', 'category']
+      });
+      
+      const total = await Discussion.countDocuments(filters);
+      
+      res.json({ 
+        discussions: discussions.map(d => d.toSafeObject()),
+        subject,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          pages: Math.ceil(total / Number(limit))
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching discussions by subject:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  }
+
+  // Protected routes - Discussion management
   async createDiscussion(req: Request, res: Response) {
     try {
       const errors = validationResult(req);
@@ -510,7 +700,7 @@ export class ForumController {
     }
   }
 
-  // Discussion interactions
+// Discussion interactions
   async likeDiscussion(req: Request, res: Response) {
     try {
       const errors = validationResult(req);
@@ -660,6 +850,34 @@ export class ForumController {
     }
   }
 
+  async getBookmarkedDiscussions(req: Request, res: Response) {
+    try {
+      const userId = (req as AuthenticatedRequest).user.id;
+      const { page = 1, limit = 20 } = req.query;
+      
+      const bookmarks = await Bookmark.findByUserAndType(userId, 'discussion', {
+        page: Number(page),
+        limit: Number(limit),
+        populate: ['target']
+      });
+      
+      const total = await Bookmark.countByUserAndType(userId, 'discussion');
+      
+      res.json({ 
+        discussions: bookmarks.map(b => b.target.toSafeObject()),
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          pages: Math.ceil(total / Number(limit))
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching bookmarked discussions:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  }
+
   async followDiscussion(req: Request, res: Response) {
     try {
       const errors = validationResult(req);
@@ -721,6 +939,34 @@ export class ForumController {
     }
   }
 
+  async getFollowedDiscussions(req: Request, res: Response) {
+    try {
+      const userId = (req as AuthenticatedRequest).user.id;
+      const { page = 1, limit = 20 } = req.query;
+      
+      const follows = await Follow.findByUser(userId, {
+        page: Number(page),
+        limit: Number(limit),
+        populate: ['discussion']
+      });
+      
+      const total = await Follow.countByUser(userId);
+      
+      res.json({ 
+        discussions: follows.map(f => f.discussion.toSafeObject()),
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          pages: Math.ceil(total / Number(limit))
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching followed discussions:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  }
+
   async reportDiscussion(req: Request, res: Response) {
     try {
       const errors = validationResult(req);
@@ -760,7 +1006,6 @@ export class ForumController {
       res.status(500).json({ message: 'Internal server error' });
     }
   }
-}
 
 // Replies management
   async createReply(req: Request, res: Response) {
@@ -1149,1165 +1394,3 @@ export class ForumController {
       res.status(500).json({ message: 'Internal server error' });
     }
   }
-
-  // Best answers and solutions
-  async markAsSolution(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { replyId } = req.params;
-      const userId = (req as AuthenticatedRequest).user.id;
-      const isModerator = (req as AuthenticatedRequest).user.isModerator;
-      const isAdmin = (req as AuthenticatedRequest).user.isAdmin;
-      
-      // Check if reply exists
-      const reply = await Reply.findById(replyId);
-      if (!reply) {
-        return res.status(404).json({ message: 'Reply not found' });
-      }
-
-      // Check if discussion exists and is a question
-      const discussion = await Discussion.findById(reply.discussionId);
-      if (!discussion) {
-        return res.status(404).json({ message: 'Discussion not found' });
-      }
-
-      if (discussion.type !== 'question') {
-        return res.status(400).json({ message: 'Can only mark solutions for questions' });
-      }
-
-      // Check permissions (discussion author, moderator, or admin)
-      if (discussion.authorId !== userId && !isModerator && !isAdmin) {
-        return res.status(403).json({ message: 'Only the question author or moderators can mark solutions' });
-      }
-
-      // Mark as solution
-      await Reply.markAsSolution(replyId);
-      
-      // Update discussion status
-      await Discussion.update(discussion.id, { 
-        status: 'solved',
-        solvedAt: new Date(),
-        solutionReplyId: replyId
-      });
-
-      // Send notification to reply author
-      if (reply.authorId !== userId) {
-        await NotificationService.notifySolutionMarked(reply, discussion);
-      }
-      
-      res.json({ message: 'Reply marked as solution successfully' });
-    } catch (error) {
-      console.error('Error marking reply as solution:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  async unmarkAsSolution(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { replyId } = req.params;
-      const userId = (req as AuthenticatedRequest).user.id;
-      const isModerator = (req as AuthenticatedRequest).user.isModerator;
-      const isAdmin = (req as AuthenticatedRequest).user.isAdmin;
-      
-      // Check if reply exists and is marked as solution
-      const reply = await Reply.findById(replyId);
-      if (!reply) {
-        return res.status(404).json({ message: 'Reply not found' });
-      }
-
-      if (!reply.isSolution) {
-        return res.status(400).json({ message: 'Reply is not marked as solution' });
-      }
-
-      // Check if discussion exists
-      const discussion = await Discussion.findById(reply.discussionId);
-      if (!discussion) {
-        return res.status(404).json({ message: 'Discussion not found' });
-      }
-
-      // Check permissions (discussion author, moderator, or admin)
-      if (discussion.authorId !== userId && !isModerator && !isAdmin) {
-        return res.status(403).json({ message: 'Only the question author or moderators can unmark solutions' });
-      }
-
-      // Unmark as solution
-      await Reply.unmarkAsSolution(replyId);
-      
-      // Update discussion status
-      await Discussion.update(discussion.id, { 
-        status: 'open',
-        solvedAt: null,
-        solutionReplyId: null
-      });
-      
-      res.json({ message: 'Reply unmarked as solution successfully' });
-    } catch (error) {
-      console.error('Error unmarking reply as solution:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  // Q&A specific features
-  async getQuestions(req: Request, res: Response) {
-    try {
-      const { page = 1, limit = 20, status, subject, category } = req.query;
-      
-      const filters: any = { type: 'question' };
-      if (status) filters.status = status;
-      if (subject) filters.subject = subject;
-      if (category) filters.categoryId = category;
-
-      const questions = await Discussion.findWithPagination(filters, {
-        page: Number(page),
-        limit: Number(limit),
-        sort: { createdAt: -1 },
-        populate: ['author', 'category']
-      });
-      
-      const total = await Discussion.countDocuments(filters);
-      
-      res.json({ 
-        questions: questions.map(q => q.toSafeObject()),
-        pagination: {
-          page: Number(page),
-          limit: Number(limit),
-          total,
-          pages: Math.ceil(total / Number(limit))
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching questions:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  async getUnansweredQuestions(req: Request, res: Response) {
-    try {
-      const { page = 1, limit = 20, subject, category } = req.query;
-      
-      const filters: any = { 
-        type: 'question',
-        status: 'open',
-        replyCount: 0
-      };
-      if (subject) filters.subject = subject;
-      if (category) filters.categoryId = category;
-
-      const questions = await Discussion.findWithPagination(filters, {
-        page: Number(page),
-        limit: Number(limit),
-        sort: { createdAt: -1 },
-        populate: ['author', 'category']
-      });
-      
-      const total = await Discussion.countDocuments(filters);
-      
-      res.json({ 
-        questions: questions.map(q => q.toSafeObject()),
-        pagination: {
-          page: Number(page),
-          limit: Number(limit),
-          total,
-          pages: Math.ceil(total / Number(limit))
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching unanswered questions:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  async getSolvedQuestions(req: Request, res: Response) {
-    try {
-      const { page = 1, limit = 20, subject, category } = req.query;
-      
-      const filters: any = { 
-        type: 'question',
-        status: 'solved'
-      };
-      if (subject) filters.subject = subject;
-      if (category) filters.categoryId = category;
-
-      const questions = await Discussion.findWithPagination(filters, {
-        page: Number(page),
-        limit: Number(limit),
-        sort: { solvedAt: -1 },
-        populate: ['author', 'category', 'solutionReply']
-      });
-      
-      const total = await Discussion.countDocuments(filters);
-      
-      res.json({ 
-        questions: questions.map(q => q.toSafeObject()),
-        pagination: {
-          page: Number(page),
-          limit: Number(limit),
-          total,
-          pages: Math.ceil(total / Number(limit))
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching solved questions:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  async closeQuestion(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { questionId } = req.params;
-      const { reason } = req.body;
-      const userId = (req as AuthenticatedRequest).user.id;
-      const isModerator = (req as AuthenticatedRequest).user.isModerator;
-      const isAdmin = (req as AuthenticatedRequest).user.isAdmin;
-      
-      // Check if question exists
-      const question = await Discussion.findById(questionId);
-      if (!question) {
-        return res.status(404).json({ message: 'Question not found' });
-      }
-
-      if (question.type !== 'question') {
-        return res.status(400).json({ message: 'Can only close questions' });
-      }
-
-      // Check permissions (question author, moderator, or admin)
-      if (question.authorId !== userId && !isModerator && !isAdmin) {
-        return res.status(403).json({ message: 'Only the question author or moderators can close questions' });
-      }
-
-      // Close question
-      await Discussion.update(questionId, {
-        status: 'closed',
-        closedAt: new Date(),
-        closedBy: userId,
-        closeReason: reason
-      });
-      
-      res.json({ message: 'Question closed successfully' });
-    } catch (error) {
-      console.error('Error closing question:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  async reopenQuestion(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { questionId } = req.params;
-      const userId = (req as AuthenticatedRequest).user.id;
-      const isModerator = (req as AuthenticatedRequest).user.isModerator;
-      const isAdmin = (req as AuthenticatedRequest).user.isAdmin;
-      
-      // Check if question exists
-      const question = await Discussion.findById(questionId);
-      if (!question) {
-        return res.status(404).json({ message: 'Question not found' });
-      }
-
-      if (question.type !== 'question') {
-        return res.status(400).json({ message: 'Can only reopen questions' });
-      }
-
-      if (question.status !== 'closed') {
-        return res.status(400).json({ message: 'Question is not closed' });
-      }
-
-      // Check permissions (question author, moderator, or admin)
-      if (question.authorId !== userId && !isModerator && !isAdmin) {
-        return res.status(403).json({ message: 'Only the question author or moderators can reopen questions' });
-      }
-
-      // Reopen question
-      await Discussion.update(questionId, {
-        status: 'open',
-        closedAt: null,
-        closedBy: null,
-        closeReason: null
-      });
-      
-      res.json({ message: 'Question reopened successfully' });
-    } catch (error) {
-      console.error('Error reopening question:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-// Moderation features
-  async pinDiscussion(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { discussionId } = req.params;
-      const userId = (req as AuthenticatedRequest).user.id;
-      const isModerator = (req as AuthenticatedRequest).user.isModerator;
-      const isAdmin = (req as AuthenticatedRequest).user.isAdmin;
-      
-      // Check permissions
-      if (!isModerator && !isAdmin) {
-        return res.status(403).json({ message: 'Only moderators and admins can pin discussions' });
-      }
-
-      // Check if discussion exists
-      const discussion = await Discussion.findById(discussionId);
-      if (!discussion) {
-        return res.status(404).json({ message: 'Discussion not found' });
-      }
-
-      if (discussion.isPinned) {
-        return res.status(400).json({ message: 'Discussion is already pinned' });
-      }
-
-      // Pin discussion
-      await Discussion.update(discussionId, {
-        isPinned: true,
-        pinnedAt: new Date(),
-        pinnedBy: userId
-      });
-      
-      res.json({ message: 'Discussion pinned successfully' });
-    } catch (error) {
-      console.error('Error pinning discussion:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  async unpinDiscussion(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { discussionId } = req.params;
-      const userId = (req as AuthenticatedRequest).user.id;
-      const isModerator = (req as AuthenticatedRequest).user.isModerator;
-      const isAdmin = (req as AuthenticatedRequest).user.isAdmin;
-      
-      // Check permissions
-      if (!isModerator && !isAdmin) {
-        return res.status(403).json({ message: 'Only moderators and admins can unpin discussions' });
-      }
-
-      // Check if discussion exists
-      const discussion = await Discussion.findById(discussionId);
-      if (!discussion) {
-        return res.status(404).json({ message: 'Discussion not found' });
-      }
-
-      if (!discussion.isPinned) {
-        return res.status(400).json({ message: 'Discussion is not pinned' });
-      }
-
-      // Unpin discussion
-      await Discussion.update(discussionId, {
-        isPinned: false,
-        pinnedAt: null,
-        pinnedBy: null
-      });
-      
-      res.json({ message: 'Discussion unpinned successfully' });
-    } catch (error) {
-      console.error('Error unpinning discussion:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  async lockDiscussion(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { discussionId } = req.params;
-      const { reason } = req.body;
-      const userId = (req as AuthenticatedRequest).user.id;
-      const isModerator = (req as AuthenticatedRequest).user.isModerator;
-      const isAdmin = (req as AuthenticatedRequest).user.isAdmin;
-      
-      // Check permissions
-      if (!isModerator && !isAdmin) {
-        return res.status(403).json({ message: 'Only moderators and admins can lock discussions' });
-      }
-
-      // Check if discussion exists
-      const discussion = await Discussion.findById(discussionId);
-      if (!discussion) {
-        return res.status(404).json({ message: 'Discussion not found' });
-      }
-
-      if (discussion.status === 'locked') {
-        return res.status(400).json({ message: 'Discussion is already locked' });
-      }
-
-      // Lock discussion
-      await Discussion.update(discussionId, {
-        status: 'locked',
-        lockedAt: new Date(),
-        lockedBy: userId,
-        lockReason: reason
-      });
-      
-      res.json({ message: 'Discussion locked successfully' });
-    } catch (error) {
-      console.error('Error locking discussion:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  async unlockDiscussion(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { discussionId } = req.params;
-      const userId = (req as AuthenticatedRequest).user.id;
-      const isModerator = (req as AuthenticatedRequest).user.isModerator;
-      const isAdmin = (req as AuthenticatedRequest).user.isAdmin;
-      
-      // Check permissions
-      if (!isModerator && !isAdmin) {
-        return res.status(403).json({ message: 'Only moderators and admins can unlock discussions' });
-      }
-
-      // Check if discussion exists
-      const discussion = await Discussion.findById(discussionId);
-      if (!discussion) {
-        return res.status(404).json({ message: 'Discussion not found' });
-      }
-
-      if (discussion.status !== 'locked') {
-        return res.status(400).json({ message: 'Discussion is not locked' });
-      }
-
-      // Unlock discussion
-      await Discussion.update(discussionId, {
-        status: 'open',
-        lockedAt: null,
-        lockedBy: null,
-        lockReason: null
-      });
-      
-      res.json({ message: 'Discussion unlocked successfully' });
-    } catch (error) {
-      console.error('Error unlocking discussion:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  async featureDiscussion(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { discussionId } = req.params;
-      const userId = (req as AuthenticatedRequest).user.id;
-      const isModerator = (req as AuthenticatedRequest).user.isModerator;
-      const isAdmin = (req as AuthenticatedRequest).user.isAdmin;
-      
-      // Check permissions
-      if (!isModerator && !isAdmin) {
-        return res.status(403).json({ message: 'Only moderators and admins can feature discussions' });
-      }
-
-      // Check if discussion exists
-      const discussion = await Discussion.findById(discussionId);
-      if (!discussion) {
-        return res.status(404).json({ message: 'Discussion not found' });
-      }
-
-      if (discussion.isFeatured) {
-        return res.status(400).json({ message: 'Discussion is already featured' });
-      }
-
-      // Feature discussion
-      await Discussion.update(discussionId, {
-        isFeatured: true,
-        featuredAt: new Date(),
-        featuredBy: userId
-      });
-      
-      res.json({ message: 'Discussion featured successfully' });
-    } catch (error) {
-      console.error('Error featuring discussion:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  async unfeatureDiscussion(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { discussionId } = req.params;
-      const userId = (req as AuthenticatedRequest).user.id;
-      const isModerator = (req as AuthenticatedRequest).user.isModerator;
-      const isAdmin = (req as AuthenticatedRequest).user.isAdmin;
-      
-      // Check permissions
-      if (!isModerator && !isAdmin) {
-        return res.status(403).json({ message: 'Only moderators and admins can unfeature discussions' });
-      }
-
-      // Check if discussion exists
-      const discussion = await Discussion.findById(discussionId);
-      if (!discussion) {
-        return res.status(404).json({ message: 'Discussion not found' });
-      }
-
-      if (!discussion.isFeatured) {
-        return res.status(400).json({ message: 'Discussion is not featured' });
-      }
-
-      // Unfeature discussion
-      await Discussion.update(discussionId, {
-        isFeatured: false,
-        featuredAt: null,
-        featuredBy: null
-      });
-      
-      res.json({ message: 'Discussion unfeatured successfully' });
-    } catch (error) {
-      console.error('Error unfeaturing discussion:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  // Statistics and analytics
-  async getForumStats(req: Request, res: Response) {
-    try {
-      const { period = '30d' } = req.query;
-      
-      const stats = await AnalyticsService.getForumStats({
-        period: period as string
-      });
-      
-      res.json({ stats });
-    } catch (error) {
-      console.error('Error fetching forum stats:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  async getUserStats(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { userId } = req.params;
-      
-      // Check if user exists
-      const user = await User.findById(userId);
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-
-      const stats = await AnalyticsService.getUserStats(userId);
-      
-      res.json({ 
-        stats,
-        user: user.toPublicObject()
-      });
-    } catch (error) {
-      console.error('Error fetching user stats:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  async getTrendingTopics(req: Request, res: Response) {
-    try {
-      const { period = '7d', limit = 20 } = req.query;
-      
-      const topics = await AnalyticsService.getTrendingTopics({
-        period: period as string,
-        limit: Number(limit)
-      });
-      
-      res.json({ topics });
-    } catch (error) {
-      console.error('Error fetching trending topics:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  // Notifications
-  async getForumNotifications(req: Request, res: Response) {
-    try {
-      const userId = (req as AuthenticatedRequest).user.id;
-      const { page = 1, limit = 20, unreadOnly = false } = req.query;
-      
-      const filters: any = { 
-        userId,
-        type: { 
-          $in: [
-            'new_reply', 
-            'discussion_liked', 
-            'reply_liked', 
-            'mentioned', 
-            'solution_marked', 
-            'discussion_followed'
-          ] 
-        }
-      };
-      
-      if (unreadOnly === 'true') {
-        filters.isRead = false;
-      }
-
-      const notifications = await Notification.findByUser(userId, {
-        filters,
-        page: Number(page),
-        limit: Number(limit),
-        sort: { createdAt: -1 }
-      });
-      
-      const total = await Notification.countByUser(userId, filters);
-      const unreadCount = await Notification.getUnreadCount(userId);
-      
-      res.json({ 
-        notifications: notifications.map(n => n.toSafeObject()),
-        unreadCount,
-        pagination: {
-          page: Number(page),
-          limit: Number(limit),
-          total,
-          pages: Math.ceil(total / Number(limit))
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching forum notifications:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  async markNotificationAsRead(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { notificationId } = req.params;
-      const userId = (req as AuthenticatedRequest).user.id;
-      
-      // Check if notification exists and belongs to user
-      const notification = await Notification.findById(notificationId);
-      if (!notification) {
-        return res.status(404).json({ message: 'Notification not found' });
-      }
-
-      if (notification.userId !== userId) {
-        return res.status(403).json({ message: 'Unauthorized' });
-      }
-
-      // Mark as read
-      await Notification.markAsRead(notificationId);
-      
-      res.json({ message: 'Notification marked as read' });
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  // Polls and voting
-  async createPoll(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { discussionId } = req.params;
-      const { question, options, allowMultiple = false, expiresAt } = req.body;
-      const userId = (req as AuthenticatedRequest).user.id;
-      
-      // Check if discussion exists and user owns it
-      const discussion = await Discussion.findById(discussionId);
-      if (!discussion) {
-        return res.status(404).json({ message: 'Discussion not found' });
-      }
-
-      if (discussion.authorId !== userId) {
-        return res.status(403).json({ message: 'Only the discussion author can create polls' });
-      }
-
-      // Check if discussion already has a poll
-      const existingPoll = await Poll.findByDiscussion(discussionId);
-      if (existingPoll) {
-        return res.status(400).json({ message: 'Discussion already has a poll' });
-      }
-
-      // Create poll
-      const pollData = {
-        discussionId,
-        question,
-        options: options.map((option: string, index: number) => ({
-          id: index + 1,
-          text: option,
-          votes: 0
-        })),
-        allowMultiple,
-        expiresAt: expiresAt ? new Date(expiresAt) : null,
-        createdBy: userId
-      };
-
-      const poll = await Poll.create(pollData);
-      
-      // Update discussion type to poll
-      await Discussion.update(discussionId, { type: 'poll' });
-      
-      res.status(201).json({ 
-        poll: poll.toSafeObject(), 
-        message: 'Poll created successfully' 
-      });
-    } catch (error) {
-      console.error('Error creating poll:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  async votePoll(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { pollId } = req.params;
-      const { optionIds } = req.body;
-      const userId = (req as AuthenticatedRequest).user.id;
-      
-      // Check if poll exists
-      const poll = await Poll.findById(pollId);
-      if (!poll) {
-        return res.status(404).json({ message: 'Poll not found' });
-      }
-
-      // Check if poll is expired
-      if (poll.expiresAt && new Date() > poll.expiresAt) {
-        return res.status(400).json({ message: 'Poll has expired' });
-      }
-
-      // Check if user already voted
-      const existingVote = await Poll.getUserVote(pollId, userId);
-      if (existingVote) {
-        return res.status(400).json({ message: 'You have already voted on this poll' });
-      }
-
-      // Validate option IDs
-      const validOptionIds = poll.options.map(o => o.id);
-      const invalidOptions = optionIds.filter((id: number) => !validOptionIds.includes(id));
-      if (invalidOptions.length > 0) {
-        return res.status(400).json({ message: 'Invalid option IDs provided' });
-      }
-
-      // Check multiple choice rules
-      if (!poll.allowMultiple && optionIds.length > 1) {
-        return res.status(400).json({ message: 'This poll only allows single choice' });
-      }
-
-      // Record vote
-      await Poll.vote(pollId, userId, optionIds);
-      
-      res.json({ message: 'Vote recorded successfully' });
-    } catch (error) {
-      console.error('Error voting on poll:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  async getPollResults(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { pollId } = req.params;
-      const userId = (req as AuthenticatedRequest).user?.id;
-      
-      // Check if poll exists
-      const poll = await Poll.findById(pollId);
-      if (!poll) {
-        return res.status(404).json({ message: 'Poll not found' });
-      }
-
-      // Get poll results
-      const results = await Poll.getResults(pollId);
-      
-      // Get user's vote if authenticated
-      let userVote = null;
-      if (userId) {
-        userVote = await Poll.getUserVote(pollId, userId);
-      }
-      
-      res.json({ 
-        results: {
-          ...results,
-          poll: poll.toSafeObject()
-        },
-        userVote
-      });
-    } catch (error) {
-      console.error('Error fetching poll results:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  // User activity and profiles
-  async getUserDiscussions(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { userId } = req.params;
-      const { page = 1, limit = 20, sort = 'recent' } = req.query;
-      
-      // Check if user exists
-      const user = await User.findById(userId);
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-
-      let sortOptions: any = {};
-      switch (sort) {
-        case 'recent':
-          sortOptions = { createdAt: -1 };
-          break;
-        case 'popular':
-          sortOptions = { viewCount: -1, likeCount: -1 };
-          break;
-        case 'replies':
-          sortOptions = { replyCount: -1 };
-          break;
-        default:
-          sortOptions = { createdAt: -1 };
-      }
-
-      const discussions = await Discussion.findByAuthor(userId, {
-        page: Number(page),
-        limit: Number(limit),
-        sort: sortOptions,
-        populate: ['category']
-      });
-      
-      const total = await Discussion.countByAuthor(userId);
-      
-      res.json({ 
-        discussions: discussions.map(d => d.toSafeObject()),
-        user: user.toPublicObject(),
-        pagination: {
-          page: Number(page),
-          limit: Number(limit),
-          total,
-          pages: Math.ceil(total / Number(limit))
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching user discussions:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  async getUserReplies(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { userId } = req.params;
-      const { page = 1, limit = 20, sort = 'recent' } = req.query;
-      
-      // Check if user exists
-      const user = await User.findById(userId);
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-
-      let sortOptions: any = {};
-      switch (sort) {
-        case 'recent':
-          sortOptions = { createdAt: -1 };
-          break;
-        case 'popular':
-          sortOptions = { likeCount: -1 };
-          break;
-        case 'oldest':
-          sortOptions = { createdAt: 1 };
-          break;
-        default:
-          sortOptions = { createdAt: -1 };
-      }
-
-      const replies = await Reply.findByAuthor(userId, {
-        page: Number(page),
-        limit: Number(limit),
-        sort: sortOptions,
-        populate: ['discussion']
-      });
-      
-      const total = await Reply.countByAuthor(userId);
-      
-      res.json({ 
-        replies: replies.map(r => r.toSafeObject()),
-        user: user.toPublicObject(),
-        pagination: {
-          page: Number(page),
-          limit: Number(limit),
-          total,
-          pages: Math.ceil(total / Number(limit))
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching user replies:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  async getMyDiscussions(req: Request, res: Response) {
-    try {
-      const userId = (req as AuthenticatedRequest).user.id;
-      const { page = 1, limit = 20, sort = 'recent', status } = req.query;
-      
-      const filters: any = { authorId: userId };
-      if (status) filters.status = status;
-
-      let sortOptions: any = {};
-      switch (sort) {
-        case 'recent':
-          sortOptions = { createdAt: -1 };
-          break;
-        case 'popular':
-          sortOptions = { viewCount: -1, likeCount: -1 };
-          break;
-        case 'replies':
-          sortOptions = { replyCount: -1 };
-          break;
-        default:
-          sortOptions = { createdAt: -1 };
-      }
-
-      const discussions = await Discussion.findWithPagination(filters, {
-        page: Number(page),
-        limit: Number(limit),
-        sort: sortOptions,
-        populate: ['category']
-      });
-      
-      const total = await Discussion.countDocuments(filters);
-      
-      res.json({ 
-        discussions: discussions.map(d => d.toSafeObject()),
-        pagination: {
-          page: Number(page),
-          limit: Number(limit),
-          total,
-          pages: Math.ceil(total / Number(limit))
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching my discussions:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  async getMyReplies(req: Request, res: Response) {
-    try {
-      const userId = (req as AuthenticatedRequest).user.id;
-      const { page = 1, limit = 20, sort = 'recent' } = req.query;
-      
-      let sortOptions: any = {};
-      switch (sort) {
-        case 'recent':
-          sortOptions = { createdAt: -1 };
-          break;
-        case 'popular':
-          sortOptions = { likeCount: -1 };
-          break;
-        case 'oldest':
-          sortOptions = { createdAt: 1 };
-          break;
-        default:
-          sortOptions = { createdAt: -1 };
-      }
-
-      const replies = await Reply.findByAuthor(userId, {
-        page: Number(page),
-        limit: Number(limit),
-        sort: sortOptions,
-        populate: ['discussion']
-      });
-      
-      const total = await Reply.countByAuthor(userId);
-      
-      res.json({ 
-        replies: replies.map(r => r.toSafeObject()),
-        pagination: {
-          page: Number(page),
-          limit: Number(limit),
-          total,
-          pages: Math.ceil(total / Number(limit))
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching my replies:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  async getMyActivity(req: Request, res: Response) {
-    try {
-      const userId = (req as AuthenticatedRequest).user.id;
-      const { page = 1, limit = 20, type } = req.query;
-      
-      const activities = await AnalyticsService.getUserActivity(userId, {
-        page: Number(page),
-        limit: Number(limit),
-        type: type as string
-      });
-      
-      res.json({ 
-        activities,
-        pagination: {
-          page: Number(page),
-          limit: Number(limit),
-          total: activities.length,
-          pages: Math.ceil(activities.length / Number(limit))
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching my activity:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  // School and study group specific methods
-  async getSchoolDiscussions(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { schoolId } = req.params;
-      const { page = 1, limit = 20, sort = 'recent', category } = req.query;
-      
-      const filters: any = { schoolId };
-      if (category) filters.categoryId = category;
-
-      let sortOptions: any = {};
-      switch (sort) {
-        case 'recent':
-          sortOptions = { createdAt: -1 };
-          break;
-        case 'popular':
-          sortOptions = { viewCount: -1, likeCount: -1 };
-          break;
-        case 'replies':
-          sortOptions = { replyCount: -1 };
-          break;
-        default:
-          sortOptions = { createdAt: -1 };
-      }
-
-      const discussions = await Discussion.findWithPagination(filters, {
-        page: Number(page),
-        limit: Number(limit),
-        sort: sortOptions,
-        populate: ['author', 'category']
-      });
-      
-      const total = await Discussion.countDocuments(filters);
-      
-      res.json({ 
-        discussions: discussions.map(d => d.toSafeObject()),
-        pagination: {
-          page: Number(page),
-          limit: Number(limit),
-          total,
-          pages: Math.ceil(total / Number(limit))
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching school discussions:', error);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-
-  async createSchoolDiscussion(req: Request, res: Response) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { schoolId } = req.params;
-      const { title, content, category, type = 'discussion' } = req.body;
-      const userId = (req as AuthenticatedRequest).user.id;
-      
-      // Verify user belongs to the school
-      const user = await User.findById(userId);
-      if (user?.schoolId !== schoolId) {
-        return res.status(403).json({ message: 'You can only create discussions for your school' });
-      }
-
-      // Create discussion
-      const discussionData = {
-        title,
-        content: sanitizeHtml(content),
-        slug: generateSlug(title),
-        authorId: userId,
-        schoolId,
-        categoryId: category,
-        type,
-        status: 'open'
-      };
-
-      const discussion = await Discussion.create(discussionData);
-      
-      res.status(201).json({ 
-        discussion: discussion.toSafeObject(),
-        message: 'School discussion created successfully' 
-      });
-    } catch (error) {
-      console.error('Error creating school discussion:', error);
-      res.status(500).{ message: 'Internal server error' });
-    }
-  }
-}
-
-// Export the controller class
-export default ForumController;
