@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { validationResult } from 'express-validator';
-import { AppError } from '../utils/AppError';
-import { catchAsync } from '../utils/catchAsync';
-import { ApiResponse } from '../utils/ApiResponse';
+import AppError from '../utils/AppError';
+import catchAsync from '../utils/catchAsync';
+import ApiResponse from '../utils/ApiResponse';
 import { 
   Discussion, 
   Reply, 
@@ -15,22 +15,139 @@ import {
   Follow,
   Report,
   Notification,
-  Like
-} from '../models'; // Adjust import path as needed
+  Like,
+  User
+} from '../models';
 import { Op } from 'sequelize';
 import { uploadToCloudinary, deleteFromCloudinary } from '../utils/cloudinary';
 
+interface IUser {
+  id: string;
+  email: string;
+  role: string;
+  schoolId?: string;
+  password: string;
+  verified: boolean;
+  profile: any;
+  preferences: any;
+  // Add other required properties from your User model
+  createdAt?: Date;
+  updatedAt?: Date;
+  firstName?: string;
+  lastName?: string;
+  avatar?: string;
+  bio?: string;
+  location?: string;
+  website?: string;
+  socialLinks?: any;
+  achievements?: any;
+  stats?: any;
+  settings?: any;
+  lastActive?: Date;
+  isOnline?: boolean;
+  reputation?: number;
+  badges?: any[];
+  followersCount?: number;
+  followingCount?: number;
+  postsCount?: number;
+  likesCount?: number;
+  commentsCount?: number;
+  sharesCount?: number;
+  bookmarksCount?: number;
+  viewsCount?: number;
+  profileViews?: number;
+  joinedAt?: Date;
+  emailVerifiedAt?: Date;
+  phoneVerifiedAt?: Date;
+  twoFactorEnabled?: boolean;
+  lastLoginAt?: Date;
+  loginCount?: number;
+  timezone?: string;
+  language?: string;
+  theme?: string;
+  notifications?: any;
+  privacy?: any;
+  blocked?: string[];
+  following?: string[];
+  followers?: string[];
+  mutedUsers?: string[];
+  mutedTopics?: string[];
+  interests?: string[];
+  skills?: string[];
+  education?: any[];
+  experience?: any[];
+  projects?: any[];
+  courses?: any[];
+  certifications?: any[];
+  languages?: any[];
+  contactInfo?: any;
+  emergencyContact?: any;
+  parentInfo?: any;
+  schoolInfo?: any;
+  classInfo?: any;
+  subjectPreferences?: string[];
+  learningStyle?: string;
+  goals?: string[];
+  studySchedule?: any;
+  availability?: any;
+  timePreferences?: any;
+  studyGroups?: string[];
+  mentorRequests?: any[];
+  mentoringRequests?: any[];
+  tutoringSessions?: any[];
+  assignments?: any[];
+  submissions?: any[];
+  grades?: any[];
+  attendance?: any[];
+  disciplinaryRecords?: any[];
+  achievements_academic?: any[];
+  extracurricular?: any[];
+  honors?: any[];
+  awards?: any[];
+}
+
 interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    role: string;
-    schoolId?: string;
-  };
+  user?: IUser;
+}
+
+interface IPollOption {
+  id: number;
+  text: string;
+  votes: number;
+  order: number;
+}
+
+interface IReport {
+  userId?: string;
+  discussionId?: string;
+  replyId?: string;
+  reason: string;
+  description?: string;
+  status: string;
+}
+
+interface IBookmark {
+  userId: string;
+  discussionId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface INotification {
+  userId: string;
+  type: string;
+  title: string;
+  message: string;
+  relatedId?: string;
+  relatedType?: string;
+  isRead: boolean;
+  readAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export class ForumController {
-// =================
+  // =================
   // DISCUSSION MANAGEMENT
   // =================
 
@@ -73,8 +190,7 @@ export class ForumController {
           as: 'likes',
           attributes: ['id'],
           separate: true
-        },
-        // Include user info, category, etc.
+        }
       ],
       order: [[sortBy as string, sortOrder as string]],
       limit: Number(limit),
@@ -159,7 +275,6 @@ export class ForumController {
   getTrendingDiscussions = catchAsync(async (req: Request, res: Response) => {
     const { limit = 10 } = req.query;
     
-    // Get discussions with most activity in last 7 days
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -180,8 +295,6 @@ export class ForumController {
         }
       ],
       order: [
-        // Custom ordering based on activity score
-        // This would typically involve a calculated field or subquery
         ['replyCount', 'DESC'],
         ['likeCount', 'DESC']
       ],
@@ -235,16 +348,12 @@ export class ForumController {
       include: [
         {
           model: Reply,
-          as: 'replies',
-          include: [
-            // Include nested replies, user info, etc.
-          ]
+          as: 'replies'
         },
         {
           model: Like,
           as: 'likes'
         }
-        // Include other associations
       ]
     });
 
@@ -252,7 +361,6 @@ export class ForumController {
       throw new AppError('Discussion not found', 404);
     }
 
-    // Increment view count
     await discussion.increment('viewCount');
 
     res.status(200).json(new ApiResponse(200, discussion, 'Discussion retrieved successfully'));
@@ -277,8 +385,7 @@ export class ForumController {
       throw new AppError('User not authenticated', 401);
     }
 
-    // Handle file uploads
-    let attachments = [];
+    let attachments: any[] = [];
     if (req.files && Array.isArray(req.files)) {
       for (const file of req.files) {
         const uploadResult = await uploadToCloudinary(file.buffer, {
@@ -286,11 +393,12 @@ export class ForumController {
           resource_type: 'auto'
         });
         attachments.push({
-          url: uploadResult.secure_url,
-          publicId: uploadResult.public_id,
-          type: file.mimetype,
-          name: file.originalname,
-          size: file.size
+          id: uploadResult.public_id,
+          filename: uploadResult.public_id,
+          originalName: file.originalname,
+          size: file.size,
+          mimetype: file.mimetype,
+          url: uploadResult.secure_url
         });
       }
     }
@@ -324,7 +432,6 @@ export class ForumController {
       throw new AppError('Discussion not found', 404);
     }
 
-    // Check if user owns the discussion or has moderation rights
     if (discussion.authorId !== userId && req.user?.role !== 'admin' && req.user?.role !== 'moderator') {
       throw new AppError('You are not authorized to update this discussion', 403);
     }
@@ -351,12 +458,10 @@ export class ForumController {
       throw new AppError('Discussion not found', 404);
     }
 
-    // Check permissions
     if (discussion.authorId !== userId && req.user?.role !== 'admin' && req.user?.role !== 'moderator') {
       throw new AppError('You are not authorized to delete this discussion', 403);
     }
 
-    // Delete associated attachments from cloudinary
     if (discussion.attachments && discussion.attachments.length > 0) {
       for (const attachment of discussion.attachments) {
         if (attachment.publicId) {
@@ -370,7 +475,7 @@ export class ForumController {
     res.status(200).json(new ApiResponse(200, null, 'Discussion deleted successfully'));
   });
 
-// =================
+  // =================
   // DISCUSSION INTERACTIONS
   // =================
 
@@ -391,7 +496,7 @@ export class ForumController {
       throw new AppError('Discussion already liked', 400);
     }
 
-    await Like.create({ userId, discussionId });
+    await Like.create({ userId, discussionId, replyId: null });
     await discussion.increment('likeCount');
 
     res.status(200).json(new ApiResponse(200, null, 'Discussion liked successfully'));
@@ -453,7 +558,7 @@ export class ForumController {
       throw new AppError('Bookmark not found', 404);
     }
 
-    await bookmark.destroy();
+    await (bookmark as any).destroy();
 
     res.status(200).json(new ApiResponse(200, null, 'Discussion unbookmarked successfully'));
   });
@@ -555,7 +660,7 @@ export class ForumController {
     const totalPages = Math.ceil(follows.count / Number(limit));
 
     res.status(200).json(new ApiResponse(200, {
-      discussions: follows.rows.map(follow => follow.discussion),
+      discussions: follows.rows.map((follow: any) => follow.discussion),
       pagination: {
         currentPage: Number(page),
         totalPages,
@@ -574,7 +679,6 @@ export class ForumController {
       throw new AppError('Discussion not found', 404);
     }
 
-    // Check if user already reported this discussion
     const existingReport = await Report.findOne({
       where: { userId, discussionId }
     });
@@ -589,12 +693,12 @@ export class ForumController {
       reason,
       description,
       status: 'pending'
-    });
+    } as Partial<IReport>);
 
     res.status(200).json(new ApiResponse(200, null, 'Discussion reported successfully'));
   });
 
-// =================
+  // =================
   // CATEGORIES AND TAGS
   // =================
 
@@ -651,7 +755,6 @@ export class ForumController {
   });
 
   getAllTags = catchAsync(async (req: Request, res: Response) => {
-    // Get all unique tags from discussions
     const discussions = await Discussion.findAll({
       attributes: ['tags'],
       where: {
@@ -660,15 +763,15 @@ export class ForumController {
     });
 
     const allTags = new Set();
-    discussions.forEach(discussion => {
+    discussions.forEach((discussion: any) => {
       if (discussion.tags && Array.isArray(discussion.tags)) {
-        discussion.tags.forEach(tag => allTags.add(tag));
+        discussion.tags.forEach((tag: string) => allTags.add(tag));
       }
     });
 
     const tags = Array.from(allTags).map(tag => ({
       name: tag,
-      count: discussions.filter(d => d.tags?.includes(tag as string)).length
+      count: discussions.filter((d: any) => d.tags?.includes(tag as string)).length
     }));
 
     res.status(200).json(new ApiResponse(200, tags, 'Tags retrieved successfully'));
@@ -774,15 +877,12 @@ export class ForumController {
     const replies = await Reply.findAndCountAll({
       where: { 
         discussionId,
-        parentReplyId: null // Only top-level replies
+        parentReplyId: null
       },
       include: [
         {
           model: Reply,
-          as: 'nestedReplies',
-          include: [
-            // Include user info, likes, etc.
-          ]
+          as: 'nestedReplies'
         },
         {
           model: Like,
@@ -808,7 +908,7 @@ export class ForumController {
     }, 'Discussion replies retrieved successfully'));
   });
 
-// =================
+  // =================
   // REPLIES MANAGEMENT
   // =================
 
@@ -822,13 +922,11 @@ export class ForumController {
       throw new AppError('Discussion not found', 404);
     }
 
-    // Check if discussion is locked
     if (discussion.status === 'locked') {
       throw new AppError('Cannot reply to locked discussion', 403);
     }
 
-    // Handle file uploads
-    let attachments = [];
+    let attachments: any[] = [];
     if (req.files && Array.isArray(req.files)) {
       for (const file of req.files) {
         const uploadResult = await uploadToCloudinary(file.buffer, {
@@ -853,10 +951,8 @@ export class ForumController {
       attachments
     });
 
-    // Update discussion reply count
     await discussion.increment('replyCount');
 
-    // Create notification for discussion followers
     const followers = await Follow.findAll({
       where: { discussionId },
       attributes: ['userId']
@@ -870,8 +966,9 @@ export class ForumController {
           title: 'New reply on followed discussion',
           message: `${req.user?.email} replied to "${discussion.title}"`,
           relatedId: discussionId,
-          relatedType: 'discussion'
-        });
+          relatedType: 'discussion',
+          isRead: false
+        } as Partial<INotification>);
       }
     }
 
@@ -889,7 +986,6 @@ export class ForumController {
       throw new AppError('Reply not found', 404);
     }
 
-    // Check permissions
     if (reply.authorId !== userId && req.user?.role !== 'admin' && req.user?.role !== 'moderator') {
       throw new AppError('You are not authorized to update this reply', 403);
     }
@@ -912,13 +1008,11 @@ export class ForumController {
       throw new AppError('Reply not found', 404);
     }
 
-    // Check permissions
     if (reply.authorId !== userId && req.user?.role !== 'admin' && req.user?.role !== 'moderator') {
       throw new AppError('You are not authorized to delete this reply', 403);
     }
 
-    // Delete associated attachments
-    if (reply.attachments && reply.attachments.length > 0) {
+    if (rettachments && reply.attachments.length > 0) {
       for (const attachment of reply.attachments) {
         if (attachment.publicId) {
           await deleteFromCloudinary(attachment.publicId);
@@ -928,7 +1022,6 @@ export class ForumController {
 
     await reply.destroy();
 
-    // Update discussion reply count
     const discussion = await Discussion.findByPk(reply.discussionId);
     if (discussion) {
       await discussion.decrement('replyCount');
@@ -938,7 +1031,7 @@ export class ForumController {
   });
 
   // =================
-  // REPLY INTERACTIONS
+  // RPLY INTERACTIONS
   // =================
 
   likeReply = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
@@ -958,7 +1051,7 @@ export class ForumController {
       throw new AppError('Reply already liked', 400);
     }
 
-    await Like.create({ userId, replyId });
+    await Like.create({ u, replyId, discussionId: null });
     await reply.increment('likeCount');
 
     res.status(200).json(new ApiResponse(200, null, 'Reply liked successfully'));
@@ -978,7 +1071,7 @@ export class ForumController {
 
     await like.destroy();
     
-    const reply = await Reply.findByPk(replyId);
+    const repawait Reply.findByPk(replyId);
     if (reply) {
       await reply.decrement('likeCount');
     }
@@ -996,8 +1089,7 @@ export class ForumController {
       throw new AppError('Reply not found', 404);
     }
 
-    // Check if user already reported this reply
-    const existingReport = await Report.findOne({
+   t existingReport = await Report.findOne({
       where: { userId, replyId }
     });
 
@@ -1011,16 +1103,16 @@ export class ForumController {
       reason,
       description,
       status: 'pending'
-    });
+    } as Partial<IReport>);
 
     res.status(200).json(new ApiResponse(200, null, 'Reply reported successfully'));
   });
 
-// =================
+  // =================
   // NESTED REPLIES
   // =================
 
-  createNestedReply = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
+  createNestedReply = catchAsynasync (req: AuthenticatedRequest, res: Response) => {
     const { replyId } = req.params;
     const { content, isAnonymous = false } = req.body;
     const userId = req.user?.id;
@@ -1033,10 +1125,9 @@ export class ForumController {
       throw new AppError('Parent reply not found', 404);
     }
 
-    // Check if discussion is locked
     if (parentReply.discussion.status === 'locked') {
       throw new AppError('Cannot reply to locked discussion', 403);
-    }
+ }
 
     const nestedReply = await Reply.create({
       content,
@@ -1046,21 +1137,20 @@ export class ForumController {
       isAnonymous
     });
 
-    // Update discussion reply count
     await Discussion.increment('replyCount', { 
       where: { id: parentReply.discussionId } 
     });
 
-    // Notify parent reply author
     if (parentReply.authorId !== userId) {
       await Notification.create({
         userId: parentReply.authorId,
         type: 'nested_reply',
         title: 'Someone replied to your comment',
-        message: `${req.user?.email} replied to your comment`,
+        message: `${reqr?.email} replied to your comment`,
         relatedId: parentReply.discussionId,
-        relatedType: 'discussion'
-      });
+        relatedType: 'discussion',
+        isRead: false
+      } as Partial<INotification>);
     }
 
     res.status(201).json(new ApiResponse(201, nestedReply, 'Nested reply created successfully'));
@@ -1079,7 +1169,6 @@ export class ForumController {
           as: 'likes',
           attributes: ['id']
         }
-        // Include user info, etc.
       ],
       order: [['createdAt', 'asc']],
       limit: Number(limit),
@@ -1092,7 +1181,7 @@ export class ForumController {
       replies: nestedReplies.rows,
       pagination: {
         currentPage: Number(page),
-        totalPages,
+        toPages,
         totalCount: nestedReplies.count
       }
     }, 'Nested replies retrieved successfully'));
@@ -1111,46 +1200,42 @@ export class ForumController {
     });
 
     if (!reply) {
-      throw new AppError('Reply not found', 404);
+      throw new AppError('Reply nnd', 404);
     }
 
-    // Only discussion author can mark solutions
     if (reply.discussion.authorId !== userId) {
       throw new AppError('Only discussion author can mark solutions', 403);
     }
 
-    // Remove existing solution if any
     await Reply.update(
       { isSolution: false },
       { where: { discussionId: reply.discussionId } }
     );
 
-    // Mark this reply as solution
     await reply.update({ isSolution: true });
 
-    // Update discussion status
     await reply.discussion.update({ 
       status: 'solved',
       solvedAt: new Date()
     });
 
-    // Notify reply author
     if (reply.authorId !== userId) {
       await Notification.create({
         userId: reply.authorId,
-        type: 'solution_marked',
+ type: 'solution_marked',
         title: 'Your answer was marked as solution',
         message: `Your answer to "${reply.discussion.title}" was marked as the solution`,
         relatedId: reply.discussionId,
-        relatedType: 'discussion'
-      });
+        relatedType: 'discussion',
+        isRead: false
+      } as Partial<INotification>);
     }
 
     res.status(200).json(new ApiResponse(200, reply, 'Reply marked as solution successfully'));
   });
 
   unmarkAsSolution = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
-    const { replyId } = req.params;
+    const { repl} = req.params;
     const userId = req.user?.id;
 
     const reply = await Reply.findByPk(replyId, {
@@ -1161,23 +1246,20 @@ export class ForumController {
       throw new AppError('Reply not found', 404);
     }
 
-    // Only discussion author can unmark solutions
     if (reply.discussion.authorId !== userId) {
       throw new AppError('Only discussion author can unmark solutions', 403);
     }
 
     await reply.update({ isSolution: false });
 
-    // Update discussion status
     await reply.discussion.update({ 
       status: 'active',
       solvedAt: null
     });
-
-    res.status(200).json(new ApiResponse(200, reply, 'Solution unmarked successfully'));
+ res.status(200).json(new ApiResponse(200, reply, 'Solution unmarked successfully'));
   });
 
-// =================
+  // =================
   // USER ACTIVITY
   // =================
 
@@ -1212,7 +1294,7 @@ export class ForumController {
       pagination: {
         currentPage: Number(page),
         totalPages,
-        totalCount: discussions.count
+        totalCount: ssions.count
       }
     }, 'User discussions retrieved successfully'));
   });
@@ -1229,8 +1311,7 @@ export class ForumController {
           model: Discussion,
           as: 'discussion',
           attributes: ['id', 'title', 'slug']
-        }
-      ],
+            ],
       order: [['createdAt', 'desc']],
       limit: Number(limit),
       offset
@@ -1249,7 +1330,7 @@ export class ForumController {
   });
 
   getMyDiscussions = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
-    const userId = req.user?.id;
+    const userI= req.user?.id;
     const { page = 1, limit = 20, status } = req.query;
     const offset = (Number(page) - 1) * Number(limit);
 
@@ -1268,7 +1349,7 @@ export class ForumController {
           model: Like,
           as: 'likes',
           attributes: ['id']
-        }
+  }
       ],
       order: [['createdAt', 'desc']],
       limit: Number(limit),
@@ -1288,7 +1369,7 @@ export class ForumController {
     }, 'My discussions retrieved successfully'));
   });
 
-  getMyReplies = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
+  getMyReplies = catchAsync(async (req: AuthenticatedReques: Response) => {
     const userId = req.user?.id;
     const { page = 1, limit = 20 } = req.query;
     const offset = (Number(page) - 1) * Number(limit);
@@ -1307,7 +1388,7 @@ export class ForumController {
           attributes: ['id']
         }
       ],
-      order: [['createdAt', 'desc']],
+      order: [['tedAt', 'desc']],
       limit: Number(limit),
       offset
     });
@@ -1326,10 +1407,8 @@ export class ForumController {
 
   getMyActivity = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user?.id;
-    const { page = 1, limit = 20 } = req.query;
-    const offset = (Number(page) - 1) * Number(limit);
+    const { pag = 1, limit = 20 } = req.query;
 
-    // Get combined activity (discussions and replies)
     const [discussions, replies] = await Promise.all([
       Discussion.findAll({
         where: { authorId: userId },
@@ -1344,7 +1423,7 @@ export class ForumController {
           {
             model: Discussion,
             as: 'discussion',
-            attributes: ['title']
+     attributes: ['title']
           }
         ],
         limit: Number(limit) / 2,
@@ -1352,23 +1431,22 @@ export class ForumController {
       })
     ]);
 
-    // Combine and sort by date
     const activity = [
-      ...discussions.map(d => ({ ...d.toJSON(), activityType: 'discussion' })),
-      ...replies.map(r => ({ ...r.toJSON(), activityType: 'reply' }))
+      ...discussions.map((d: any) => ({ ...d.toJSON(), activityType: 'discussion' })),
+      ...replies.map((r: any) => ({ ...r.toJSON(), activityType: 'reply' }))
     ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
      .slice(0, Number(limit));
 
     res.status(200).json(new ApiResponse(200, {
       activity,
-      pagination: {
+    pagination: {
         currentPage: Number(page),
         totalCount: activity.length
       }
     }, 'User activity retrieved successfully'));
   });
 
-// =================
+  // =================
   // Q&A SPECIFIC FEATURES
   // =================
 
@@ -1377,8 +1455,7 @@ export class ForumController {
     const offset = (Number(page) - 1) * Number(limit);
 
     const whereClause: any = { type: 'question' };
-    if (status) whereClause.status = status;
-    if (subject) whereClause.subject = subject;
+    if (status) whereClause.status = status; (subject) whereClause.subject = subject;
 
     const questions = await Discussion.findAndCountAll({
       where: whereClause,
@@ -1400,7 +1477,7 @@ export class ForumController {
       distinct: true
     });
 
-    const totalPages = Math.ceil(questions.count / Number(limit));
+    const totalPages = Math.ceil(questionsunt / Number(limit));
 
     res.status(200).json(new ApiResponse(200, {
       questions: questions.rows,
@@ -1439,7 +1516,7 @@ export class ForumController {
     res.status(200).json(new ApiResponse(200, {
       questions: questions.rows,
       pagination: {
-        currentPage: Number(page),
+        currentPage: Number(page
         totalPages,
         totalCount: questions.count
       }
@@ -1458,8 +1535,7 @@ export class ForumController {
       include: [
         {
           model: Reply,
-          as: 'replies',
-          where: { isSolution: true },
+          as: 'replie       where: { isSolution: true },
           required: false
         }
       ],
@@ -1495,7 +1571,6 @@ export class ForumController {
       throw new AppError('This is not a question', 400);
     }
 
-    // Check permissions (author or moderator)
     if (question.authorId !== userId && req.user?.role !== 'moderator' && req.user?.role !== 'admin') {
       throw new AppError('You are not authorized to close this question', 403);
     }
@@ -1514,13 +1589,12 @@ export class ForumController {
     const { questionId } = req.params;
     const userId = req.user?.id;
 
-    const question = await Discussion.findByPk(questionId);
+    const question = aDiscussion.findByPk(questionId);
 
     if (!question) {
       throw new AppError('Question not found', 404);
     }
 
-    // Check permissions
     if (question.authorId !== userId && req.user?.role !== 'moderator' && req.user?.role !== 'admin') {
       throw new AppError('You are not authorized to reopen this question', 403);
     }
@@ -1532,10 +1606,10 @@ export class ForumController {
       closedBy: null
     });
 
-    res.status(200).json(new ApiResponse(200, question, 'Question reopened successfully'));
+    res.status(200).json(new ApiResponse(200, question, 'Question reopened scessfully'));
   });
 
-// =================
+  // =================
   // STUDY GROUPS DISCUSSIONS
   // =================
 
@@ -1549,7 +1623,7 @@ export class ForumController {
       include: [
         {
           model: Reply,
-          as: 'replies',
+   as: 'replies',
           attributes: ['id']
         },
         {
@@ -1570,7 +1644,7 @@ export class ForumController {
       discussions: discussions.rows,
       pagination: {
         currentPage: Number(page),
-        totalPages,
+        total
         totalCount: discussions.count
       }
     }, 'Study group discussions retrieved successfully'));
@@ -1581,14 +1655,6 @@ export class ForumController {
     const { title, content, categoryId, tags, type = 'general' } = req.body;
     const userId = req.user?.id;
 
-    // TODO: Add check if user is member of the study group
-    // const isMember = await StudyGroupMember.findOne({
-    //   where: { groupId, userId }
-    // });
-    // if (!isMember) {
-    //   throw new AppError('You must be a member of this study group', 403);
-    // }
-
     const discussion = await Discussion.create({
       title,
       content,
@@ -1596,7 +1662,7 @@ export class ForumController {
       categoryId,
       tags: tags || [],
       type,
-      studyGroupId: groupId,
+ udyGroupId: groupId,
       status: 'active'
     });
 
@@ -1612,7 +1678,7 @@ export class ForumController {
     const { page = 1, limit = 20, subject, category } = req.query;
     const offset = (Number(page) - 1) * Number(limit);
 
-    const whereClause: any = { schoolId };
+    const whereClause: any ={ schoolId };
     if (subject) whereClause.subject = subject;
     if (category) whereClause.categoryId = category;
 
@@ -1635,7 +1701,7 @@ export class ForumController {
       distinct: true
     });
 
-    const totalPages = Math.ceil(discussions.count / Number(limit));
+    onst totalPages = Math.ceil(discussions.count / Number(limit));
 
     res.status(200).json(new ApiResponse(200, {
       discussions: discussions.rows,
@@ -1649,10 +1715,9 @@ export class ForumController {
 
   createSchoolDiscussion = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
     const { schoolId } = req.params;
-    const { title, content, categoryId, tags, subject, type = 'general' } = req.body;
+    const { title, content, categoryId, tags, subjepe = 'general' } = req.body;
     const userId = req.user?.id;
 
-    // Check if user belongs to this school
     if (req.user?.schoolId !== schoolId) {
       throw new AppError('You can only create discussions in your own school', 403);
     }
@@ -1669,10 +1734,10 @@ export class ForumController {
       status: 'active'
     });
 
-    res.status(201).json(new ApiResponse(201, discussion, 'School discussion created successfully'));
+    res.status(201).json(new ApiResponse(201, discussion, 'School discussion created successfull);
   });
 
-// =================
+  // =================
   // MODERATION FEATURES
   // =================
 
@@ -1680,14 +1745,13 @@ export class ForumController {
     const { discussionId } = req.params;
     const userId = req.user?.id;
 
-    // Check moderation permissions
     if (req.user?.role !== 'admin' && req.user?.role !== 'moderator') {
       throw new AppError('You do not have permission to pin discussions', 403);
     }
 
     const discussion = await Discussion.findByPk(discussionId);
     if (!discussion) {
-      throw new AppError('Discussion not found', 404);
+      throw new AppError('ussion not found', 404);
     }
 
     await discussion.update({
@@ -1702,9 +1766,8 @@ export class ForumController {
   unpinDiscussion = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
     const { discussionId } = req.params;
 
-    // Check moderation permissions
     if (req.user?.role !== 'admin' && req.user?.role !== 'moderator') {
-      throw new AppError('You do not have permission to unpin discussions', 403);
+      throw new AppError('You do not have permission to unpin discusions', 403);
     }
 
     const discussion = await Discussion.findByPk(discussionId);
@@ -1723,10 +1786,9 @@ export class ForumController {
 
   lockDiscussion = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
     const { discussionId } = req.params;
-    const { reason } = req.body;
+    const  reason } = req.body;
     const userId = req.user?.id;
 
-    // Check moderation permissions
     if (req.user?.role !== 'admin' && req.user?.role !== 'moderator') {
       throw new AppError('You do not have permission to lock discussions', 403);
     }
@@ -1743,20 +1805,19 @@ export class ForumController {
       lockedBy: userId
     });
 
-    res.status(200).json(new ApiResponse(200, discussion, 'Discussion locked successfully'));
+    res(200).json(new ApiResponse(200, discussion, 'Discussion locked successfully'));
   });
 
   unlockDiscussion = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
     const { discussionId } = req.params;
 
-    // Check moderation permissions
     if (req.user?.role !== 'admin' && req.user?.role !== 'moderator') {
       throw new AppError('You do not have permission to unlock discussions', 403);
     }
 
     const discussion = await Discussion.findByPk(discussionId);
     if (!discussion) {
-      throw new AppError('Discussion not found', 404);
+      throw new AppError('Discussion not found',404);
     }
 
     await discussion.update({
@@ -1773,9 +1834,8 @@ export class ForumController {
     const { discussionId } = req.params;
     const userId = req.user?.id;
 
-    // Check moderation permissions
     if (req.user?.role !== 'admin' && req.user?.role !== 'moderator') {
-      throw new AppError('You do not have permission to feature discussions', 403);
+      throw new AppError('You doot have permission to feature discussions', 403);
     }
 
     const discussion = await Discussion.findByPk(discussionId);
@@ -1792,10 +1852,9 @@ export class ForumController {
     res.status(200).json(new ApiResponse(200, discussion, 'Discussion featured successfully'));
   });
 
-  unfeatureDiscussion = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
+  unfeatureDiscussion = catchAsync(async (req: AuthenticatedRequest, res: Response) ={
     const { discussionId } = req.params;
 
-    // Check moderation permissions
     if (req.user?.role !== 'admin' && req.user?.role !== 'moderator') {
       throw new AppError('You do not have permission to unfeature discussions', 403);
     }
@@ -1811,10 +1870,10 @@ export class ForumController {
       featuredBy: null
     });
 
-    res.status(200).json(new ApiResponse(200, discussion, 'Discussion unfeatured successfully'));
+    res.status(200).json(new ApiResponse(20scussion, 'Discussion unfeatured successfully'));
   });
 
-// =================
+  // =================
   // STATISTICS AND ANALYTICS
   // =================
 
@@ -1829,10 +1888,9 @@ export class ForumController {
     ] = await Promise.all([
       Discussion.count(),
       Reply.count(),
-      // User.count(), // Uncomment when User model is available
-      0, // Placeholder
+      User ? User.count() : 0,
       Discussion.count({ where: { status: 'active' } }),
-      Discussion.count({ where: { type: 'question', status: 'solved' } }),
+  Discussion.count({ where: { type: 'question', status: 'solved' } }),
       Discussion.count({
         where: {
           createdAt: { [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000) }
@@ -1850,7 +1908,7 @@ export class ForumController {
       engagementRate: totalReplies > 0 ? (totalReplies / totalDiscussions).toFixed(2) : '0'
     };
 
-    res.status(200).json(new ApiResponse(200, stats, 'Forum statistics retrieved successfully'));
+    res.status(200).json(new ApiResponse(20stats, 'Forum statistics retrieved successfully'));
   });
 
   getUserStats = catchAsync(async (req: Request, res: Response) => {
@@ -1866,7 +1924,7 @@ export class ForumController {
       Discussion.count({ where: { authorId: userId } }),
       Reply.count({ where: { authorId: userId } }),
       Like.count({ where: { userId } }),
-      Reply.count({ where: { authorId: userId, isSolution: true } }),
+      Reply.count({ where: { authorId: userId, ision: true } }),
       Discussion.count({
         where: {
           type: 'question',
@@ -1875,7 +1933,7 @@ export class ForumController {
               where: { authorId: userId },
               attributes: ['discussionId'],
               group: ['discussionId']
-            }).then(replies => replies.map(r => r.discussionId))
+            }).then((replies: any[]) => replies.map(r => r.discussionId))
           }
         }
       })
@@ -1886,8 +1944,8 @@ export class ForumController {
       totalReplies,
       totalLikes,
       solutionsMarked,
-      questionsAnswered,
-      reputation: solutionsMarked * 10 + totalLikes * 2 // Simple reputation calculation
+      questionsAnsw,
+      reputation: solutionsMarked * 10 + totalLikes * 2
     };
 
     res.status(200).json(new ApiResponse(200, userStats, 'User statistics retrieved successfully'));
@@ -1898,25 +1956,23 @@ export class ForumController {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    // Get most discussed subjects in the last 7 days
     const trendingSubjects = await Discussion.findAll({
       attributes: [
         'subject',
-        [Discussion.sequelize.fn('COUNT', Discussion.sequelize.col('id')), 'discussionCount'],
-        [Discussion.sequelize.fn('SUM', Discussion.sequelize.col('replyCount')), 'totalReplies']
+        [(Discussion as any).sequelize.OUNT', (Discussion as any).sequelize.col('id')), 'discussionCount'],
+        [(Discussion as any).sequelize.fn('SUM', (Discussion as any).sequelize.col('replyCount')), 'totalReplies']
       ],
       where: {
         createdAt: { [Op.gte]: sevenDaysAgo },
         subject: { [Op.ne]: null }
       },
       group: ['subject'],
-      order: [[Discussion.sequelize.literal('discussionCount + totalReplies'), 'DESC']],
+      order: [[(Discussion as any).sequelize.literal('discussionCount + totalReplies'), 'DESC']],
       limit: Number(limit)
     });
 
-    // Get trending tags
     const discussions = await Discussion.findAll({
-      attributes: ['tags'],
+  tributes: ['tags'],
       where: {
         createdAt: { [Op.gte]: sevenDaysAgo },
         tags: { [Op.ne]: null }
@@ -1924,9 +1980,9 @@ export class ForumController {
     });
 
     const tagCounts = new Map();
-    discussions.forEach(discussion => {
+    discussions.forEach((discussion: any) => {
       if (discussion.tags && Array.isArray(discussion.tags)) {
-        discussion.tags.forEach(tag => {
+        discussion.tags.forEach((tag: string) => {
           tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
         });
       }
@@ -1934,7 +1990,7 @@ export class ForumController {
 
     const trendingTags = Array.from(tagCounts.entries())
       .sort((a, b) => b[1] - a[1])
-      .slice(0, Number(limit))
+     e(0, Number(limit))
       .map(([tag, count]) => ({ tag, count }));
 
     const trendingTopics = {
@@ -1945,13 +2001,13 @@ export class ForumController {
     res.status(200).json(new ApiResponse(200, trendingTopics, 'Trending topics retrieved successfully'));
   });
 
-// =================
+  // =================
   // NOTIFICATIONS
   // =================
 
   getForumNotifications = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user?.id;
-    const { page = 1, limit = 20, unreadOnly = false } = req.query;
+    const { page = 1, limit = 20, unreadOnly= false } = req.query;
     const offset = (Number(page) - 1) * Number(limit);
 
     const whereClause: any = { 
@@ -1986,7 +2042,7 @@ export class ForumController {
     const { notificationId } = req.params;
     const userId = req.user?.id;
 
-    const notification = await Notification.findOne({
+    const notificatiwait Notification.findOne({
       where: { id: notificationId, userId }
     });
 
@@ -1994,7 +2050,7 @@ export class ForumController {
       throw new AppError('Notification not found', 404);
     }
 
-    await notification.update({ 
+    await (notification as any).update({ 
       isRead: true,
       readAt: new Date()
     });
@@ -2002,11 +2058,11 @@ export class ForumController {
     res.status(200).json(new ApiResponse(200, notification, 'Notification marked as read'));
   });
 
-// =================
+  // =================
   // POLLS AND VOTING
   // =================
 
-  createPoll = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
+  createPoll = catchAsync(async (req: AuthenticatedRequest, res: Response) =>{
     const { discussionId } = req.params;
     const { question, options, allowMultiple = false, expiresAt } = req.body;
     const userId = req.user?.id;
@@ -2016,14 +2072,12 @@ export class ForumController {
       throw new AppError('Discussion not found', 404);
     }
 
-    // Check if user owns the discussion
     if (discussion.authorId !== userId) {
       throw new AppError('You can only create polls in your own discussions', 403);
     }
 
-    // Validate options
     if (!Array.isArray(options) || options.length < 2) {
-      throw new AppError('Poll must have at least 2 options', 400);
+      throw new Apr('Poll must have at least 2 options', 400);
     }
 
     const poll = await Poll.create({
@@ -2033,14 +2087,15 @@ export class ForumController {
       options: options.map((option: string, index: number) => ({
         id: index + 1,
         text: option,
-        votes: 0
-      })),
+        votes: 0,
+        order: index + 1
+      })) as IPollOption[],
       allowMultiple,
-      expiresAt: expiresAt ? new Date(expiresAt) : null,
+      expiresAt: expiresAt ? new Date(expiresAt) : undefined,
       status: 'active'
     });
 
-    res.status(201).json(new ApiResponse(201, poll, 'Poll created successfully'));
+    res.status(201).json(new ApiResponse(201, poll, 'Poll created essfully'));
   });
 
   votePoll = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
@@ -2053,17 +2108,14 @@ export class ForumController {
       throw new AppError('Poll not found', 404);
     }
 
-    // Check if poll is still active
     if (poll.status !== 'active') {
       throw new AppError('Poll is not active', 400);
     }
 
-    // Check if poll has expired
     if (poll.expiresAt && new Date() > poll.expiresAt) {
-      throw new AppError('Poll has expired', 400);
+      throw new AppError('Poll has ex 400);
     }
 
-    // Check if user already voted
     const existingVote = await Vote.findOne({
       where: { userId, pollId }
     });
@@ -2072,7 +2124,6 @@ export class ForumController {
       throw new AppError('You have already voted in this poll', 400);
     }
 
-    // Validate option IDs
     if (!Array.isArray(optionIds) || optionIds.length === 0) {
       throw new AppError('You must select at least one option', 400);
     }
@@ -2081,22 +2132,19 @@ export class ForumController {
       throw new AppError('This poll allows only one selection', 400);
     }
 
-    // Validate that all option IDs exist in the poll
-    const validOptionIds = poll.options.map((option: any) => option.id);
-    const invalidOptions = optionIds.filter(id => !validOptionIds.includes(id));
+    const validOptionIds = poll.option((option: any) => option.id);
+    const invalidOptions = optionIds.filter((id: number) => !validOptionIds.includes(id));
     
     if (invalidOptions.length > 0) {
       throw new AppError('Invalid option IDs provided', 400);
     }
 
-    // Create vote record
     await Vote.create({
       userId,
       pollId,
       optionIds
     });
 
-    // Update vote counts in poll
     const updatedOptions = poll.options.map((option: any) => {
       if (optionIds.includes(option.id)) {
         return { ...option, votes: option.votes + 1 };
@@ -2104,7 +2152,7 @@ export class ForumController {
       return option;
     });
 
-    await poll.update({ options: updatedOptions });
+    t poll.update({ options: updatedOptions });
     await poll.increment('totalVotes');
 
     res.status(200).json(new ApiResponse(200, poll, 'Vote recorded successfully'));
@@ -2124,10 +2172,9 @@ export class ForumController {
     });
 
     if (!poll) {
-      throw new AppError('Poll not found', 404);
+      ew AppError('Poll not found', 404);
     }
 
-    // Calculate additional statistics
     const results = {
       ...poll.toJSON(),
       statistics: {
@@ -2140,7 +2187,7 @@ export class ForumController {
       }
     };
 
-    res.status(200).json(new ApiResponse(200, results, 'Poll results retrieved successfully'));
+    res.status(200).jon(new ApiResponse(200, results, 'Poll results retrieved successfully'));
   });
 
   // =================
@@ -2156,10 +2203,12 @@ export class ForumController {
     relatedType?: string;
   }) {
     try {
-      await Notification.create(data);
+      await Notification.create({
+        ...data,
+        isRead: false
+      } as Partial<INotification>);
     } catch (error) {
-      console.error('Failed to create notification:', error);
-      // Don't throw error to avoid breaking the main operation
+      console.error('Failed to create notifion:', error);
     }
   }
 
@@ -2168,14 +2217,12 @@ export class ForumController {
     const createdAt = new Date(discussion.createdAt).getTime();
     const hoursSinceCreation = (now - createdAt) / (1000 * 60 * 60);
     
-    // Gravity factor - older posts get lower scores
     const gravity = 1.8;
     const ageScore = Math.pow(hoursSinceCreation + 2, gravity);
     
-    // Activity score based on replies, likes, and views
     const replyCount = discussion.replies?.length || 0;
     const likeCount = discussion.likes?.length || 0;
-    const viewCount = discussion.viewCount || 0;
+    const viewCount = discussion.wCount || 0;
     
     const activityScore = (replyCount * 3) + (likeCount * 2) + (viewCount * 0.1);
     
@@ -2193,10 +2240,11 @@ export class ForumController {
         attributes: ['userId']
       });
 
-      const notifications = followers
-        .filter(follow => follow.userId !== excludeUserId)
-        .map(follow => ({
+   t notifications = followers
+        .filter((follow: any) => follow.userId !== excludeUserId)
+        .map((follow: any) => ({
           userId: follow.userId,
+          isRead: false,
           ...notificationData
         }));
 
@@ -2208,12 +2256,8 @@ export class ForumController {
     }
   }
 
-  // =================
-  // ERROR HANDLING
-  // =================
-
   private handleDatabaseError(error: any): never {
-    if (error.name === 'SequelizeValidationError') {
+    if (error.name === 'SequelizeValidatonError') {
       const messages = error.errors.map((err: any) => err.message);
       throw new AppError(`Validation error: ${messages.join(', ')}`, 400);
     }
@@ -2229,11 +2273,7 @@ export class ForumController {
     throw error;
   }
 
-  // =================
-  // SEARCH HELPERS
-  // =================
-
-  private buildSearchQuery(searchTerm: string, filters: any = {}) {
+  private buildSearchQuery(searchTerm: string, filter any = {}) {
     const whereClause: any = {
       [Op.or]: [
         { title: { [Op.iLike]: `%${searchTerm}%` } },
@@ -2247,7 +2287,7 @@ export class ForumController {
       whereClause.tags = { [Op.overlap]: filters.tags };
     }
     if (filters.dateFrom) {
-      whereClause.createdAt = { [Op.gte]: new Date(filters.dateFrom) };
+      whereClause.createdAt = { [Op.gte]: new Date(ters.dateFrom) };
     }
     if (filters.dateTo) {
       whereClause.createdAt = { 
@@ -2258,10 +2298,6 @@ export class ForumController {
 
     return whereClause;
   }
-
-  // =================
-  // PAGINATION HELPERS
-  // =================
 
   private getPaginationData(page: number, limit: number, totalCount: number) {
     const totalPages = Math.ceil(totalCount / limit);
@@ -2275,4 +2311,3 @@ export class ForumController {
     };
   }
 }
-
