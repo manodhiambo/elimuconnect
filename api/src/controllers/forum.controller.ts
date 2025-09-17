@@ -30,8 +30,7 @@ interface AuthenticatedRequest extends Request {
 }
 
 export class ForumController {
-  
-  // =================
+// =================
   // DISCUSSION MANAGEMENT
   // =================
 
@@ -183,6 +182,8 @@ export class ForumController {
       order: [
         // Custom ordering based on activity score
         // This would typically involve a calculated field or subquery
+        ['replyCount', 'DESC'],
+        ['likeCount', 'DESC']
       ],
       limit: Number(limit)
     });
@@ -369,7 +370,7 @@ export class ForumController {
     res.status(200).json(new ApiResponse(200, null, 'Discussion deleted successfully'));
   });
 
-  // =================
+// =================
   // DISCUSSION INTERACTIONS
   // =================
 
@@ -487,10 +488,6 @@ export class ForumController {
     }, 'Bookmarked discussions retrieved successfully'));
   });
 
-}
-
-// Continuation of ForumController class...
-
   followDiscussion = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
     const { discussionId } = req.params;
     const userId = req.user?.id;
@@ -597,7 +594,7 @@ export class ForumController {
     res.status(200).json(new ApiResponse(200, null, 'Discussion reported successfully'));
   });
 
-  // =================
+// =================
   // CATEGORIES AND TAGS
   // =================
 
@@ -766,7 +763,7 @@ export class ForumController {
   });
 
   // =================
-  // REPLIES MANAGEMENT
+  // DISCUSSION REPLIES
   // =================
 
   getDiscussionReplies = catchAsync(async (req: Request, res: Response) => {
@@ -810,6 +807,10 @@ export class ForumController {
       }
     }, 'Discussion replies retrieved successfully'));
   });
+
+// =================
+  // REPLIES MANAGEMENT
+  // =================
 
   createReply = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
     const { discussionId } = req.params;
@@ -1015,9 +1016,7 @@ export class ForumController {
     res.status(200).json(new ApiResponse(200, null, 'Reply reported successfully'));
   });
 
-// Continuation of ForumController class...
-
-  // =================
+// =================
   // NESTED REPLIES
   // =================
 
@@ -1178,7 +1177,7 @@ export class ForumController {
     res.status(200).json(new ApiResponse(200, reply, 'Solution unmarked successfully'));
   });
 
-  // =================
+// =================
   // USER ACTIVITY
   // =================
 
@@ -1369,7 +1368,7 @@ export class ForumController {
     }, 'User activity retrieved successfully'));
   });
 
-  // =================
+// =================
   // Q&A SPECIFIC FEATURES
   // =================
 
@@ -1535,10 +1534,8 @@ export class ForumController {
 
     res.status(200).json(new ApiResponse(200, question, 'Question reopened successfully'));
   });
-}
-// Continuation of ForumController class...
 
-  // =================
+// =================
   // STUDY GROUPS DISCUSSIONS
   // =================
 
@@ -1675,7 +1672,7 @@ export class ForumController {
     res.status(201).json(new ApiResponse(201, discussion, 'School discussion created successfully'));
   });
 
-  // =================
+// =================
   // MODERATION FEATURES
   // =================
 
@@ -1817,7 +1814,7 @@ export class ForumController {
     res.status(200).json(new ApiResponse(200, discussion, 'Discussion unfeatured successfully'));
   });
 
-  // =================
+// =================
   // STATISTICS AND ANALYTICS
   // =================
 
@@ -1917,29 +1914,6 @@ export class ForumController {
       limit: Number(limit)
     });
 
-// Continuation of ForumController class...
-
-  getTrendingTopics = catchAsync(async (req: Request, res: Response) => {
-    const { limit = 10 } = req.query;
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-    // Get most discussed subjects in the last 7 days
-    const trendingSubjects = await Discussion.findAll({
-      attributes: [
-        'subject',
-        [Discussion.sequelize.fn('COUNT', Discussion.sequelize.col('id')), 'discussionCount'],
-        [Discussion.sequelize.fn('SUM', Discussion.sequelize.col('replyCount')), 'totalReplies']
-      ],
-      where: {
-        createdAt: { [Op.gte]: sevenDaysAgo },
-        subject: { [Op.ne]: null }
-      },
-      group: ['subject'],
-      order: [[Discussion.sequelize.literal('discussionCount + totalReplies'), 'DESC']],
-      limit: Number(limit)
-    });
-
     // Get trending tags
     const discussions = await Discussion.findAll({
       attributes: ['tags'],
@@ -1971,7 +1945,7 @@ export class ForumController {
     res.status(200).json(new ApiResponse(200, trendingTopics, 'Trending topics retrieved successfully'));
   });
 
-  // =================
+// =================
   // NOTIFICATIONS
   // =================
 
@@ -2028,7 +2002,7 @@ export class ForumController {
     res.status(200).json(new ApiResponse(200, notification, 'Notification marked as read'));
   });
 
-  // =================
+// =================
   // POLLS AND VOTING
   // =================
 
@@ -2302,5 +2276,3 @@ export class ForumController {
   }
 }
 
-// Export the controller
-export { ForumController };
