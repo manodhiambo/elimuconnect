@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { ForumController } from '../controllers/forum.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
-import { validationMiddleware } from '../middleware/validation.middleware';
+import { validationMiddleware, validateMultiple } from '../middleware/validation.middleware';
 import { uploadMiddleware } from '../middleware/upload.middleware';
 import { 
   createDiscussionSchema, 
@@ -81,13 +81,16 @@ router.use(authMiddleware);
 
 // Discussion management
 router.post('/discussions', 
-  validationMiddleware(createDiscussionSchema),
+  validationMiddleware(createDiscussionSchema, 'body'),
   uploadMiddleware.array('attachments', 5),
   forumController.createDiscussion
 );
 
 router.put('/discussions/:discussionId', 
-  validationMiddleware([...discussionIdSchema, ...updateDiscussionSchema]),
+  validateMultiple({
+    params: discussionIdSchema,
+    body: updateDiscussionSchema
+  }),
   forumController.updateDiscussion
 );
 
@@ -132,19 +135,28 @@ router.delete('/discussions/:discussionId/follow',
 router.get('/followed', forumController.getFollowedDiscussions);
 
 router.post('/discussions/:discussionId/report', 
-  validationMiddleware([...discussionIdSchema, ...reportSchema]),
+  validateMultiple({
+    params: discussionIdSchema,
+    body: reportSchema
+  }),
   forumController.reportDiscussion
 );
 
 // Replies management
 router.post('/discussions/:discussionId/replies', 
-  validationMiddleware([...discussionIdSchema, ...createReplySchema]),
+  validateMultiple({
+    params: discussionIdSchema,
+    body: createReplySchema
+  }),
   uploadMiddleware.array('attachments', 3),
   forumController.createReply
 );
 
 router.put('/replies/:replyId', 
-  validationMiddleware([...replyIdSchema, ...updateReplySchema]),
+  validateMultiple({
+    params: replyIdSchema,
+    body: updateReplySchema
+  }),
   forumController.updateReply
 );
 
@@ -165,13 +177,19 @@ router.delete('/replies/:replyId/like',
 );
 
 router.post('/replies/:replyId/report', 
-  validationMiddleware([...replyIdSchema, ...reportSchema]),
+  validateMultiple({
+    params: replyIdSchema,
+    body: reportSchema
+  }),
   forumController.reportReply
 );
 
 // Nested replies (replies to replies)
 router.post('/replies/:replyId/replies', 
-  validationMiddleware([...replyIdSchema, ...createReplySchema]),
+  validateMultiple({
+    params: replyIdSchema,
+    body: createReplySchema
+  }),
   forumController.createNestedReply
 );
 
@@ -212,7 +230,10 @@ router.get('/questions/unanswered', forumController.getUnansweredQuestions);
 router.get('/questions/solved', forumController.getSolvedQuestions);
 
 router.post('/questions/:questionId/close', 
-  validationMiddleware([...discussionIdSchema, ...moderationActionSchema]),
+  validateMultiple({
+    params: discussionIdSchema,
+    body: moderationActionSchema
+  }),
   forumController.closeQuestion
 );
 
@@ -228,7 +249,10 @@ router.get('/study-groups/:groupId/discussions',
 );
 
 router.post('/study-groups/:groupId/discussions', 
-  validationMiddleware([...studyGroupIdSchema, ...createDiscussionSchema]),
+  validateMultiple({
+    params: studyGroupIdSchema,
+    body: createDiscussionSchema
+  }),
   forumController.createStudyGroupDiscussion
 );
 
@@ -239,7 +263,10 @@ router.get('/schools/:schoolId/discussions',
 );
 
 router.post('/schools/:schoolId/discussions', 
-  validationMiddleware([...schoolIdSchema, ...createDiscussionSchema]),
+  validateMultiple({
+    params: schoolIdSchema,
+    body: createDiscussionSchema
+  }),
   forumController.createSchoolDiscussion
 );
 
@@ -255,7 +282,10 @@ router.delete('/discussions/:discussionId/pin',
 );
 
 router.post('/discussions/:discussionId/lock', 
-  validationMiddleware([...discussionIdSchema, ...moderationActionSchema]),
+  validateMultiple({
+    params: discussionIdSchema,
+    body: moderationActionSchema
+  }),
   forumController.lockDiscussion
 );
 
@@ -294,12 +324,18 @@ router.put('/notifications/:notificationId/read',
 
 // Polls and voting
 router.post('/discussions/:discussionId/polls', 
-  validationMiddleware([...discussionIdSchema, ...createPollSchema]),
+  validateMultiple({
+    params: discussionIdSchema,
+    body: createPollSchema
+  }),
   forumController.createPoll
 );
 
 router.post('/polls/:pollId/vote', 
-  validationMiddleware([...pollIdSchema, ...votePollSchema]),
+  validateMultiple({
+    params: pollIdSchema,
+    body: votePollSchema
+  }),
   forumController.votePoll
 );
 
