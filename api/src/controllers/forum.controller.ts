@@ -1,13 +1,59 @@
 import { Request, Response } from 'express';
-import AppError from '../utils/AppError';
-import catchAsync from '../utils/catchAsync';
-import ApiResponse from '../utils/ApiResponse';
+import { Op } from 'sequelize';
 import { 
-  Discussion, Reply, Category, Tag, Subject, Poll, Vote,
+  Discussion, Reply, Category, Tag, Poll, Vote,
   Bookmark, Follow, Report, Notification, Like, User
 } from '../models';
-import { Op } from 'sequelize';
-import { uploadToCloudinary, deleteFromCloudinary } from '../utils/cloudinary';
+
+// Utility imports - you'll need to create these files
+class AppError extends Error {
+  statusCode: number;
+  status: string;
+  isOperational: boolean;
+
+  constructor(message: string, statusCode: number) {
+    super(message);
+    this.statusCode = statusCode;
+    this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error';
+    this.isOperational = true;
+
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+const catchAsync = (fn: Function) => {
+  return (req: Request, res: Response, next: Function) => {
+    fn(req, res, next).catch(next);
+  };
+};
+
+class ApiResponse {
+  statusCode: number;
+  data: any;
+  message: string;
+  success: boolean;
+
+  constructor(statusCode: number, data: any, message: string = 'Success') {
+    this.statusCode = statusCode;
+    this.data = data;
+    this.message = message;
+    this.success = statusCode < 400;
+  }
+}
+
+// Cloudinary utilities - you'll need to implement these
+const uploadToCloudinary = async (buffer: Buffer, options: any) => {
+  // Implement your cloudinary upload logic
+  return {
+    public_id: 'sample_id',
+    secure_url: 'https://sample-url.com/image.jpg'
+  };
+};
+
+const deleteFromCloudinary = async (publicId: string) => {
+  // Implement your cloudinary delete logic
+  return true;
+};
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -39,13 +85,21 @@ export class ForumController {
         { model: Like, as: 'likes', attributes: ['id'], separate: true }
       ],
       order: [[sortBy as string, sortOrder as string]],
-      limit: Number(limit), offset, distinct: true
+      limit: Number(limit), 
+      offset, 
+      distinct: true
     });
 
     const totalPages = Math.ceil(discussions.count / Number(limit));
     res.status(200).json(new ApiResponse(200, {
       discussions: discussions.rows,
-      pagination: { currentPage: Number(page), totalPages, totalCount: discussions.count, hasNext: Number(page) < totalPages, hasPrev: Number(page) > 1 }
+      pagination: { 
+        currentPage: Number(page), 
+        totalPages, 
+        totalCount: discussions.count, 
+        hasNext: Number(page) < totalPages, 
+        hasPrev: Number(page) > 1 
+      }
     }, 'Discussions retrieved successfully'));
   });
 
@@ -71,12 +125,16 @@ export class ForumController {
     const discussions = await Discussion.findAndCountAll({
       where: whereClause,
       include: [{ model: Reply, as: 'replies', attributes: ['id'] }],
-      order: [['createdAt', 'desc']], limit: Number(limit), offset, distinct: true
+      order: [['createdAt', 'desc']], 
+      limit: Number(limit), 
+      offset, 
+      distinct: true
     });
 
     const totalPages = Math.ceil(discussions.count / Number(limit));
     res.status(200).json(new ApiResponse(200, {
-      discussions: discussions.rows, searchQuery: q,
+      discussions: discussions.rows, 
+      searchQuery: q,
       pagination: { currentPage: Number(page), totalPages, totalCount: discussions.count }
     }, 'Search completed successfully'));
   });
@@ -102,7 +160,8 @@ export class ForumController {
   getRecentDiscussions = catchAsync(async (req: Request, res: Response) => {
     const { limit = 20 } = req.query;
     const discussions = await Discussion.findAll({
-      order: [['createdAt', 'desc']], limit: Number(limit),
+      order: [['createdAt', 'desc']], 
+      limit: Number(limit),
       include: [{ model: Reply, as: 'replies', attributes: ['id'] }]
     });
     res.status(200).json(new ApiResponse(200, discussions, 'Recent discussions retrieved successfully'));
@@ -111,7 +170,9 @@ export class ForumController {
   getFeaturedDiscussions = catchAsync(async (req: Request, res: Response) => {
     const { limit = 10 } = req.query;
     const discussions = await Discussion.findAll({
-      where: { isFeatured: true }, order: [['featuredAt', 'desc']], limit: Number(limit),
+      where: { isFeatured: true }, 
+      order: [['featuredAt', 'desc']], 
+      limit: Number(limit),
       include: [{ model: Reply, as: 'replies', attributes: ['id'] }]
     });
     res.status(200).json(new ApiResponse(200, discussions, 'Featured discussions retrieved successfully'));
@@ -137,15 +198,29 @@ export class ForumController {
       for (const file of req.files) {
         const uploadResult = await uploadToCloudinary(file.buffer, { folder: 'forum/discussions', resource_type: 'auto' });
         attachments.push({
-          id: uploadResult.public_id, filename: uploadResult.public_id, originalName: file.originalname,
-          size: file.size, mimetype: file.mimetype, url: uploadResult.secure_url
+          id: uploadResult.public_id, 
+          filename: uploadResult.public_id, 
+          originalName: file.originalname,
+          size: file.size, 
+          mimetype: file.mimetype, 
+          url: uploadResult.secure_url
         });
       }
     }
 
     const discussion = await Discussion.create({
-      title, content, authorId: userId, categoryId, tags: tags || [], subject, type,
-      schoolId: schoolId || req.user?.schoolId, studyGroupId, isAnonymous, attachments, status: 'active'
+      title, 
+      content, 
+      authorId: userId, 
+      categoryId, 
+      tags: tags || [], 
+      subject, 
+      type,
+      schoolId: schoolId || req.user?.schoolId, 
+      studyGroupId, 
+      isAnonymous, 
+      attachments, 
+      status: 'active'
     });
 
     res.status(201).json(new ApiResponse(201, discussion, 'Discussion created successfully'));
@@ -164,9 +239,12 @@ export class ForumController {
     }
 
     await discussion.update({
-      title: title || discussion.title, content: content || discussion.content,
-      categoryId: categoryId || discussion.categoryId, tags: tags || discussion.tags,
-      subject: subject || discussion.subject, updatedAt: new Date()
+      title: title || discussion.title, 
+      content: content || discussion.content,
+      categoryId: categoryId || discussion.categoryId, 
+      tags: tags || discussion.tags,
+      subject: subject || discussion.subject, 
+      updatedAt: new Date()
     });
 
     res.status(200).json(new ApiResponse(200, discussion, 'Discussion updated successfully'));
@@ -193,7 +271,7 @@ export class ForumController {
     res.status(200).json(new ApiResponse(200, null, 'Discussion deleted successfully'));
   });
 
-  // Discussion Interactions
+// Discussion Interactions
   likeDiscussion = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
     const { discussionId } = req.params;
     const userId = req.user?.id;
@@ -204,7 +282,7 @@ export class ForumController {
     const existingLike = await Like.findOne({ where: { userId, discussionId } });
     if (existingLike) throw new AppError('Discussion already liked', 400);
 
-    await Like.create({ userId, discussionId, replyId: null });
+    await Like.create('discussion', discussionId, userId);
     await discussion.increment('likeCount');
     res.status(200).json(new ApiResponse(200, null, 'Discussion liked successfully'));
   });
@@ -243,7 +321,7 @@ export class ForumController {
     const bookmark = await Bookmark.findOne({ where: { userId, discussionId } });
     if (!bookmark) throw new AppError('Bookmark not found', 404);
 
-    await (bookmark as any).destroy();
+    await bookmark.destroy();
     res.status(200).json(new ApiResponse(200, null, 'Discussion unbookmarked successfully'));
   });
 
@@ -253,8 +331,11 @@ export class ForumController {
     const offset = (Number(page) - 1) * Number(limit);
 
     const bookmarks = await Bookmark.findAndCountAll({
-      where: { userId }, include: [{ model: Discussion, as: 'discussion' }],
-      order: [['createdAt', 'desc']], limit: Number(limit), offset
+      where: { userId }, 
+      include: [{ model: Discussion, as: 'discussion' }],
+      order: [['createdAt', 'desc']], 
+      limit: Number(limit), 
+      offset
     });
 
     const totalPages = Math.ceil(bookmarks.count / Number(limit));
@@ -274,7 +355,7 @@ export class ForumController {
     const existingFollow = await Follow.findOne({ where: { userId, discussionId } });
     if (existingFollow) throw new AppError('Discussion already followed', 400);
 
-    await Follow.create({ userId, discussionId });
+    await Follow.create(userId, discussionId);
     res.status(200).json(new ApiResponse(200, null, 'Discussion followed successfully'));
   });
 
@@ -296,8 +377,14 @@ export class ForumController {
 
     const follows = await Follow.findAndCountAll({
       where: { userId },
-      include: [{ model: Discussion, as: 'discussion', include: [{ model: Reply, as: 'replies', attributes: ['id'] }] }],
-      order: [['createdAt', 'desc']], limit: Number(limit), offset
+      include: [{ 
+        model: Discussion, 
+        as: 'discussion', 
+        include: [{ model: Reply, as: 'replies', attributes: ['id'] }] 
+      }],
+      order: [['createdAt', 'desc']], 
+      limit: Number(limit), 
+      offset
     });
 
     const totalPages = Math.ceil(follows.count / Number(limit));
@@ -318,11 +405,19 @@ export class ForumController {
     const existingReport = await Report.findOne({ where: { userId, discussionId } });
     if (existingReport) throw new AppError('Discussion already reported by you', 400);
 
-    await Report.create({ userId, discussionId, reason, description, status: 'pending' });
+    await Report.create({ 
+      userId, 
+      discussionId, 
+      reason, 
+      description, 
+      status: 'pending',
+      targetType: 'discussion',
+      targetId: discussionId
+    });
     res.status(200).json(new ApiResponse(200, null, 'Discussion reported successfully'));
   });
 
-  // Categories and Tags
+// Categories and Tags
   getAllCategories = catchAsync(async (req: Request, res: Response) => {
     const categories = await Category.findAll({
       include: [{ model: Discussion, as: 'discussions', attributes: ['id'], separate: true }],
@@ -343,7 +438,9 @@ export class ForumController {
         { model: Category, as: 'category' }
       ],
       order: [[sortBy as string, sortOrder as string]],
-      limit: Number(limit), offset, distinct: true
+      limit: Number(limit), 
+      offset, 
+      distinct: true
     });
 
     const totalPages = Math.ceil(discussions.count / Number(limit));
@@ -355,7 +452,8 @@ export class ForumController {
 
   getAllTags = catchAsync(async (req: Request, res: Response) => {
     const discussions = await Discussion.findAll({
-      attributes: ['tags'], where: { tags: { [Op.ne]: null } }
+      attributes: ['tags'], 
+      where: { tags: { [Op.ne]: null } }
     });
 
     const allTags = new Set();
@@ -381,23 +479,41 @@ export class ForumController {
     const discussions = await Discussion.findAndCountAll({
       where: { tags: { [Op.contains]: [tag] } },
       include: [{ model: Reply, as: 'replies', attributes: ['id'] }],
-      order: [['createdAt', 'desc']], limit: Number(limit), offset, distinct: true
+      order: [['createdAt', 'desc']], 
+      limit: Number(limit), 
+      offset, 
+      distinct: true
     });
 
     const totalPages = Math.ceil(discussions.count / Number(limit));
     res.status(200).json(new ApiResponse(200, {
-      discussions: discussions.rows, tag,
+      discussions: discussions.rows, 
+      tag,
       pagination: { currentPage: Number(page), totalPages, totalCount: discussions.count }
     }, 'Tag discussions retrieved successfully'));
   });
 
   // Subject-specific forums
   getAllSubjects = catchAsync(async (req: Request, res: Response) => {
-    const subjects = await Subject.findAll({
-      include: [{ model: Discussion, as: 'discussions', attributes: ['id'], separate: true }],
-      order: [['name', 'asc']]
+    const subjects = await Discussion.findAll({
+      attributes: ['subject'],
+      where: { subject: { [Op.ne]: null } },
+      group: ['subject'],
+      order: [['subject', 'asc']]
     });
-    res.status(200).json(new ApiResponse(200, subjects, 'Subjects retrieved successfully'));
+
+    // Transform to include discussion counts
+    const subjectList = await Promise.all(
+      subjects.map(async (item: any) => {
+        const count = await Discussion.count({ where: { subject: item.subject } });
+        return {
+          name: item.subject,
+          discussionCount: count
+        };
+      })
+    );
+
+    res.status(200).json(new ApiResponse(200, subjectList, 'Subjects retrieved successfully'));
   });
 
   getDiscussionsBySubject = catchAsync(async (req: Request, res: Response) => {
@@ -406,18 +522,23 @@ export class ForumController {
     const offset = (Number(page) - 1) * Number(limit);
 
     const discussions = await Discussion.findAndCountAll({
-      where: { subject }, include: [{ model: Reply, as: 'replies', attributes: ['id'] }],
-      order: [['createdAt', 'desc']], limit: Number(limit), offset, distinct: true
+      where: { subject }, 
+      include: [{ model: Reply, as: 'replies', attributes: ['id'] }],
+      order: [['createdAt', 'desc']], 
+      limit: Number(limit), 
+      offset, 
+      distinct: true
     });
 
     const totalPages = Math.ceil(discussions.count / Number(limit));
     res.status(200).json(new ApiResponse(200, {
-      discussions: discussions.rows, subject,
+      discussions: discussions.rows, 
+      subject,
       pagination: { currentPage: Number(page), totalPages, totalCount: discussions.count }
     }, 'Subject discussions retrieved successfully'));
   });
 
-  // Discussion Replies
+// Discussion Replies
   getDiscussionReplies = catchAsync(async (req: Request, res: Response) => {
     const { discussionId } = req.params;
     const { page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'asc' } = req.query;
@@ -430,7 +551,9 @@ export class ForumController {
         { model: Like, as: 'likes', attributes: ['id'] }
       ],
       order: [[sortBy as string, sortOrder as string]],
-      limit: Number(limit), offset, distinct: true
+      limit: Number(limit), 
+      offset, 
+      distinct: true
     });
 
     const totalPages = Math.ceil(replies.count / Number(limit));
@@ -455,22 +578,40 @@ export class ForumController {
       for (const file of req.files) {
         const uploadResult = await uploadToCloudinary(file.buffer, { folder: 'forum/replies', resource_type: 'auto' });
         attachments.push({
-          url: uploadResult.secure_url, publicId: uploadResult.public_id,
-          type: file.mimetype, name: file.originalname, size: file.size
+          url: uploadResult.secure_url, 
+          publicId: uploadResult.public_id,
+          type: file.mimetype, 
+          name: file.originalname, 
+          size: file.size
         });
       }
     }
 
-    const reply = await Reply.create({ content, authorId: userId, discussionId, isAnonymous, attachments });
+    const reply = await Reply.create({ 
+      content, 
+      authorId: userId, 
+      discussionId, 
+      isAnonymous, 
+      attachments 
+    });
     await discussion.increment('replyCount');
 
-    const followers = await Follow.findAll({ where: { discussionId }, attributes: ['userId'] });
+    // Find followers to notify
+    const followers = await Follow.findAll({ 
+      where: { discussionId }, 
+      attributes: ['userId'] 
+    });
+    
     for (const follow of followers) {
       if (follow.userId !== userId) {
         await Notification.create({
-          userId: follow.userId, type: 'reply', title: 'New reply on followed discussion',
+          userId: follow.userId, 
+          type: 'reply', 
+          title: 'New reply on followed discussion',
           message: `${req.user?.email} replied to "${discussion.title}"`,
-          relatedId: discussionId, relatedType: 'discussion', isRead: false
+          relatedId: discussionId, 
+          relatedType: 'discussion', 
+          isRead: false
         });
       }
     }
@@ -490,7 +631,10 @@ export class ForumController {
       throw new AppError('You are not authorized to update this reply', 403);
     }
 
-    await reply.update({ content: content || reply.content, updatedAt: new Date() });
+    await reply.update({ 
+      content: content || reply.content, 
+      updatedAt: new Date() 
+    });
     res.status(200).json(new ApiResponse(200, reply, 'Reply updated successfully'));
   });
 
@@ -528,7 +672,7 @@ export class ForumController {
     const existingLike = await Like.findOne({ where: { userId, replyId } });
     if (existingLike) throw new AppError('Reply already liked', 400);
 
-    await Like.create({ userId, replyId, discussionId: null });
+    await Like.create('reply', replyId, userId);
     await reply.increment('likeCount');
     res.status(200).json(new ApiResponse(200, null, 'Reply liked successfully'));
   });
@@ -557,31 +701,49 @@ export class ForumController {
     const existingReport = await Report.findOne({ where: { userId, replyId } });
     if (existingReport) throw new AppError('Reply already reported by you', 400);
 
-    await Report.create({ userId, replyId, reason, description, status: 'pending' });
+    await Report.create({ 
+      userId, 
+      replyId, 
+      reason, 
+      description, 
+      status: 'pending',
+      targetType: 'reply',
+      targetId: replyId
+    });
     res.status(200).json(new ApiResponse(200, null, 'Reply reported successfully'));
   });
 
-  // Nested Replies
+// Nested Replies
   createNestedReply = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
     const { replyId } = req.params;
     const { content, isAnonymous = false } = req.body;
     const userId = req.user?.id;
 
-    const parentReply = await Reply.findByPk(replyId, { include: [{ model: Discussion, as: 'discussion' }] });
+    const parentReply = await Reply.findByPk(replyId, { 
+      include: [{ model: Discussion, as: 'discussion' }] 
+    });
     if (!parentReply) throw new AppError('Parent reply not found', 404);
     if (parentReply.discussion.status === 'locked') throw new AppError('Cannot reply to locked discussion', 403);
 
     const nestedReply = await Reply.create({
-      content, authorId: userId, discussionId: parentReply.discussionId, parentReplyId: replyId, isAnonymous
+      content, 
+      authorId: userId, 
+      discussionId: parentReply.discussionId, 
+      parentReplyId: replyId, 
+      isAnonymous
     });
 
     await Discussion.increment('replyCount', { where: { id: parentReply.discussionId } });
 
     if (parentReply.authorId !== userId) {
       await Notification.create({
-        userId: parentReply.authorId, type: 'nested_reply', title: 'Someone replied to your comment',
-        message: `${req.user?.email} replied to your comment`, relatedId: parentReply.discussionId,
-        relatedType: 'discussion', isRead: false
+        userId: parentReply.authorId, 
+        type: 'nested_reply', 
+        title: 'Someone replied to your comment',
+        message: `${req.user?.email} replied to your comment`, 
+        relatedId: parentReply.discussionId,
+        relatedType: 'discussion', 
+        isRead: false
       });
     }
 
@@ -596,7 +758,9 @@ export class ForumController {
     const nestedReplies = await Reply.findAndCountAll({
       where: { parentReplyId: replyId },
       include: [{ model: Like, as: 'likes', attributes: ['id'] }],
-      order: [['createdAt', 'asc']], limit: Number(limit), offset
+      order: [['createdAt', 'asc']], 
+      limit: Number(limit), 
+      offset
     });
 
     const totalPages = Math.ceil(nestedReplies.count / Number(limit));
@@ -611,19 +775,28 @@ export class ForumController {
     const { replyId } = req.params;
     const userId = req.user?.id;
 
-    const reply = await Reply.findByPk(replyId, { include: [{ model: Discussion, as: 'discussion' }] });
+    const reply = await Reply.findByPk(replyId, { 
+      include: [{ model: Discussion, as: 'discussion' }] 
+    });
     if (!reply) throw new AppError('Reply not found', 404);
-    if (reply.discussion.authorId !== userId) throw new AppError('Only discussion author ark solutions', 403);
+    if (reply.discussion.authorId !== userId) throw new AppError('Only discussion author can mark solutions', 403);
 
+    // Remove existing solutions
     await Reply.update({ isSolution: false }, { where: { discussionId: reply.discussionId } });
+    
+    // Mark this reply as solution
     await reply.update({ isSolution: true });
     await reply.discussion.update({ status: 'solved', solvedAt: new Date() });
 
     if (reply.authorId !== userId) {
       await Notification.create({
-        userId: reply.authorId, type: 'solution_marked', title: 'Your answer was marked as solution',
+        userId: reply.authorId, 
+        type: 'solution_marked', 
+        title: 'Your answer was marked as solution',
         message: `Your answer to "${reply.discussion.title}" was marked as the solution`,
-       relatedId: reply.discussionId, relatedType: 'discussion', isRead: false
+        relatedId: reply.discussionId, 
+        relatedType: 'discussion', 
+        isRead: false
       });
     }
 
@@ -634,7 +807,9 @@ export class ForumController {
     const { replyId } = req.params;
     const userId = req.user?.id;
 
-    const reply = await Reply.findByPk(replyId, { include: [{ model: Discussion, as: 'discussion' }] });
+    const reply = await Reply.findByPk(replyId, { 
+      include: [{ model: Discussion, as: 'discussion' }] 
+    });
     if (!reply) throw new AppError('Reply not found', 404);
     if (reply.discussion.authorId !== userId) throw new AppError('Only discussion author can unmark solutions', 403);
 
@@ -643,7 +818,7 @@ export class ForumController {
     res.status(200).json(new ApiResponse(200, reply, 'Solution unmarked successfully'));
   });
 
-  // User Activity
+// User Activity
   getUserDiscussions = catchAsync(async (req: Request, res: Response) => {
     const { userId } = req.params;
     const { page = 1, limit = 20 } = req.query;
@@ -655,7 +830,10 @@ export class ForumController {
         { model: Reply, as: 'replies', attributes: ['id'] },
         { model: Category, as: 'category' }
       ],
-      order: [['createdAt', 'desc']], limit: Number(limit), offset, distinct: true
+      order: [['createdAt', 'desc']], 
+      limit: Number(limit), 
+      offset, 
+      distinct: true
     });
 
     const totalPages = Math.ceil(discussions.count / Number(limit));
@@ -673,7 +851,9 @@ export class ForumController {
     const replies = await Reply.findAndCountAll({
       where: { authorId: userId },
       include: [{ model: Discussion, as: 'discussion', attributes: ['id', 'title', 'slug'] }],
-      order: [['createdAt', 'desc']], limit: Number(limit), offset
+      order: [['createdAt', 'desc']], 
+      limit: Number(limit), 
+      offset
     });
 
     const totalPages = Math.ceil(replies.count / Number(limit));
@@ -697,7 +877,10 @@ export class ForumController {
         { model: Reply, as: 'replies', attributes: ['id'] },
         { model: Like, as: 'likes', attributes: ['id'] }
       ],
-      order: [['createdAt', 'desc']], limit: Number(limit), offset, distinct: true
+      order: [['createdAt', 'desc']], 
+      limit: Number(limit), 
+      offset, 
+      distinct: true
     });
 
     const totalPages = Math.ceil(discussions.count / Number(limit));
@@ -718,7 +901,9 @@ export class ForumController {
         { model: Discussion, as: 'discussion', attributes: ['id', 'title', 'slug', 'status'] },
         { model: Like, as: 'likes', attributes: ['id'] }
       ],
-      order: [['createdAt', 'desc']], limit: Number(limit), offset
+      order: [['createdAt', 'desc']], 
+      limit: Number(limit), 
+      offset
     });
 
     const totalPages = Math.ceil(replies.count / Number(limit));
@@ -734,13 +919,17 @@ export class ForumController {
 
     const [discussions, replies] = await Promise.all([
       Discussion.findAll({
-        where: { authorId: userId }, attributes: ['id', 'title', 'createdAt', 'type'],
-        limit: Number(limit) / 2, order: [['createdAt', 'desc']]
+        where: { authorId: userId }, 
+        attributes: ['id', 'title', 'createdAt', 'type'],
+        limit: Math.floor(Number(limit) / 2), 
+        order: [['createdAt', 'desc']]
       }),
       Reply.findAll({
-        where: { authorId: userId }, attributes: ['id', 'content', 'createdAt', 'discussionId'],
+        where: { authorId: userId }, 
+        attributes: ['id', 'content', 'createdAt', 'discussionId'],
         include: [{ model: Discussion, as: 'discussion', attributes: ['title'] }],
-        limit: Number(limit) / 2, order: [['createdAt', 'desc']]
+        limit: Math.floor(Number(limit) / 2), 
+        order: [['createdAt', 'desc']]
       })
     ]);
 
@@ -751,7 +940,8 @@ export class ForumController {
      .slice(0, Number(limit));
 
     res.status(200).json(new ApiResponse(200, {
-      activity, pagination: { currentPage: Number(page), totalCount: activity.length }
+      activity, 
+      pagination: { currentPage: Number(page), totalCount: activity.length }
     }, 'User activity retrieved successfully'));
   });
 
@@ -770,7 +960,10 @@ export class ForumController {
         { model: Reply, as: 'replies', attributes: ['id', 'isSolution'] },
         { model: Like, as: 'likes', attributes: ['id'] }
       ],
-      order: [['createdAt', 'desc']], limit: Number(limit), offset, distinct: true
+      order: [['createdAt', 'desc']], 
+      limit: Number(limit), 
+      offset, 
+      distinct: true
     });
 
     const totalPages = Math.ceil(questions.count / Number(limit));
@@ -787,7 +980,9 @@ export class ForumController {
     const questions = await Discussion.findAndCountAll({
       where: { type: 'question', replyCount: 0, status: 'active' },
       include: [{ model: Like, as: 'likes', attributes: ['id'] }],
-      order: [['createdAt', 'desc']], limit: Number(limit), offset
+      order: [['createdAt', 'desc']], 
+      limit: Number(limit), 
+      offset
     });
 
     const totalPages = Math.ceil(questions.count / Number(limit));
@@ -804,7 +999,9 @@ export class ForumController {
     const questions = await Discussion.findAndCountAll({
       where: { type: 'question', status: 'solved' },
       include: [{ model: Reply, as: 'replies', where: { isSolution: true }, required: false }],
-      order: [['solvedAt', 'desc']], limit: Number(limit), offset
+      order: [['solvedAt', 'desc']], 
+      limit: Number(limit), 
+      offset
     });
 
     const totalPages = Math.ceil(questions.count / Number(limit));
@@ -828,7 +1025,10 @@ export class ForumController {
     }
 
     await question.update({
-      status: 'closed', closeReason: reason, closedAt: new Date(), closedBy: userId
+      status: 'closed', 
+      closeReason: reason, 
+      closedAt: new Date(), 
+      closedBy: userId
     });
 
     res.status(200).json(new ApiResponse(200, question, 'Question closed successfully'));
@@ -845,11 +1045,16 @@ export class ForumController {
       throw new AppError('You are not authorized to reopen this question', 403);
     }
 
-    await question.update({ status: 'active', closeReason: null, closedAt: null, closedBy: null });
+    await question.update({ 
+      status: 'active', 
+      closeReason: null, 
+      closedAt: null, 
+      closedBy: null 
+    });
     res.status(200).json(new ApiResponse(200, question, 'Question reopened successfully'));
   });
 
-  // Study Groups
+// Study Groups
   getStudyGroupDiscussions = catchAsync(async (req: Request, res: Response) => {
     const { groupId } = req.params;
     const { page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
@@ -862,7 +1067,9 @@ export class ForumController {
         { model: Like, as: 'likes', attributes: ['id'] }
       ],
       order: [[sortBy as string, sortOrder as string]],
-      limit: Number(limit), offset, distinct: true
+      limit: Number(limit), 
+      offset, 
+      distinct: true
     });
 
     const totalPages = Math.ceil(discussions.count / Number(limit));
@@ -878,8 +1085,14 @@ export class ForumController {
     const userId = req.user?.id;
 
     const discussion = await Discussion.create({
-      title, content, authorId: userId, categoryId, tags: tags || [],
-      type, studyGroupId: groupId, status: 'active'
+      title, 
+      content, 
+      authorId: userId, 
+      categoryId, 
+      tags: tags || [],
+      type, 
+      studyGroupId: groupId, 
+      status: 'active'
     });
 
     res.status(201).json(new ApiResponse(201, discussion, 'Study group discussion created successfully'));
@@ -901,7 +1114,10 @@ export class ForumController {
         { model: Reply, as: 'replies', attributes: ['id'] },
         { model: Category, as: 'category' }
       ],
-      order: [['createdAt', 'desc']], limit: Number(limit), offset, distinct: true
+      order: [['createdAt', 'desc']], 
+      limit: Number(limit), 
+      offset, 
+      distinct: true
     });
 
     const totalPages = Math.ceil(discussions.count / Number(limit));
@@ -921,14 +1137,21 @@ export class ForumController {
     }
 
     const discussion = await Discussion.create({
-      title, content, authorId: userId, categoryId, tags: tags || [],
-      subject, type, schoolId, status: 'active'
+      title, 
+      content, 
+      authorId: userId, 
+      categoryId, 
+      tags: tags || [],
+      subject, 
+      type, 
+      schoolId, 
+      status: 'active'
     });
 
     res.status(201).json(new ApiResponse(201, discussion, 'School discussion created successfully'));
   });
 
-  // Moderation
+// Moderation
   pinDiscussion = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
     const { discussionId } = req.params;
     const userId = req.user?.id;
@@ -940,7 +1163,11 @@ export class ForumController {
     const discussion = await Discussion.findByPk(discussionId);
     if (!discussion) throw new AppError('Discussion not found', 404);
 
-    await discussion.update({ isPinned: true, pinnedAt: new Date(), pinnedBy: userId });
+    await discussion.update({ 
+      isPinned: true, 
+      pinnedAt: new Date(), 
+      pinnedBy: userId 
+    });
     res.status(200).json(new ApiResponse(200, discussion, 'Discussion pinned successfully'));
   });
 
@@ -954,7 +1181,11 @@ export class ForumController {
     const discussion = await Discussion.findByPk(discussionId);
     if (!discussion) throw new AppError('Discussion not found', 404);
 
-    await discussion.update({ isPinned: false, pinnedAt: null, pinnedBy: null });
+    await discussion.update({ 
+      isPinned: false, 
+      pinnedAt: null, 
+      pinnedBy: null 
+    });
     res.status(200).json(new ApiResponse(200, discussion, 'Discussion unpinned successfully'));
   });
 
@@ -971,7 +1202,10 @@ export class ForumController {
     if (!discussion) throw new AppError('Discussion not found', 404);
 
     await discussion.update({
-      status: 'locked', lockReason: reason, lockedAt: new Date(), lockedBy: userId
+      status: 'locked', 
+      lockReason: reason, 
+      lockedAt: new Date(), 
+      lockedBy: userId
     });
 
     res.status(200).json(new ApiResponse(200, discussion, 'Discussion locked successfully'));
@@ -987,7 +1221,12 @@ export class ForumController {
     const discussion = await Discussion.findByPk(discussionId);
     if (!discussion) throw new AppError('Discussion not found', 404);
 
-    await discussion.update({ status: 'active', lockReason: null, lockedAt: null, lockedBy: null });
+    await discussion.update({ 
+      status: 'active', 
+      lockReason: null, 
+      lockedAt: null, 
+      lockedBy: null 
+    });
     res.status(200).json(new ApiResponse(200, discussion, 'Discussion unlocked successfully'));
   });
 
@@ -1002,7 +1241,11 @@ export class ForumController {
     const discussion = await Discussion.findByPk(discussionId);
     if (!discussion) throw new AppError('Discussion not found', 404);
 
-    await discussion.update({ isFeatured: true, featuredAt: new Date(), featuredBy: userId });
+    await discussion.update({ 
+      isFeatured: true, 
+      featuredAt: new Date(), 
+      featuredBy: userId 
+    });
     res.status(200).json(new ApiResponse(200, discussion, 'Discussion featured successfully'));
   });
 
@@ -1016,23 +1259,43 @@ export class ForumController {
     const discussion = await Discussion.findByPk(discussionId);
     if (!discussion) throw new AppError('Discussion not found', 404);
 
-    await discussion.update({ isFeatured: false, featuredAt: null, featuredBy: null });
+    await discussion.update({ 
+      isFeatured: false, 
+      featuredAt: null, 
+      featuredBy: null 
+    });
     res.status(200).json(new ApiResponse(200, discussion, 'Discussion unfeatured successfully'));
   });
 
-  // Statistics
+// Statistics
   getForumStats = catchAsync(async (req: Request, res: Response) => {
-    const [totalDiscussions, totalReplies, totalUsers, activeDiscussions, solvedQuestions, recentActivity] = await Promise.all([
+    const [
+      totalDiscussions, 
+      totalReplies, 
+      totalUsers, 
+      activeDiscussions, 
+      solvedQuestions, 
+      recentActivity
+    ] = await Promise.all([
       Discussion.count(),
       Reply.count(),
       User ? User.count() : 0,
       Discussion.count({ where: { status: 'active' } }),
       Discussion.count({ where: { type: 'question', status: 'solved' } }),
-      Discussion.count({ where: { createdAt: { [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000) } } })
+      Discussion.count({ 
+        where: { 
+          createdAt: { [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000) } 
+        } 
+      })
     ]);
 
     const stats = {
-      totalDiscussions, totalReplies, totalUsers, activeDiscussions, solvedQuestions, recentActivity,
+      totalDiscussions, 
+      totalReplies, 
+      totalUsers, 
+      activeDiscussions, 
+      solvedQuestions, 
+      recentActivity,
       engagementRate: totalReplies > 0 ? (totalReplies / totalDiscussions).toFixed(2) : '0'
     };
 
@@ -1042,7 +1305,13 @@ export class ForumController {
   getUserStats = catchAsync(async (req: Request, res: Response) => {
     const { userId } = req.params;
 
-    const [totalDiscussions, totalReplies, totalLikes, solutionsMarked, questionsAnswered] = await Promise.all([
+    const [
+      totalDiscussions, 
+      totalReplies, 
+      totalLikes, 
+      solutionsMarked, 
+      questionsAnswered
+    ] = await Promise.all([
       Discussion.count({ where: { authorId: userId } }),
       Reply.count({ where: { authorId: userId } }),
       Like.count({ where: { userId } }),
@@ -1050,15 +1319,23 @@ export class ForumController {
       Discussion.count({
         where: {
           type: 'question',
-          id: { [Op.in]: await Reply.findAll({
-            where: { authorId: userId }, attributes: ['discussionId'], group: ['discussionId']
-          }).then((replies: any[]) => replies.map(r => r.discussionId)) }
+          id: { 
+            [Op.in]: (await Reply.findAll({
+              where: { authorId: userId }, 
+              attributes: ['discussionId'], 
+              group: ['discussionId']
+            })).map((reply: any) => reply.discussionId)
+          }
         }
       })
     ]);
 
     const userStats = {
-      totalDiscussions, totalReplies, totalLikes, solutionsMarked, questionsAnswered,
+      totalDiscussions, 
+      totalReplies, 
+      totalLikes, 
+      solutionsMarked, 
+      questionsAnswered,
       reputation: solutionsMarked * 10 + totalLikes * 2
     };
 
@@ -1070,27 +1347,37 @@ export class ForumController {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
+    // Get trending subjects
     const trendingSubjects = await Discussion.findAll({
       attributes: [
         'subject',
         [(Discussion as any).sequelize.fn('COUNT', (Discussion as any).sequelize.col('id')), 'discussionCount'],
         [(Discussion as any).sequelize.fn('SUM', (Discussion as any).sequelize.col('replyCount')), 'totalReplies']
       ],
-      where: { createdAt: { [Op.gte]: sevenDaysAgo }, subject: { [Op.ne]: null } },
+      where: { 
+        createdAt: { [Op.gte]: sevenDaysAgo }, 
+        subject: { [Op.ne]: null } 
+      },
       group: ['subject'],
       order: [[(Discussion as any).sequelize.literal('discussionCount + totalReplies'), 'DESC']],
       limit: Number(limit)
     });
 
+    // Get trending tags
     const discussions = await Discussion.findAll({
       attributes: ['tags'],
-      where: { createdAt: { [Op.gte]: sevenDaysAgo }, tags: { [Op.ne]: null } }
+      where: { 
+        createdAt: { [Op.gte]: sevenDaysAgo }, 
+        tags: { [Op.ne]: null } 
+      }
     });
 
     const tagCounts = new Map();
     discussions.forEach((discussion: any) => {
       if (discussion.tags && Array.isArray(discussion.tags)) {
-        discussion.tags.forEach((tag: string) => tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1));
+        discussion.tags.forEach((tag: string) => {
+          tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+        });
       }
     });
 
@@ -1111,13 +1398,18 @@ export class ForumController {
 
     const whereClause: any = { 
       userId,
-      type: { [Op.in]: ['reply', 'nested_reply', 'solution_marked', 'discussion_liked', 'reply_liked'] }
+      type: { 
+        [Op.in]: ['reply', 'nested_reply', 'solution_marked', 'discussion_liked', 'reply_liked'] 
+      }
     };
 
     if (unreadOnly === 'true') whereClause.isRead = false;
 
     const notifications = await Notification.findAndCountAll({
-      where: whereClause, order: [['createdAt', 'desc']], limit: Number(limit), offset
+      where: whereClause, 
+      order: [['createdAt', 'desc']], 
+      limit: Number(limit), 
+      offset
     });
 
     const totalPages = Math.ceil(notifications.count / Number(limit));
@@ -1131,10 +1423,12 @@ export class ForumController {
     const { notificationId } = req.params;
     const userId = req.user?.id;
 
-    const notification = await Notification.findOne({ where: { id: notificationId, userId } });
+    const notification = await Notification.findOne({ 
+      where: { id: notificationId, userId } 
+    });
     if (!notification) throw new AppError('Notification not found', 404);
 
-    await (notification as any).update({ isRead: true, readAt: new Date() });
+    await notification.update({ isRead: true, readAt: new Date() });
     res.status(200).json(new ApiResponse(200, notification, 'Notification marked as read'));
   });
 
@@ -1146,15 +1440,26 @@ export class ForumController {
 
     const discussion = await Discussion.findByPk(discussionId);
     if (!discussion) throw new AppError('Discussion not found', 404);
-    if (discussion.authorId !== userId) throw new AppError('You can only create polls in your own discussions', 403);
-    if (!Array.isArray(options) || options.length < 2) throw new AppError('Poll must have at least 2 options', 400);
+    if (discussion.authorId !== userId) {
+      throw new AppError('You can only create polls in your own discussions', 403);
+    }
+    if (!Array.isArray(options) || options.length < 2) {
+      throw new AppError('Poll must have at least 2 options', 400);
+    }
 
     const poll = await Poll.create({
-      discussionId, createdBy: userId, question,
+      discussionId, 
+      createdBy: userId, 
+      question,
       options: options.map((option: string, index: number) => ({
-        id: index + 1, text: option, votes: 0, order: index + 1
+        id: (index + 1).toString(), 
+        text: option, 
+        votes: 0, 
+        order: index + 1
       })),
-      allowMultiple, expiresAt: expiresAt ? new Date(expiresAt) : undefined, status: 'active'
+      allowMultiple, 
+      expiresAt: expiresAt ? new Date(expiresAt) : undefined, 
+      status: 'active'
     });
 
     res.status(201).json(new ApiResponse(201, poll, 'Poll created successfully'));
@@ -1168,21 +1473,33 @@ export class ForumController {
     const poll = await Poll.findByPk(pollId);
     if (!poll) throw new AppError('Poll not found', 404);
     if (poll.status !== 'active') throw new AppError('Poll is not active', 400);
-    if (poll.expiresAt && new Date() > poll.expiresAt) throw new AppError('Poll has expired', 400);
+    if (poll.expiresAt && new Date() > poll.expiresAt) {
+      throw new AppError('Poll has expired', 400);
+    }
 
     const existingVote = await Vote.findOne({ where: { userId, pollId } });
     if (existingVote) throw new AppError('You have already voted in this poll', 400);
 
-    if (!Array.isArray(optionIds) || optionIds.length === 0) throw new AppError('You must select at least one option', 400);
-    if (!poll.allowMultiple && optionIds.length > 1) throw new AppError('This poll allows only one selection', 400);
+    if (!Array.isArray(optionIds) || optionIds.length === 0) {
+      throw new AppError('You must select at least one option', 400);
+    }
+    if (!poll.allowMultiple && optionIds.length > 1) {
+      throw new AppError('This poll allows only one selection', 400);
+    }
 
     const validOptionIds = poll.options.map((option: any) => option.id);
-    const invalidOptions = optionIds.filter((id: number) => !validOptionIds.includes(id));
-    if (invalidOptions.length > 0) throw new AppError('Invalid option IDs provided', 400);
+    const invalidOptions = optionIds.filter((id: string) => !validOptionIds.includes(id));
+    if (invalidOptions.length > 0) {
+      throw new AppError('Invalid option IDs provided', 400);
+    }
 
     await Vote.create({ userId, pollId, optionIds });
+    
+    // Update vote counts
     const updatedOptions = poll.options.map((option: any) => {
-      if (optionIds.includes(option.id)) return { ...option, votes: option.votes + 1 };
+      if (optionIds.includes(option.id)) {
+        return { ...option, votes: option.votes + 1 };
+      }
       return option;
     });
 
@@ -1195,7 +1512,11 @@ export class ForumController {
     const { pollId } = req.params;
 
     const poll = await Poll.findByPk(pollId, {
-      include: [{ model: Vote, as: 'votes', attributes: ['userId', 'optionIds', 'createdAt'] }]
+      include: [{ 
+        model: Vote, 
+        as: 'votes', 
+        attributes: ['userId', 'optionIds', 'createdAt'] 
+      }]
     });
 
     if (!poll) throw new AppError('Poll not found', 404);
@@ -1207,7 +1528,8 @@ export class ForumController {
         participationRate: poll.totalVotes > 0 ? 
           ((poll.votes?.length || 0) / poll.totalVotes * 100).toFixed(2) + '%' : '0%',
         isExpired: poll.expiresAt ? new Date() > poll.expiresAt : false,
-        timeRemaining: poll.expiresAt ? Math.max(0, poll.expiresAt.getTime() - new Date().getTime()) : null
+        timeRemaining: poll.expiresAt ? 
+          Math.max(0, poll.expiresAt.getTime() - new Date().getTime()) : null
       }
     };
 
