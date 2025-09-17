@@ -12,6 +12,14 @@ export { default as Notification, INotification } from './Notification';
 export { default as Assignment, IAssignment, IAssignmentSubmission } from './Assignment';
 export { default as Bookmark, IBookmark } from './Bookmark';
 export { UserActivity, SystemMetrics, UserMetrics, IUserActivity, ISystemMetrics, IUserMetrics } from './Analytics';
+export { default as Reply } from './Reply';
+export { default as Category } from './Category';
+export { default as Tag } from './Tag';
+export { default as Poll } from './Poll';
+export { default as Vote } from './Vote';
+export { default as Follow } from './Follow';
+export { default as Report } from './Report';
+export { default as Like } from './Like';
 
 // Additional utility exports
 export * from './User';
@@ -44,7 +52,15 @@ export const ModelRegistry = {
   Bookmark,
   UserActivity,
   SystemMetrics,
-  UserMetrics
+  UserMetrics,
+  Reply,
+  Category,
+  Tag,
+  Poll,
+  Vote,
+  Follow,
+  Report,
+  Like
 };
 
 // Helper function to get model by name
