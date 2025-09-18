@@ -2,13 +2,14 @@
   "compilerOptions": {
     "target": "ES2020",
     "lib": ["ES2020"],
-    "module": "commonjs",
+    "module": "commonjs",                       // keep commonjs since you're using require/express style
+    "moduleResolution": "node16",               // ✅ modern resolver (fixes TS5098)
+    "customConditions": ["node"],               // works now
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": false,
@@ -39,9 +40,7 @@
       "@elimuconnect/shared/utils": ["../shared/utils/src"]
     }
   },
-  "include": [
-    "src/**/*"
-  ],
+  "include": ["src/**/*"],
   "exclude": [
     "node_modules",
     "dist",
@@ -49,14 +48,8 @@
     "**/*.spec.ts"
   ],
   "references": [
-    {
-      "path": "../shared/constants"
-    },
-    {
-      "path": "../shared/types"
-    },
-    {
-      "path": "../shared/utils"
-    }
+    { "path": "../shared/constants" },
+    { "path": "../shared/types" },
+    { "path": "../shared/utils" }
   ]
 }
