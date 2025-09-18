@@ -1,169 +1,211 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt, { JwtPayload, TokenExpiredError, JsonWebTokenError } from 'jsonwebtoken';
-import { User, IUser } from '../models/User';
-import { AppError } from '../utils/errors';
-import { logger } from '../utils/logger';
+import jwt from 'jsonwebtoken';
+import User from '../models/User';
+import { ApiError } from '../utils/ApiResponse';
+import { StatusCodes } from 'http-status-codes';
 
-// Extend Request interface
-declare global {
-  namespace Express {
-    interface Request {
-      user?: IUser;
-    }
-  }
+export interface AuthenticatedRequest extends Request {
+  user?: IUser;
 }
 
-// Main authentication middleware
-export const authMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const authenticate = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return next(new AppError('Authentication token required', 401));
-    }
-
-    const token = authHeader.split(' ')[1];
+    const token = req.header('Authorization')?.replace('Bearer ', '');
     
     if (!token) {
-      return next(new AppError('Authentication token required', 401));
+      return res.status(StatusCodes.UNAUTHORIZED).json(
+        new ApiError('Access token is required')
+      );
     }
 
-    const decoded = jwt.verify(token, (process.env.JWT_SECRET || 'your-secret-key')) as JwtPayload;
-    
-    const user = await User.findById(decoded.userId).select('-password');
-    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+    const user = await User.findById(decoded.userId);
+
     if (!user) {
-      return next(new AppError('User not found', 401));
-    }
-
-    // Check if user is active (manual check since we removed the virtual)
-    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    if (user.lastActive <= oneWeekAgo) {
-      return next(new AppError('Account is inactive', 401));
+      return res.status(StatusCodes.UNAUTHORIZED).json(
+        new ApiError('Invalid token')
+      );
     }
 
     req.user = user;
     next();
   } catch (error) {
-    if (error instanceof TokenExpiredError) {
-      return next(new AppError('Token has expired', 401));
-    }
-    if (error instanceof JsonWebTokenError) {
-      return next(new AppError('Invalid token', 401));
-    }
-    return next(new AppError('Authentication failed', 401));
+    return res.status(StatusCodes.UNAUTHORIZED).json(
+      new ApiError('Invalid or expired token')
+    );
   }
 };
 
-// Optional authentication middleware (doesn't fail if no token)
-export const optionalAuth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const optionalAuthMiddleware = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const authHeader = req.headers.authorization;
+    const token = req.header('Authorization')?.replace('Bearer ', '');
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return next();
+    if (token) {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+      const user = await User.findById(decoded.userId);
+      
+      if (user) {
+        req.user = user;
+      }
     }
 
-    const token = authHeader.split(' ')[1];
-    
-    if (!token) {
-      return next();
-    }
-
-    const decoded = jwt.verify(token, (process.env.JWT_SECRET || 'your-secret-key')) as JwtPayload;
-    const user = await User.findById(decoded.userId).select('-password');
-    
-    if (user) {
-      req.user = user;
-    }
-    
     next();
   } catch (error) {
-    // If token is invalid, just continue without setting user
     next();
   }
 };
 
-// Role-based authorization
-export const requireRole = (roles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
+export const authorize = (...roles: string[]) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
-      return next(new AppError('Authentication required', 401));
+      return res.status(StatusCodes.UNAUTHORIZED).json(
+        new ApiError('Authentication required')
+      );
     }
 
     if (!roles.includes(req.user.role)) {
-      return next(new AppError('Insufficient permissions', 403));
+      return res.status(StatusCodes.FORBIDDEN).json(
+        new ApiError('Insufficient permissions')
+      );
     }
 
     next();
   };
 };
 
-// Admin only middleware
-export const requireAdmin = requireRole(['admin', 'school_admin']);
+export const authorizeOwnerOrAdmin = (resourceUserIdField: string = 'userId') => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(StatusCodes.UNAUTHORIZED).json(
+        new ApiError('Authentication required')
+      );
+    }
 
-// Teacher or admin middleware
-export const requireTeacherOrAdmin = requireRole(['teacher', 'admin', 'school_admin']);
+    const resourceUserId = req.params[resourceUserIdField] || req.body[resourceUserIdField];
+    
+    if (req.user.role === 'admin' || req.user._id.toString() === resourceUserId) {
+      return next();
+    }
 
-// Email verification requirement
-export const requireEmailVerification = (req: Request, res: Response, next: NextFunction): void => {
+    return res.status(StatusCodes.FORBIDDEN).json(
+      new ApiError('You can only access your own resources')
+    );
+  };
+};
+
+export const requireAdminOrSchoolAdmin = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   if (!req.user) {
-    return next(new AppError('Authentication required', 401));
+    return res.status(StatusCodes.UNAUTHORIZED).json(
+      new ApiError('Authentication required')
+    );
   }
 
-  // Use the 'verified' field from your model instead of 'isEmailVerified'
-  if (!req.user.verified) {
-    return next(new AppError('Email verification required', 403));
+  if (!['admin', 'moderator'].includes(req.user.role)) {
+    return res.status(StatusCodes.FORBIDDEN).json(
+      new ApiError('Admin privileges required')
+    );
   }
 
   next();
 };
 
-// School member verification
-export const requireSchoolMembership = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const validateSession = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
-      return next(new AppError('Authentication required', 401));
+      return res.status(StatusCodes.UNAUTHORIZED).json(
+        new ApiError('Authentication required')
+      );
     }
 
-    const { schoolId } = req.params;
-    
-    // Check if user belongs to the school - use profile.school
-    if (!req.user.profile.school || req.user.profile.school.toString() !== schoolId) {
-      return next(new AppError('School membership required', 403));
+    const user = await User.findById(req.user._id);
+    if (!user || !user.verified) {
+      return res.status(StatusCodes.UNAUTHORIZED).json(
+        new ApiError('Account not verified or does not exist')
+      );
     }
 
     next();
   } catch (error) {
-    next(error);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(
+      new ApiError('Session validation failed')
+    );
   }
 };
 
-// API key authentication (for external services)
-export const apiKeyAuth = (req: Request, res: Response, next: NextFunction): void => {
-  const apiKey = req.headers['x-api-key'] as string;
-  
-  if (!apiKey) {
-    return next(new AppError('API key required', 401));
-  }
-
-  // Verify API key
-  if (apiKey !== process.env.API_KEY) {
-    return next(new AppError('Invalid API key', 401));
-  }
-
+export const requireTwoFactor = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   next();
 };
 
-// Rate limiting check for authenticated users
-export const checkUserRateLimit = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const verifyDevice = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  next();
+};
+
+const blacklistedTokens = new Set<string>();
+
+export const blacklistToken = (token: string) => {
+  blacklistedTokens.add(token);
+};
+
+export const removeFromBlacklist = (token: string) => {
+  blacklistedTokens.delete(token);
+};
+
+export const isTokenBlacklisted = (token: string): boolean => {
+  return blacklistedTokens.has(token);
+};
+
+export const cleanupBlacklist = () => {
+  blacklistedTokens.clear();
+};
+
+export const logUserActivity = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  if (req.user) {
+    console.log(`User ${req.user._id} accessed ${req.method} ${req.path}`);
+  }
+  next();
+};
+
+export const checkAccountStatus = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return next();
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(StatusCodes.UNAUTHORIZED).json(
+        new ApiError('User account not found')
+      );
+    }
+
+    if (!user.verified) {
+      return res.status(StatusCodes.FORBIDDEN).json(
+        new ApiError('Account not verified')
+      );
+    }
+
+    next();
+  } catch (error) {
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(
+      new ApiError('Account status check failed')
+    );
+  }
+};
+
+export const requireElevatedPermissions = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   if (!req.user) {
-    return next();
+    return res.status(StatusCodes.UNAUTHORIZED).json(
+      new ApiError('Authentication required')
+    );
   }
 
-  // Add user-specific rate limiting logic here
-  // For now, just continue
+  if (!['admin', 'moderator'].includes(req.user.role)) {
+    return res.status(StatusCodes.FORBIDDEN).json(
+      new ApiError('Elevated permissions required')
+    );
+  }
+
   next();
 };
 
-export default authMiddleware;
+export default authenticate;

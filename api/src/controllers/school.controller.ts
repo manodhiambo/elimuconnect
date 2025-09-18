@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { School, SchoolDocument } from '../models/School';
-import { User } from '../models/User';
+import User from '../models/User';
 import { AppError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
@@ -252,7 +252,7 @@ export class SchoolController {
         throw new AppError('School not found', 404);
       }
 
-      if (req.user?.role !== 'admin' && req.user?.role !== 'school_admin') {
+      if (req.user?.role !== 'admin' && req.user?.role !== 'school_admin' as any) {
         throw new AppError('Insufficient permissions to update school', 403);
       }
 

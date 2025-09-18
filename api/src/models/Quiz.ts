@@ -1,55 +1,137 @@
-// api/src/models/Quiz.ts
 import { Schema, model, Document } from 'mongoose';
-import { Quiz as IQuiz, Question as IQuestion, QuizAttempt as IQuizAttempt, Answer as IAnswer, EducationLevel } from '@elimuconnect/shared/types';
+import { EducationLevel, EducationLevelType } from './User';
 
-export interface QuestionDocument extends Document, Omit<IQuestion, '_id'> {}
-export interface QuizDocument extends Document, Omit<IQuiz, '_id'> {}
-export interface AnswerDocument extends Document, Omit<IAnswer, '_id'> {}
-export interface QuizAttemptDocument extends Document, Omit<IQuizAttempt, '_id'> {}
+export interface QuestionDocument extends Document {
+  questionText: string;
+  questionType: 'multiple_choice' | 'true_false' | 'short_answer';
+  options?: string[];
+  correctAnswer: string | string[];
+  explanation?: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  marks: number;
+}
+
+export interface AnswerDocument extends Document {
+  questionId: Schema.Types.ObjectId;
+  selectedAnswer: string | string[];
+  isCorrect: boolean;
+  points: number;
+}
+
+export interface QuizAttemptDocument extends Document {
+  userId: Schema.Types.ObjectId;
+  quizId: Schema.Types.ObjectId;
+  answers: AnswerDocument[];
+  score: number;
+  totalMarks: number;
+  percentage: number;
+  timeSpent: number;
+  completedAt: Date;
+}
+
+export interface QuizDocument extends Document {
+  title: string;
+  description?: string;
+  subject: string;
+  level: EducationLevelType;
+  grade: string;
+  questions: QuestionDocument[];
+  timeLimit?: number;
+  passingScore: number;
+  totalMarks: number;
+  isPublic: boolean;
+  createdBy: Schema.Types.ObjectId;
+  school?: Schema.Types.ObjectId;
+  tags: string[];
+  difficulty: 'easy' | 'medium' | 'hard';
+  attempts: Schema.Types.ObjectId[];
+  createdAt: Date;
+}
 
 const questionSchema = new Schema<QuestionDocument>({
-  question: {
+  questionText: {
     type: String,
-    required: true,
-    maxlength: 1000
-  },
-  type: {
-    type: String,
-    enum: ['multiple_choice', 'true_false', 'short_answer', 'essay'],
     required: true
   },
-  options: [{ type: String }],
+  questionType: {
+    type: String,
+    enum: ['multiple_choice', 'true_false', 'short_answer'],
+    required: true
+  },
+  options: [String],
   correctAnswer: {
     type: Schema.Types.Mixed,
     required: true
   },
-  explanation: {
+  explanation: String,
+  difficulty: {
     type: String,
-    maxlength: 500
+    enum: ['easy', 'medium', 'hard'],
+    default: 'medium'
   },
   marks: {
     type: Number,
     required: true,
     min: 1
+  }
+});
+
+const answerSchema = new Schema<AnswerDocument>({
+  questionId: {
+    type: Schema.Types.ObjectId,
+    required: true
   },
-  difficulty: {
-    type: String,
-    enum: ['easy', 'medium', 'hard'],
-    default: 'medium'
+  selectedAnswer: {
+    type: Schema.Types.Mixed,
+    required: true
+  },
+  isCorrect: {
+    type: Boolean,
+    required: true
+  },
+  points: {
+    type: Number,
+    required: true
+  }
+});
+
+const quizAttemptSchema = new Schema<QuizAttemptDocument>({
+  userId: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  quizId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Quiz',
+    required: true
+  },
+  answers: [answerSchema],
+  score: {
+    type: Number,
+    required: true
+  },
+  totalMarks: {
+    type: Number,
+    required: true
+  },
+  percentage: {
+    type: Number,
+    required: true
+  },
+  timeSpent: Number,
+  completedAt: {
+    type: Date,
+    default: Date.now
   }
 });
 
 const quizSchema = new Schema<QuizDocument>({
   title: {
     type: String,
-    required: true,
-    trim: true,
-    maxlength: 200
+    required: true
   },
-  description: {
-    type: String,
-    maxlength: 1000
-  },
+  description: String,
   subject: {
     type: String,
     required: true
@@ -64,106 +146,41 @@ const quizSchema = new Schema<QuizDocument>({
     required: true
   },
   questions: [questionSchema],
-  duration: {
+  timeLimit: Number,
+  passingScore: {
     type: Number,
-    required: true,
-    min: 5 // minimum 5 minutes
+    default: 50
   },
   totalMarks: {
     type: Number,
-    required: true
-  },
-  passingScore: {
-    type: Number,
-    required: true
-  },
-  attempts: {
-    type: Number,
-    default: 0
-  },
-  creator: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
     required: true
   },
   isPublic: {
     type: Boolean,
     default: true
   },
-  tags: [{ type: String }]
-}, {
-  timestamps: true
-});
-
-const answerSchema = new Schema<AnswerDocument>({
-  question: {
-    type: Schema.Types.ObjectId,
-    required: true
-  },
-  answer: {
-    type: Schema.Types.Mixed,
-    required: true
-  },
-  correct: {
-    type: Boolean,
-    required: true
-  },
-  marks: {
-    type: Number,
-    required: true
-  }
-});
-
-const quizAttemptSchema = new Schema<QuizAttemptDocument>({
-  quiz: {
-    type: Schema.Types.ObjectId,
-    ref: 'Quiz',
-    required: true
-  },
-  user: {
+  createdBy: {
     type: Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
-  answers: [answerSchema],
-  score: {
-    type: Number,
-    required: true,
-    min: 0
+  school: {
+    type: Schema.Types.ObjectId,
+    ref: 'School'
   },
-  percentage: {
-    type: Number,
-    required: true,
-    min: 0,
-    max: 100
+  tags: [String],
+  difficulty: {
+    type: String,
+    enum: ['easy', 'medium', 'hard'],
+    default: 'medium'
   },
-  timeSpent: {
-    type: Number,
-    required: true // in seconds
-  },
-  completed: {
-    type: Boolean,
-    default: false
-  },
-  startedAt: {
-    type: Date,
-    required: true
-  },
-  completedAt: {
-    type: Date
-  }
+  attempts: [{
+    type: Schema.Types.ObjectId,
+    ref: 'QuizAttempt'
+  }]
 }, {
   timestamps: true
 });
 
-// Indexes
-quizSchema.index({ subject: 1, level: 1, grade: 1 });
-quizSchema.index({ creator: 1 });
-quizSchema.index({ isPublic: 1 });
-quizAttemptSchema.index({ quiz: 1, user: 1 });
-quizAttemptSchema.index({ user: 1, completedAt: -1 });
-
-export const Question = model<QuestionDocument>('Question', questionSchema);
-export const Quiz = model<QuizDocument>('Quiz', quizSchema);
-export const Answer = model<AnswerDocument>('Answer', answerSchema);
 export const QuizAttempt = model<QuizAttemptDocument>('QuizAttempt', quizAttemptSchema);
+export default model<QuizDocument>('Quiz', quizSchema);

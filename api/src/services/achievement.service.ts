@@ -1,97 +1,83 @@
-// api/src/services/achievement.service.ts
 import { UserService } from './user.service';
 import { NotificationService } from './notification.service';
-import { ACHIEVEMENT_BADGES, NotificationType } from '@elimuconnect/shared/constants';
-import { logger } from '@elimuconnect/shared/utils';
+import { NotificationType } from '../models/User';
+
+interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  points: number;
+  icon: string;
+}
+
+const BADGES: Record<string, Badge> = {
+  FIRST_LOGIN: {
+    id: 'first_login',
+    name: 'Welcome Aboard',
+    description: 'Logged in for the first time',
+    points: 10,
+    icon: '👋'
+  },
+  FIRST_BOOK_READ: {
+    id: 'first_book_read',
+    name: 'Book Explorer',
+    description: 'Read your first book',
+    points: 25,
+    icon: '📚'
+  },
+  QUIZ_MASTER: {
+    id: 'quiz_master',
+    name: 'Quiz Master',
+    description: 'Completed 10 quizzes',
+    points: 100,
+    icon: '🧠'
+  }
+};
 
 export class AchievementService {
-  private userService: UserService;
-  private notificationService: NotificationService;
+  constructor(
+    private userService: UserService,
+    private notificationService: NotificationService
+  ) {}
 
-  constructor() {
-    this.userService = new UserService();
-    this.notificationService = new NotificationService();
-  }
+  async checkAchievements(userId: string, action: string, data?: any) {
+    const user = await this.userService.findById(userId);
+    if (!user) return;
 
-  async checkAndAwardAchievements(userId: string, action: string, data?: any): Promise<void> {
-    try {
-      const user = await this.userService.findById(userId);
-      if (!user) return;
+    const currentBadges = user.progress?.badges || [];
 
-      const currentBadges = user.progress.badges || [];
-
-      switch (action) {
-        case 'first_login':
-          await this.checkFirstLogin(userId, currentBadges);
-          break;
-        case 'book_read':
-          await this.checkBookReader(userId, user.progress.booksRead + 1, currentBadges);
-          break;
-        case 'quiz_completed':
-          await this.checkQuizMaster(userId, user.progress.testsCompleted + 1, currentBadges);
-          break;
-        case 'streak_updated':
-          await this.checkStreakAchievements(userId, data.streakDays, currentBadges);
-          break;
-        case 'quiz_scored':
-          await this.checkTopScorer(userId, data.score, currentBadges);
-          break;
-      }
-    } catch (error) {
-      logger.error('Failed to check achievements:', error);
+    switch (action) {
+      case 'book_read':
+        await this.checkBookReader(userId, (user.progress?.booksRead || 0) + 1, currentBadges);
+        break;
+      case 'quiz_completed':
+        await this.checkQuizMaster(userId, (user.progress?.testsCompleted || 0) + 1, currentBadges);
+        break;
     }
   }
 
-  private async awardBadge(userId: string, badgeKey: string, currentBadges: string[]): Promise<void> {
-    if (currentBadges.includes(badgeKey)) return;
+  private async checkBookReader(userId: string, booksRead: number, currentBadges: string[]) {
+    if (booksRead === 1 && !currentBadges.includes(BADGES.FIRST_BOOK_READ.id)) {
+      await this.awardBadge(userId, BADGES.FIRST_BOOK_READ);
+    }
+  }
 
-    const badge = ACHIEVEMENT_BADGES[badgeKey as keyof typeof ACHIEVEMENT_BADGES];
-    if (!badge) return;
+  private async checkQuizMaster(userId: string, testsCompleted: number, currentBadges: string[]) {
+    if (testsCompleted === 10 && !currentBadges.includes(BADGES.QUIZ_MASTER.id)) {
+      await this.awardBadge(userId, BADGES.QUIZ_MASTER);
+    }
+  }
 
-    await this.userService.addBadge(userId, badgeKey);
+  private async awardBadge(userId: string, badge: Badge) {
+    await this.userService.addBadge(userId, badge.id);
     await this.userService.addPoints(userId, badge.points);
 
-    await this.notificationService.sendNotification(
+    await this.notificationService.create(
       userId,
       NotificationType.ACHIEVEMENT,
-      'Achievement Unlocked! 🏆',
+      `Achievement Unlocked!`,
       `You've earned the "${badge.name}" badge! +${badge.points} points`,
-      { badge: badgeKey, points: badge.points }
+      { badge: badge.id, points: badge.points }
     );
-
-    logger.info(`Badge awarded: ${badgeKey} to user ${userId}`);
-  }
-
-  private async checkFirstLogin(userId: string, currentBadges: string[]): Promise<void> {
-    await this.awardBadge(userId, 'FIRST_LOGIN', currentBadges);
-  }
-
-  private async checkBookReader(userId: string, booksRead: number, currentBadges: string[]): Promise<void> {
-    if (booksRead >= 10) {
-      await this.awardBadge(userId, 'BOOK_READER', currentBadges);
-    }
-  }
-
-  private async checkQuizMaster(userId: string, testsCompleted: number, currentBadges: string[]): Promise<void> {
-    if (testsCompleted >= 25) {
-      await this.awardBadge(userId, 'QUIZ_MASTER', currentBadges);
-    }
-  }
-
-  private async checkStreakAchievements(userId: string, streakDays: number, currentBadges: string[]): Promise<void> {
-    if (streakDays >= 30 && !currentBadges.includes('STREAK_MONTH')) {
-      await this.awardBadge(userId, 'STREAK_MONTH', currentBadges);
-    } else if (streakDays >= 7 && !currentBadges.includes('STREAK_WEEK')) {
-      await this.awardBadge(userId, 'STREAK_WEEK', currentBadges);
-    }
-  }
-
-  private async checkTopScorer(userId: string, score: number, currentBadges: string[]): Promise<void> {
-    if (score >= 90) {
-      // Check if user has scored 90% or above in 5 quizzes
-      // This would require tracking quiz scores in the database
-      // For now, we'll award the badge based on the current score
-      await this.awardBadge(userId, 'TOP_SCORER', currentBadges);
-    }
   }
 }

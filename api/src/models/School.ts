@@ -70,3 +70,4 @@ const SchoolSchema = new Schema<SchoolDocument>(
 );
 
 export const School = model<SchoolDocument>('School', SchoolSchema);
+export default model<SchoolDocument>('School', schoolSchema);

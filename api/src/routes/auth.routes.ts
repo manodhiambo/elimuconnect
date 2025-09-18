@@ -1,6 +1,6 @@
+import { authMiddleware } from "./../middleware";
 import { Router, Request, Response, NextFunction, RequestHandler } from "express";
 import { AuthController } from "../controllers/auth.controller";
-import { authMiddleware } from "../middleware/auth.middleware";
 import { validationMiddleware } from "../middleware/validation.middleware";
 import { rateLimitMiddleware } from "../middleware/rateLimit.middleware";
 import { 

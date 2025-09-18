@@ -1,49 +1,59 @@
-/ shared/constants/src/app.ts
-export const APP_CONFIG = {
-  NAME: 'ElimuConnect',
-  VERSION: '1.0.0',
-  DESCRIPTION: 'Educational platform for Kenyan students',
-  SUPPORT_EMAIL: 'support@elimuconnect.com',
-  MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
-  SUPPORTED_FILE_TYPES: {
-    IMAGES: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-    DOCUMENTS: ['pdf', 'doc', 'docx', 'txt'],
-    AUDIO: ['mp3', 'wav', 'ogg'],
-    VIDEO: ['mp4', 'webm', 'avi']
-  }
-};
+// File: shared/constants/src/app.ts
 
-export const HTTP_STATUS = {
-  OK: 200,
-  CREATED: 201,
-  BAD_REQUEST: 400,
-  UNAUTHORIZED: 401,
-  FORBIDDEN: 403,
-  NOT_FOUND: 404,
-  CONFLICT: 409,
-  INTERNAL_SERVER_ERROR: 500
-};
+export const APP_NAME = 'ElimuConnect';
+export const APP_VERSION = '1.0.0';
+export const APP_DESCRIPTION = 'Educational platform connecting students, teachers, and resources in Kenya';
 
-export const CACHE_KEYS = {
-  USER_PROFILE: 'user:profile:',
-  SCHOOL_DATA: 'school:data:',
-  BOOK_DETAILS: 'book:details:',
-  QUIZ_RESULTS: 'quiz:results:',
-  LEADERBOARD: 'leaderboard:',
-  TRENDING_DISCUSSIONS: 'discussions:trending'
-};
+export const USER_ROLES = {
+  STUDENT: 'student',
+  TEACHER: 'teacher',
+  ADMIN: 'admin',
+  MODERATOR: 'moderator',
+  PARENT: 'parent'
+} as const;
 
-export const RATE_LIMITS = {
-  AUTH: {
-    WINDOW_MS: 15 * 60 * 1000, // 15 minutes
-    MAX_REQUESTS: 5
-  },
-  API: {
-    WINDOW_MS: 15 * 60 * 1000, // 15 minutes
-    MAX_REQUESTS: 100
-  },
-  UPLOAD: {
-    WINDOW_MS: 60 * 60 * 1000, // 1 hour
-    MAX_REQUESTS: 20
-  }
-};
+export const DISCUSSION_TYPES = {
+  GENERAL: 'general',
+  QUESTION: 'question',
+  ANNOUNCEMENT: 'announcement',
+  STUDY_GROUP: 'study_group',
+  HOMEWORK_HELP: 'homework_help'
+} as const;
+
+export const DISCUSSION_STATUS = {
+  OPEN: 'open',
+  CLOSED: 'closed',
+  LOCKED: 'locked',
+  ARCHIVED: 'archived'
+} as const;
+
+export const NOTIFICATION_TYPES = {
+  NEW_REPLY: 'new_reply',
+  MENTION: 'mention',
+  LIKE: 'like',
+  SOLUTION_ACCEPTED: 'solution_accepted',
+  DISCUSSION_CLOSED: 'discussion_closed',
+  MODERATOR_ACTION: 'moderator_action'
+} as const;
+
+export const POLL_STATUS = {
+  ACTIVE: 'active',
+  CLOSED: 'closed',
+  EXPIRED: 'expired'
+} as const;
+
+export const REPORT_REASONS = {
+  SPAM: 'spam',
+  INAPPROPRIATE: 'inappropriate',
+  HARASSMENT: 'harassment',
+  COPYRIGHT: 'copyright',
+  OTHER: 'other'
+} as const;
+
+export const BADGE_TYPES = {
+  HELPER: 'helper',
+  CONTRIBUTOR: 'contributor',
+  EXPERT: 'expert',
+  MODERATOR: 'moderator',
+  PIONEER: 'pioneer'
+} as const;

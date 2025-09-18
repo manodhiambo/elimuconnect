@@ -18,7 +18,7 @@ export class UserService extends BaseService<UserDocument> {
   }
 
   async findByPhone(phone: string): Promise<UserDocument | null> {
-    const formattedPhone = helpers.parsePhoneNumber(phone);
+    const formattedPhone = helpers.formatPhone(phone);
     return await this.model.findOne({ phone: formattedPhone });
   }
 

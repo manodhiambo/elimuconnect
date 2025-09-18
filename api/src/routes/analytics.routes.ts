@@ -1,6 +1,6 @@
+import { authMiddleware } from "./../middleware";
 import { Router } from 'express';
 import { AnalyticsController } from '../controllers/analytics.controller';
-import { authMiddleware } from '../middleware/auth.middleware';
 import { validationMiddleware } from '../middleware/validation.middleware';
 import { 
   analyticsQuerySchema,

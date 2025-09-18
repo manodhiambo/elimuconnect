@@ -1,20 +1,29 @@
-// api/src/models/StudyGroup.ts
 import { Schema, model, Document } from 'mongoose';
-import { StudyGroup as IStudyGroup, EducationLevel } from '@elimuconnect/shared/types';
+import { EducationLevel, EducationLevelType } from './User';
 
-export interface StudyGroupDocument extends Document, Omit<IStudyGroup, '_id'> {}
+export interface StudyGroupDocument extends Document {
+  name: string;
+  description?: string;
+  subject: string;
+  level: EducationLevelType;
+  grade: string;
+  members: Schema.Types.ObjectId[];
+  createdBy: Schema.Types.ObjectId;
+  moderators: Schema.Types.ObjectId[];
+  isPrivate: boolean;
+  joinCode?: string;
+  maxMembers?: number;
+  school?: Schema.Types.ObjectId;
+  tags: string[];
+  createdAt: Date;
+}
 
 const studyGroupSchema = new Schema<StudyGroupDocument>({
   name: {
     type: String,
-    required: true,
-    trim: true,
-    maxlength: 100
+    required: true
   },
-  description: {
-    type: String,
-    maxlength: 500
-  },
+  description: String,
   subject: {
     type: String,
     required: true
@@ -28,42 +37,35 @@ const studyGroupSchema = new Schema<StudyGroupDocument>({
     type: String,
     required: true
   },
-  creator: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
   members: [{
     type: Schema.Types.ObjectId,
     ref: 'User'
   }],
-  maxMembers: {
-    type: Number,
-    default: 50,
-    max: 100
+  createdBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
+  moderators: [{
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   isPrivate: {
     type: Boolean,
     default: false
   },
-  inviteCode: {
-    type: String,
-    unique: true,
-    sparse: true
+  joinCode: String,
+  maxMembers: {
+    type: Number,
+    default: 50
   },
-  rules: [{ type: String }],
-  resources: [{
+  school: {
     type: Schema.Types.ObjectId,
-    ref: 'Book'
-  }]
+    ref: 'School'
+  },
+  tags: [String]
 }, {
   timestamps: true
 });
 
-// Indexes
-studyGroupSchema.index({ subject: 1, level: 1, grade: 1 });
-studyGroupSchema.index({ creator: 1 });
-studyGroupSchema.index({ members: 1 });
-studyGroupSchema.index({ inviteCode: 1 });
-
-export const StudyGroup = model<StudyGroupDocument>('StudyGroup', studyGroupSchema);
+export default model<StudyGroupDocument>('StudyGroup', studyGroupSchema);

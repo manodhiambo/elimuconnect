@@ -1,4 +1,7 @@
-// libs/shared/utils/src/validation.ts
+// File: shared/utils/src/validation.ts
+
+import { REGEX_PATTERNS } from './constants.js';
+
 export interface ValidationResult {
   isValid: boolean;
   errors: string[];
@@ -6,11 +9,10 @@ export interface ValidationResult {
 
 export const validateEmail = (email: string): ValidationResult => {
   const errors: string[] = [];
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
+  
   if (!email) {
     errors.push('Email is required');
-  } else if (!emailRegex.test(email)) {
+  } else if (!REGEX_PATTERNS.EMAIL.test(email)) {
     errors.push('Please enter a valid email address');
   }
 
@@ -29,14 +31,8 @@ export const validatePassword = (password: string): ValidationResult => {
     if (password.length < 8) {
       errors.push('Password must be at least 8 characters long');
     }
-    if (!/(?=.*[a-z])/.test(password)) {
-      errors.push('Password must contain at least one lowercase letter');
-    }
-    if (!/(?=.*[A-Z])/.test(password)) {
-      errors.push('Password must contain at least one uppercase letter');
-    }
-    if (!/(?=.*\d)/.test(password)) {
-      errors.push('Password must contain at least one number');
+    if (!REGEX_PATTERNS.STRONG_PASSWORD.test(password)) {
+      errors.push('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character');
     }
   }
 
@@ -46,14 +42,42 @@ export const validatePassword = (password: string): ValidationResult => {
   };
 };
 
-export const validatePhoneNumber = (phone: string): ValidationResult => {
+export const validatePhone = (phone: string): ValidationResult => {
   const errors: string[] = [];
-  const phoneRegex = /^(\+254|0)[17]\d{8}$/; // Kenyan phone number format
-
-  if (!phone) {
-    errors.push('Phone number is required');
-  } else if (!phoneRegex.test(phone)) {
+  
+  if (phone && !REGEX_PATTERNS.PHONE.test(phone)) {
     errors.push('Please enter a valid Kenyan phone number');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+};
+
+export const validateRequired = (value: any, fieldName: string): ValidationResult => {
+  const errors: string[] = [];
+  
+  if (!value || (typeof value === 'string' && value.trim() === '')) {
+    errors.push(`${fieldName} is required`);
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+};
+
+export const validateLength = (
+  value: string, 
+  min: number, 
+  max: number, 
+  fieldName: string
+): ValidationResult => {
+  const errors: string[] = [];
+  
+  if (value && (value.length < min || value.length > max)) {
+    errors.push(`${fieldName} must be between ${min} and ${max} characters`);
   }
 
   return {

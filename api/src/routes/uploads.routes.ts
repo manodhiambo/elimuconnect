@@ -1,6 +1,6 @@
+import { authMiddleware } from "./../middleware";
 import { Router } from 'express';
 import { UploadController } from '../controllers/upload.controller';
-import { authMiddleware } from '../middleware/auth.middleware';
 import { uploadMiddleware } from '../middleware/upload.middleware';
 import { rateLimitMiddleware } from '../middleware/rateLimit.middleware';
 

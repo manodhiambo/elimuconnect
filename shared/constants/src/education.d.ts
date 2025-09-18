@@ -1,0 +1,66 @@
+export declare const EDUCATION_LEVELS: {
+    readonly PRE_PRIMARY: "pre_primary";
+    readonly PRIMARY: "primary";
+    readonly SECONDARY: "secondary";
+    readonly TERTIARY: "tertiary";
+    readonly UNIVERSITY: "university";
+    readonly VOCATIONAL: "vocational";
+};
+export declare const KENYAN_EDUCATION_SYSTEM: {
+    readonly PP1: "PP1";
+    readonly PP2: "PP2";
+    readonly GRADE_1: "Grade 1";
+    readonly GRADE_2: "Grade 2";
+    readonly GRADE_3: "Grade 3";
+    readonly GRADE_4: "Grade 4";
+    readonly GRADE_5: "Grade 5";
+    readonly GRADE_6: "Grade 6";
+    readonly GRADE_7: "Grade 7";
+    readonly GRADE_8: "Grade 8";
+    readonly GRADE_9: "Grade 9";
+    readonly FORM_1: "Form 1";
+    readonly FORM_2: "Form 2";
+    readonly FORM_3: "Form 3";
+    readonly FORM_4: "Form 4";
+};
+export declare const SUBJECTS: {
+    readonly MATHEMATICS: "mathematics";
+    readonly ENGLISH: "english";
+    readonly KISWAHILI: "kiswahili";
+    readonly SCIENCE: "science";
+    readonly SOCIAL_STUDIES: "social_studies";
+    readonly CRE: "cre";
+    readonly AGRICULTURE: "agriculture";
+    readonly HOME_SCIENCE: "home_science";
+    readonly ARTS_AND_CRAFTS: "arts_and_crafts";
+    readonly PHYSICAL_EDUCATION: "physical_education";
+    readonly BIOLOGY: "biology";
+    readonly CHEMISTRY: "chemistry";
+    readonly PHYSICS: "physics";
+    readonly HISTORY: "history";
+    readonly GEOGRAPHY: "geography";
+    readonly BUSINESS_STUDIES: "business_studies";
+    readonly COMPUTER_STUDIES: "computer_studies";
+    readonly FRENCH: "french";
+    readonly GERMAN: "german";
+    readonly ARABIC: "arabic";
+};
+export declare const KENYAN_COUNTIES: readonly ["Baringo", "Bomet", "Bungoma", "Busia", "Elgeyo-Marakwet", "Embu", "Garissa", "Homa Bay", "Isiolo", "Kajiado", "Kakamega", "Kericho", "Kiambu", "Kilifi", "Kirinyaga", "Kisii", "Kisumu", "Kitui", "Kwale", "Laikipia", "Lamu", "Machakos", "Makueni", "Mandera", "Marsabit", "Meru", "Migori", "Mombasa", "Murang'a", "Nairobi", "Nakuru", "Nandi", "Narok", "Nyamira", "Nyandarua", "Nyeri", "Samburu", "Siaya", "Taita-Taveta", "Tana River", "Tharaka-Nithi", "Trans Nzoia", "Turkana", "Uasin Gishu", "Vihiga", "Wajir", "West Pokot"];
+export declare const EXAM_TYPES: {
+    readonly CAT: "cat";
+    readonly MIDTERM: "midterm";
+    readonly ENDTERM: "endterm";
+    readonly KCPE: "kcpe";
+    readonly KCSE: "kcse";
+    readonly MOCK: "mock";
+    readonly REVISION: "revision";
+};
+export declare const SCHOOL_TYPES: {
+    readonly PUBLIC: "public";
+    readonly PRIVATE: "private";
+    readonly BOARDING: "boarding";
+    readonly DAY: "day";
+    readonly MIXED: "mixed";
+    readonly BOYS_ONLY: "boys_only";
+    readonly GIRLS_ONLY: "girls_only";
+};

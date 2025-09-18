@@ -1,50 +1,29 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "lib": ["ES2020"],
-    "module": "commonjs",                     // ✅ Express works with CommonJS
-    "moduleResolution": "node16",             // ✅ required for customConditions
-    "customConditions": ["@elimuconnect/source"], // ✅ match base tsconfig
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": false,
-    "declaration": true,
+    "target": "es2018",
+    "module": "commonjs",
+    "lib": ["es2018", "esnext.asynciterable"],
+    "allowJs": true,
     "outDir": "./dist",
     "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "strictPropertyInitialization": false,
-    "baseUrl": "./",
-    "typeRoots": ["./node_modules/@types", "./src/types"],
-    "paths": {
-      "@/*": ["src/*"],
-      "@/models/*": ["src/models/*"],
-      "@/routes/*": ["src/routes/*"],
-      "@/middleware/*": ["src/middleware/*"],
-      "@/services/*": ["src/services/*"],
-      "@/utils/*": ["src/utils/*"],
-      "@/types/*": ["src/types/*"],
-      "@/config/*": ["src/config/*"],
-      "@/controllers/*": ["src/controllers/*"],
-      "@/schemas/*": ["src/schemas/*"],
-      "@/sockets/*": ["src/sockets/*"],
-
-      // ✅ align with base tsconfig
-      "@elimuconnect/shared/constants": ["../shared/constants/src/index.ts"],
-      "@elimuconnect/shared/types": ["../shared/types/src/index.ts"],
-      "@elimuconnect/shared/utils": ["../shared/utils/src/index.ts"]
-    }
+    "declaration": true,
+    "sourceMap": true,
+    "noImplicitAny": false,
+    "moduleResolution": "node"
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],
-  "references": [
-    { "path": "../shared/constants" },
-    { "path": "../shared/types" },
-    { "path": "../shared/utils" }
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
   ]
 }

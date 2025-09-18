@@ -1,6 +1,6 @@
+import { authMiddleware } from "./../middleware";
 import { Router } from 'express';
 import { MessageController } from '../controllers/message.controller';
-import { authMiddleware } from '../middleware/auth.middleware';
 import { validationMiddleware } from '../middleware/validation.middleware';
 import { uploadMiddleware } from '../middleware/upload.middleware';
 import { 

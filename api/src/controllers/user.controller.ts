@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { User } from '../models/User';
+import User from '../models/User';
 import { AppError } from '../utils/errors';
 import { logger } from '../utils/logger';
 
@@ -26,7 +26,7 @@ export class UserController {
           profile: user.profile,
           preferences: user.preferences,
           progress: user.progress,
-          createdAt: user.createdAt,
+          createdAt: user.createdAt || new Date(),
           updatedAt: user.updatedAt
         }
       });
@@ -238,7 +238,7 @@ export class UserController {
           bio: user.profile.bio,
           progress: user.progress,
           verified: user.verified,
-          createdAt: user.createdAt
+          createdAt: user.createdAt || new Date()
         }
       });
     } catch (error) {
@@ -302,7 +302,7 @@ export class UserController {
 
       res.json({
         success: true,
-        users: users.map(user => ({
+        users: users.map((user: any) => ({
           id: user.id,
           firstName: user.profile.firstName,
           lastName: user.profile.lastName,
@@ -311,7 +311,7 @@ export class UserController {
           school: user.profile.school,
           level: user.profile.level,
           verified: user.verified,
-          createdAt: user.createdAt
+          createdAt: user.createdAt || new Date()
         })),
         pagination: {
           page: page as number,

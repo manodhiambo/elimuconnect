@@ -1,25 +1,34 @@
-// api/src/models/PastPaper.ts
 import { Schema, model, Document } from 'mongoose';
-import { PastPaper as IPastPaper, EducationLevel } from '@elimuconnect/shared/types';
+import { EducationLevel, EducationLevelType } from './User';
 
-export interface PastPaperDocument extends Document, Omit<IPastPaper, '_id'> {}
+export interface PastPaperDocument extends Document {
+  title: string;
+  subject: string;
+  year: number;
+  term?: number;
+  level: EducationLevelType;
+  grade: string;
+  examType: string;
+  fileUrl: string;
+  markingSchemeUrl?: string;
+  school?: Schema.Types.ObjectId;
+  county?: string;
+  uploadedBy: Schema.Types.ObjectId;
+  downloads: number;
+  verified: boolean;
+  tags: string[];
+  difficulty: 'easy' | 'medium' | 'hard';
+  duration?: number;
+  totalMarks?: number;
+  createdAt: Date;
+}
 
 const pastPaperSchema = new Schema<PastPaperDocument>({
   title: {
     type: String,
-    required: true,
-    trim: true
+    required: true
   },
   subject: {
-    type: String,
-    required: true
-  },
-  level: {
-    type: String,
-    enum: Object.values(EducationLevel),
-    required: true
-  },
-  grade: {
     type: String,
     required: true
   },
@@ -34,7 +43,16 @@ const pastPaperSchema = new Schema<PastPaperDocument>({
     min: 1,
     max: 3
   },
-  exam: {
+  level: {
+    type: String,
+    enum: Object.values(EducationLevel),
+    required: true
+  },
+  grade: {
+    type: String,
+    required: true
+  },
+  examType: {
     type: String,
     required: true
   },
@@ -42,50 +60,35 @@ const pastPaperSchema = new Schema<PastPaperDocument>({
     type: String,
     required: true
   },
-  markingScheme: {
-    type: String
+  markingSchemeUrl: String,
+  school: {
+    type: Schema.Types.ObjectId,
+    ref: 'School'
   },
-  duration: {
-    type: Number,
-    required: true,
-    min: 30 // minimum 30 minutes
-  },
-  totalMarks: {
-    type: Number,
-    required: true,
-    min: 1
-  },
+  county: String,
   uploadedBy: {
     type: Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
-  verified: {
-    type: Boolean,
-    default: false
-  },
   downloads: {
     type: Number,
     default: 0
   },
-  attempts: {
-    type: Number,
-    default: 0
+  verified: {
+    type: Boolean,
+    default: false
   },
-  averageScore: {
-    type: Number,
-    default: 0,
-    min: 0,
-    max: 100
-  }
+  tags: [String],
+  difficulty: {
+    type: String,
+    enum: ['easy', 'medium', 'hard'],
+    default: 'medium'
+  },
+  duration: Number,
+  totalMarks: Number
 }, {
   timestamps: true
 });
 
-// Indexes
-pastPaperSchema.index({ subject: 1, level: 1, grade: 1, year: -1 });
-pastPaperSchema.index({ exam: 1 });
-pastPaperSchema.index({ uploadedBy: 1 });
-pastPaperSchema.index({ verified: 1 });
-
-export const PastPaper = model<PastPaperDocument>('PastPaper', pastPaperSchema);
+export default model<PastPaperDocument>('PastPaper', pastPaperSchema);

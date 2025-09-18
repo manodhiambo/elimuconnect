@@ -1,6 +1,6 @@
+import { authMiddleware } from "./../middleware";
 import { Router } from 'express';
 import { UserController } from '../controllers/user.controller';
-import { authMiddleware, requireEmailVerification } from '../middleware/auth.middleware';
 import { validationMiddleware } from '../middleware/validation.middleware';
 import { rateLimitMiddleware } from '../middleware/rateLimit.middleware';
 import { 

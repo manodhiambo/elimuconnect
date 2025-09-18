@@ -1,458 +1,290 @@
-// User Types
+
 export interface User {
-  id: string;
+  _id?: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  phone?: string;
+  password: string;
   role: UserRole;
-  school?: string;
-  profilePicture?: string;
-  isEmailVerified: boolean;
-  isActive: boolean;
-  lastLoginAt?: Date;
-  createdAt: Date;
-  updatedAt: Date;
+  verified: boolean;
+  profile: UserProfile;
+  preferences: UserPreferences;
+  verification?: UserVerification;
+  progress?: UserProgress;
+  createdAt?: Date;
+  lastActive?: Date;
 }
 
-export type UserRole = 'student' | 'teacher' | 'admin' | 'school_admin';
+export interface UserProfile {
+  firstName: string;
+  lastName: string;
+  avatar?: string;
+  school?: string;
+  level: EducationLevel;
+  grade?: string;
+  subjects: string[];
+  bio?: string;
+}
 
-export type EducationLevel =
-  | 'pre-primary'
-  | 'primary'
-  | 'secondary'
-  | 'tertiary'
-  | 'university'
-  | 'college'
-  | 'tvet';
+export interface UserPreferences {
+  language: string;
+  theme: string;
+  notifications: NotificationSettings;
+}
 
-// School Types (aligned to model + controller)
+export interface UserVerification {
+  studentId?: string;
+  tscNumber?: string;
+  adminCode?: string;
+}
+
+export interface UserProgress {
+  totalPoints: number;
+  badges: string[];
+  streakDays: number;
+  booksRead: number;
+  testsCompleted: number;
+}
+
+export interface NotificationSettings {
+  email: boolean;
+  push: boolean;
+  sms: boolean;
+  digest: boolean;
+}
+
+export type UserRole = 'student' | 'teacher' | 'admin' | 'moderator';
+export type EducationLevel = 'Primary' | 'Secondary' | 'Both';
+export type KenyanCounty = 
+  | 'Nairobi' | 'Mombasa' | 'Kwale' | 'Kilifi' | 'Tana River'
+  | 'Lamu' | 'Taita-Taveta' | 'Garissa' | 'Wajir' | 'Mandera'
+  | 'Marsabit' | 'Isiolo' | 'Meru' | 'Tharaka-Nithi' | 'Embu'
+  | 'Kitui' | 'Machakos' | 'Makueni' | 'Nyandarua' | 'Nyeri'
+  | 'Kirinyaga' | 'Murang\'a' | 'Kiambu' | 'Turkana' | 'West Pokot'
+  | 'Samburu' | 'Trans-Nzoia' | 'Uasin Gishu' | 'Elgeyo-Marakwet'
+  | 'Nandi' | 'Baringo' | 'Laikipia' | 'Nakuru' | 'Narok'
+  | 'Kajiado' | 'Kericho' | 'Bomet' | 'Kakamega' | 'Vihiga'
+  | 'Bungoma' | 'Busia' | 'Siaya' | 'Kisumu' | 'Homa Bay'
+  | 'Migori' | 'Kisii' | 'Nyamira';
+
+export type SchoolType = 'Public' | 'Private' | 'Faith-Based';
+
 export interface School {
-  id: string;
+  _id?: string;
   name: string;
-  nemisCode: string; // added to align with model/controller
-  type?: SchoolType;
-  educationLevels: EducationLevel[]; // renamed from `level` to `educationLevels`
+  code: string;
+  level: EducationLevel;
+  type: SchoolType;
   county: KenyanCounty;
-  district?: string;
+  district: string;
   location?: {
-    county?: string;
-    subcounty?: string;
-    ward?: string;
-    address?: string;
-    coordinates?: {
-      latitude?: number;
-      longitude?: number;
-    };
+    latitude: number;
+    longitude: number;
   };
-  contactInfo?: {
+  contact: {
     phone?: string;
     email?: string;
-    website?: string;
     address?: string;
   };
-  createdBy?: string; // user id who created the school
-  isVerified: boolean;
-  verificationStatus?: 'pending' | 'verified' | 'rejected';
-  memberCount?: number;
-  createdAt: Date;
-  updatedAt: Date;
+  verified: boolean;
+  createdAt?: Date;
 }
 
-export type SchoolType =
-  | 'public'
-  | 'private'
-  | 'community'
-  | 'faith-based'
-  | 'special-needs'
-  | 'boarding'
-  | 'day'
-  | 'mixed';
-
-// Book Types
 export interface Book {
-  id: string;
+  _id?: string;
   title: string;
-  authors: string[];
+  author: string;
   publisher: string;
   isbn?: string;
-  subject: Subject;
+  subjects: string[];
   level: EducationLevel;
-  language: Language;
-  description: string;
+  grade: string;
+  description?: string;
   coverImage?: string;
-  fileUrl?: string;
-  fileSize?: number;
-  pageCount?: number;
-  publishedDate?: Date;
-  rating: number;
-  reviewCount: number;
-  downloadCount: number;
-  isPublic: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Paper Types
-export interface PastPaper {
-  id: string;
-  title: string;
-  subject: Subject;
-  examBoard: ExamBoard;
-  year: number;
-  term: Term;
-  level: EducationLevel;
-  duration: number; // in minutes
-  totalMarks: number;
-  difficulty: Difficulty;
-  paperType: PaperType;
-  fileUrl?: string;
-  markingSchemeUrl?: string;
-  instructions?: string;
-  downloadCount: number;
-  rating: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export type ExamBoard = 'KNEC' | 'UACE' | 'IGCSE' | 'IB' | 'Other';
-export type Term = '1' | '2' | '3' | 'annual';
-export type Difficulty = 'easy' | 'medium' | 'hard';
-export type PaperType = 'examination' | 'revision' | 'practice' | 'mock';
-
-// Discussion Types
-export interface Discussion {
-  id: string;
-  title: string;
-  content: string;
-  category: DiscussionCategory;
-  subject?: Subject;
-  level?: EducationLevel;
-  authorId: string;
-  tags: string[];
-  likes: number;
-  replies: number;
-  views: number;
-  isResolved: boolean;
-  isPinned: boolean;
-  isFeatured: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export type DiscussionCategory =
-  | 'general'
-  | 'academic'
-  | 'homework-help'
-  | 'exam-prep'
-  | 'career-guidance'
-  | 'study-tips'
-  | 'announcements';
-
-// Message Types
-export interface Message {
-  id: string;
-  conversationId: string;
-  senderId: string;
-  content: string;
-  type: MessageType;
-  attachments: Attachment[];
-  isRead: boolean;
-  isEdited: boolean;
-  replyTo?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export type MessageType = 'text' | 'image' | 'file' | 'audio' | 'video';
-
-export interface Attachment {
-  id: string;
-  fileName: string;
   fileUrl: string;
   fileSize: number;
-  mimeType: string;
+  pages?: number;
+  language: string;
+  approved: boolean;
+  downloadCount: number;
+  rating: number;
+  reviews: BookReview[];
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
-// Study Group Types
-export interface StudyGroup {
-  id: string;
-  name: string;
-  description: string;
-  subject: Subject;
-  level: EducationLevel;
-  creatorId: string;
-  members: string[];
-  maxMembers: number;
-  isPrivate: boolean;
-  inviteCode?: string;
-  settings: StudyGroupSettings;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface StudyGroupSettings {
-  allowMemberInvites: boolean;
-  requireApproval: boolean;
-  allowFileSharing: boolean;
-  allowDiscussions: boolean;
-}
-
-// Progress Types
-export interface Progress {
-  id: string;
+export interface BookReview {
   userId: string;
-  totalStudyTime: number; // in minutes
-  level: number;
-  experiencePoints: number;
-  streak: number;
-  longestStreak: number;
-  booksCompleted: number;
-  quizzesCompleted: number;
-  papersAttempted: number;
-  averageScore: number;
-  achievements: Achievement[];
-  lastStudyDate?: Date;
+  rating: number;
+  comment?: string;
   createdAt: Date;
-  updatedAt: Date;
 }
 
-export interface Achievement {
-  id: string;
+export interface PastPaper {
+  _id?: string;
   title: string;
-  description: string;
-  icon: string;
-  type: AchievementType;
+  subject: string;
+  level: EducationLevel;
+  grade: string;
+  year: number;
+  term?: number;
+  examType: ExamType;
+  fileUrl: string;
+  markingSchemeUrl?: string;
+  uploadedBy: string;
+  approved: boolean;
+  downloadCount: number;
+  createdAt?: Date;
+}
+
+export type ExamType = 'KCPE' | 'KCSE' | 'Form1' | 'Form2' | 'Form3' | 'Form4' | 'Class1' | 'Class2' | 'Class3' | 'Class4' | 'Class5' | 'Class6' | 'Class7' | 'Class8' | 'Mid-term' | 'End-term' | 'Mock';
+
+export interface Discussion {
+  _id?: string;
+  title: string;
+  content: string;
+  author: string;
+  category: string;
+  tags: string[];
+  subject?: string;
+  level?: EducationLevel;
+  pinned: boolean;
+  locked: boolean;
+  views: number;
+  upvotes: string[];
+  downvotes: string[];
+  replies: Reply[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface Reply {
+  _id?: string;
+  content: string;
+  author: string;
+  parentId?: string;
+  upvotes: string[];
+  downvotes: string[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface Message {
+  _id?: string;
+  sender: string;
+  recipient: string;
+  subject?: string;
+  content: string;
+  attachments: string[];
+  read: boolean;
+  readAt?: Date;
+  createdAt?: Date;
+}
+
+export interface Quiz {
+  _id?: string;
+  title: string;
+  description?: string;
+  subject: string;
+  level: EducationLevel;
+  grade: string;
+  questions: Question[];
+  timeLimit?: number;
+  attempts: QuizAttempt[];
+  createdBy: string;
+  isPublic: boolean;
+  createdAt?: Date;
+}
+
+export interface Question {
+  _id?: string;
+  type: QuestionType;
+  question: string;
+  options?: string[];
+  correctAnswer: string | string[];
+  explanation?: string;
   points: number;
-  earnedAt: Date;
+  difficulty: DifficultyLevel;
 }
 
-export type AchievementType =
-  | 'milestone'
-  | 'streak'
-  | 'performance'
-  | 'social'
-  | 'special';
+export type QuestionType = 'multiple-choice' | 'true-false' | 'short-answer' | 'essay';
+export type DifficultyLevel = 'easy' | 'medium' | 'hard';
 
-// Subject Types - Kenyan Curriculum
-export type Subject =
-  // Primary Subjects
-  | 'english'
-  | 'kiswahili'
-  | 'mathematics'
-  | 'science-and-technology'
-  | 'social-studies'
-  | 'creative-arts'
-  | 'physical-education'
-  | 'home-science'
-  | 'agriculture'
-  | 'religious-education'
-  // Secondary Subjects
-  | 'biology'
-  | 'chemistry'
-  | 'physics'
-  | 'geography'
-  | 'history'
-  | 'government'
-  | 'business-studies'
-  | 'accounting'
-  | 'economics'
-  | 'computer-studies'
-  | 'art-and-design'
-  | 'music'
-  | 'woodwork'
-  | 'metalwork'
-  | 'building-construction'
-  | 'power-mechanics'
-  | 'electricity'
-  | 'clothing-and-textiles'
-  | 'food-and-nutrition'
-  | 'beauty-and-hairdressing'
-  | 'agriculture-and-nutrition'
-  // Languages
-  | 'french'
-  | 'german'
-  | 'arabic'
-  | 'sign-language'
-  // Vocational
-  | 'artisan'
-  | 'craft'
-  | 'diploma';
-
-// Language Types
-export type Language = 'english' | 'kiswahili' | 'french' | 'german' | 'arabic';
-
-// Kenyan Counties
-export type KenyanCounty =
-  | 'baringo'
-  | 'bomet'
-  | 'bungoma'
-  | 'busia'
-  | 'elgeyo-marakwet'
-  | 'embu'
-  | 'garissa'
-  | 'homa-bay'
-  | 'isiolo'
-  | 'kajiado'
-  | 'kakamega'
-  | 'kericho'
-  | 'kiambu'
-  | 'kilifi'
-  | 'kirinyaga'
-  | 'kisii'
-  | 'kisumu'
-  | 'kitui'
-  | 'kwale'
-  | 'laikipia'
-  | 'lamu'
-  | 'machakos'
-  | 'makueni'
-  | 'mandera'
-  | 'marsabit'
-  | 'meru'
-  | 'migori'
-  | 'mombasa'
-  | 'murang\'a'
-  | 'nairobi'
-  | 'nakuru'
-  | 'nandi'
-  | 'narok'
-  | 'nyamira'
-  | 'nyandarua'
-  | 'nyeri'
-  | 'samburu'
-  | 'siaya'
-  | 'taita-taveta'
-  | 'tana-river'
-  | 'tharaka-nithi'
-  | 'trans-nzoia'
-  | 'turkana'
-  | 'uasin-gishu'
-  | 'vihiga'
-  | 'wajir'
-  | 'west-pokot';
-
-// API Response Types
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  errors?: string[];
-  pagination?: PaginationMeta;
+export interface QuizAttempt {
+  _id?: string;
+  userId: string;
+  quizId: string;
+  answers: Answer[];
+  score: number;
+  totalPoints: number;
+  timeSpent: number;
+  completedAt: Date;
 }
 
-export interface PaginationMeta {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
+export interface Answer {
+  questionId: string;
+  answer: string | string[];
+  isCorrect: boolean;
+  points: number;
 }
 
-// Authentication Types
-export interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
+export interface StudyGroup {
+  _id?: string;
+  name: string;
+  description?: string;
+  subject: string;
+  level: EducationLevel;
+  grade?: string;
+  members: string[];
+  admins: string[];
+  isPrivate: boolean;
+  maxMembers?: number;
+  createdBy: string;
+  createdAt?: Date;
 }
 
-export interface LoginCredentials {
-  email: string;
-  password: string;
-  rememberMe?: boolean;
-}
+export type NotificationType = 
+  | 'message' 
+  | 'forum_reply' 
+  | 'quiz_assigned' 
+  | 'assignment_due' 
+  | 'achievement_earned' 
+  | 'system_update'
+  | 'study_group_invite';
 
-export interface RegisterData {
-  email: string;
-  password: string;
-  confirmPassword: string;
-  firstName: string;
-  lastName: string;
-  role?: UserRole;
-  school?: string;
-  acceptTerms: boolean;
-  acceptPrivacy: boolean;
-}
-
-// Notification Types
 export interface Notification {
-  id: string;
-  recipientId: string;
+  _id?: string;
+  userId: string;
+  type: NotificationType;
   title: string;
   message: string;
-  type: NotificationType;
-  isRead: boolean;
-  actionUrl?: string;
   data?: any;
-  createdAt: Date;
+  read: boolean;
+  readAt?: Date;
+  createdAt?: Date;
 }
 
-export type NotificationType =
-  | 'message'
-  | 'discussion_reply'
-  | 'quiz_result'
-  | 'achievement'
-  | 'follow'
-  | 'study_group'
-  | 'book_recommendation'
-  | 'paper_reminder'
-  | 'system'
-  | 'assignment'
-  | 'exam';
-
-// Search Types
-export interface SearchFilters {
-  query?: string;
-  subject?: Subject;
-  level?: EducationLevel;
-  type?: string;
-  dateFrom?: Date;
-  dateTo?: Date;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-  page?: number;
-  limit?: number;
-}
-
-export interface SearchResult<T> {
-  items: T[];
-  total: number;
-  page: number;
-  limit: number;
-  hasMore: boolean;
-}
-
-// File Upload Types
-export interface FileUpload {
-  id: string;
-  fileName: string;
-  originalName: string;
-  fileUrl: string;
-  fileSize: number;
-  mimeType: string;
-  uploadedBy: string;
-  uploadedAt: Date;
-}
-
-// Analytics Types
-export interface UserAnalytics {
-  totalStudyTime: number;
-  booksRead: number;
-  quizzesCompleted: number;
-  averageScore: number;
-  streak: number;
-  level: number;
-  points: number;
-}
-
-// Error Types
-export interface ErrorResponse {
-  error: {
-    message: string;
-    code?: string;
-    statusCode: number;
-    timestamp: string;
-    path?: string;
-    details?: any;
+// API Response interfaces
+export interface ApiResponse<T = any> {
+  success: boolean;
+  message: string;
+  data?: T;
+  meta?: {
+    page?: number;
+    limit?: number;
+    total?: number;
+    totalPages?: number;
   };
+}
+
+export interface ApiError {
+  success: false;
+  message: string;
+  error?: string;
+  errors?: ValidationError[];
+}
+
+export interface ValidationError {
+  field: string;
+  message: string;
+  value?: any;
 }

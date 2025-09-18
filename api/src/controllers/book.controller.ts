@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { Book } from '../models/Book';
-import { User } from '../models/User';
+import User from '../models/User';
 import { AppError } from '../utils/errors';
 import { logger } from '../utils/logger';
 

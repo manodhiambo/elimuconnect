@@ -113,3 +113,4 @@ bookSchema.index({ verified: 1 });
 bookSchema.index({ uploadedBy: 1 });
 
 export const Book = model<BookDocument>('Book', bookSchema);
+export default model<BookDocument>('Book', bookSchema);
