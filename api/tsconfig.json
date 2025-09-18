@@ -2,9 +2,9 @@
   "compilerOptions": {
     "target": "ES2020",
     "lib": ["ES2020"],
-    "module": "commonjs",                       // keep commonjs since you're using require/express style
-    "moduleResolution": "node16",               // ✅ modern resolver (fixes TS5098)
-    "customConditions": ["node"],               // works now
+    "module": "commonjs",                     // ✅ Express works with CommonJS
+    "moduleResolution": "node16",             // ✅ required for customConditions
+    "customConditions": ["@elimuconnect/source"], // ✅ match base tsconfig
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -34,19 +34,14 @@
       "@/schemas/*": ["src/schemas/*"],
       "@/sockets/*": ["src/sockets/*"],
 
-      // ✅ Add shared aliases
-      "@elimuconnect/shared/constants": ["../shared/constants/src"],
-      "@elimuconnect/shared/types": ["../shared/types/src"],
-      "@elimuconnect/shared/utils": ["../shared/utils/src"]
+      // ✅ align with base tsconfig
+      "@elimuconnect/shared/constants": ["../shared/constants/src/index.ts"],
+      "@elimuconnect/shared/types": ["../shared/types/src/index.ts"],
+      "@elimuconnect/shared/utils": ["../shared/utils/src/index.ts"]
     }
   },
   "include": ["src/**/*"],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/*.test.ts",
-    "**/*.spec.ts"
-  ],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],
   "references": [
     { "path": "../shared/constants" },
     { "path": "../shared/types" },

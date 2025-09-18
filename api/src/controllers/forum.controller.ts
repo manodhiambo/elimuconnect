@@ -15,11 +15,10 @@ interface AuthenticatedRequest extends Request {
         email: string;
         role: string;
         isModerator?: boolean;
-        [key: string]: any; // Allow additional properties
+        [key: string]: any;
     };
 }
 
-// Define types for arrays
 interface Discussion {
     id: string;
     title: string;
@@ -841,7 +840,7 @@ export class ForumController {
             res.json(new ApiResponse(
                 'My replies retrieved successfully',
                 replies,
-              StatusCodes.OK
+                StatusCodes.OK
             ));
         } catch (error) {
             throw new ApiError('Failed to retrieve my replies', StatusCodes.INTERNAL_SERVER_ERROR);
@@ -850,7 +849,7 @@ export class ForumController {
 
     getMyActivity = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
         try {
-            const activity = {
+            const acty = {
                 discussions: 0,
                 replies: 0,
                 likes: 0,
@@ -858,7 +857,7 @@ export class ForumController {
                 recentActivity: []
             };
 
-            res.json(new ApiRe(
+            res.json(new ApiResponse(
                 'My activity retrieved successfully',
                 activity,
                 StatusCodes.OK
@@ -868,13 +867,12 @@ export class ForumController {
         }
     });
 
-    // Q&A specific features
-    getQuestions = asyncHandler(async (req: Request, res: Response) => {
+    // Q&A specific featureetQuestions = asyncHandler(async (req: Request, res: Response) => {
         try {
             const questions: Question[] = [];
 
             res.json(new ApiResponse(
-                'Questions retrievessfully',
+                'Questions retrieved successfully',
                 questions,
                 StatusCodes.OK
             ));
@@ -883,14 +881,14 @@ export class ForumController {
         }
     });
 
-    getUnansweredQuestions = asyncHandler(async (req: Request, res: Response) => {
+    getUnansweredQuestions = asyncHandler(async (req: Request, res: Respons => {
         try {
             const questions: Question[] = [];
 
             res.json(new ApiResponse(
                 'Unanswered questions retrieved successfully',
                 questions,
-             StatusCodes.OK
+                StatusCodes.OK
             ));
         } catch (error) {
             throw new ApiError('Failed to retrieve unanswered questions', StatusCodes.INTERNAL_SERVER_ERROR);
@@ -906,22 +904,20 @@ export class ForumController {
                 questions,
                 StatusCodes.OK
             ));
-        } catcerror) {
+        } catch (error) {
             throw new ApiError('Failed to retrieve solved questions', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     });
 
     closeQuestion = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
         const { questionId } = req.params;
-        const { reason } = req.body;
-
-        try {
+        const { reason } = req.body    try {
             res.json(new ApiResponse(
                 'Question closed successfully',
                 { isClosed: true, reason },
                 StatusCodes.OK
             ));
-        } catch (er {
+        } catch (error) {
             throw new ApiError('Failed to close question', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     });
@@ -931,7 +927,7 @@ export class ForumController {
 
         try {
             res.json(new ApiResponse(
-                'Question reopened successfully',
+               'Question reopened successfully',
                 { isClosed: false },
                 StatusCodes.OK
             ));
@@ -947,13 +943,13 @@ export class ForumController {
         try {
             const discussions: Discussion[] = [];
 
-            res.json(new ApiResponse(
+            res.new ApiResponse(
                 'Study group discussions retrieved successfully',
                 discussions,
                 StatusCodes.OK
             ));
         } catch (error) {
-            throw n ApiError('Failed to retrieve study group discussions', StatusCodes.INTERNAL_SERVER_ERROR);
+            throw new ApiError('Failed to retrieve study group discussions', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     });
 
@@ -967,7 +963,8 @@ export class ForumController {
                 title,
                 content,
                 studyGroupId: groupId,
-                tags: tags || []            replies: 0,
+                tags: tags || [],
+                replies: 0,
                 likes: 0,
                 views: 0,
                 createdAt: new Date(),
@@ -976,7 +973,7 @@ export class ForumController {
 
             res.status(StatusCodes.CREATED).json(new ApiResponse(
                 'Study group discussion created successfully',
-                discussion,
+              discussion,
                 StatusCodes.CREATED
             ));
         } catch (error) {
@@ -992,12 +989,12 @@ export class ForumController {
             const discussions: Discussion[] = [];
 
             res.json(new ApiResponse(
-                'School discussions retrieved successfully',
+                'Schl discussions retrieved successfully',
                 discussions,
                 StatusCodes.OK
             ));
         } catch (error) {
-            throw new ApiError('Failed to retrieve school discussiotatusCodes.INTERNAL_SERVER_ERROR);
+            throw new ApiError('Failed to retrieve school discussions', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     });
 
@@ -1006,7 +1003,7 @@ export class ForumController {
         const { title, content, categoryId, tags } = req.body;
 
         try {
-            const discussion = {
+            const discussion 
                 id: Date.now().toString(),
                 title,
                 content,
@@ -1014,7 +1011,7 @@ export class ForumController {
                 categoryId,
                 tags: tags || [],
                 replies: 0,
-             likes: 0,
+                likes: 0,
                 views: 0,
                 createdAt: new Date(),
                 updatedAt: new Date()
@@ -1023,14 +1020,14 @@ export class ForumController {
             res.status(StatusCodes.CREATED).json(new ApiResponse(
                 'School discussion created successfully',
                 discussion,
-                StatusCodes.CREATED
+           StatusCodes.CREATED
             ));
         } catch (error) {
             throw new ApiError('Failed to create school discussion', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     });
 
-    // Moderation fres
+    // Moderation features
     pinDiscussion = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
         const { discussionId } = req.params;
 
@@ -1038,7 +1035,7 @@ export class ForumController {
             res.json(new ApiResponse(
                 'Discussion pinned successfully',
                 { isPinned: true },
-                StatusCodes.OK
+                StatusCoK
             ));
         } catch (error) {
             throw new ApiError('Failed to pin discussion', StatusCodes.INTERNAL_SERVER_ERROR);
@@ -1055,7 +1052,7 @@ export class ForumController {
                 StatusCodes.OK
             ));
         } catch (error) {
-            throw new ApiError('Failed to unpin discussion', StatusCodes.INTERNAL_SERVER_ERROR);
+     throw new ApiError('Failed to unpin discussion', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     });
 
@@ -1070,12 +1067,12 @@ export class ForumController {
                 StatusCodes.OK
             ));
         } catch (error) {
-            throw new ApiError('Failed to lock discussion', StatusCodes.INTERNAL_SERVER_ERROR);
+            throw ApiError('Failed to lock discussion', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     });
 
     unlockDiscussion = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-        const iscussionId } = req.params;
+        const { discussionId } = req.params;
 
         try {
             res.json(new ApiResponse(
@@ -1092,7 +1089,7 @@ export class ForumController {
         const { discussionId } = req.params;
 
         try {
-         res.json(new ApiResponse(
+            res.json(new ApiResponse(
                 'Discussion featured successfully',
                 { isFeatured: true },
                 StatusCodes.OK
@@ -1100,14 +1097,13 @@ export class ForumController {
         } catch (error) {
             throw new ApiError('Failed to feature discussion', StatusCodes.INTERNAL_SERVER_ERROR);
         }
-    });
-
+   
     unfeatureDiscussion = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
         const { discussionId } = req.params;
 
         try {
             res.json(new ApiResponse(
-              'Discussion unfeatured successfully',
+                'Discussion unfeatured successfully',
                 { isFeatured: false },
                 StatusCodes.OK
             ));
@@ -1117,12 +1113,12 @@ export class ForumController {
     });
 
     // Statistics and analytics
-    getForumStats = asyncHandler(async (req: Request, res: Response) => {
+  ForumStats = asyncHandler(async (req: Request, res: Response) => {
         try {
             const stats = {
                 totalDiscussions: 0,
                 totalReplies: 0,
-                sers: 0,
+                totalUsers: 0,
                 totalCategories: 0,
                 dailyActiveUsers: 0,
                 weeklyActiveUsers: 0,
@@ -1132,7 +1128,7 @@ export class ForumController {
             };
 
             res.json(new ApiResponse(
-                'Forum stats retrieved successfully',
+                'Forum statsved successfully',
                 stats,
                 StatusCodes.OK
             ));
@@ -1156,7 +1152,7 @@ export class ForumController {
                 badges: []
             };
 
-            res.jsnew ApiResponse(
+            res.json(new ApiResponse(
                 'User stats retrieved successfully',
                 stats,
                 StatusCodes.OK
@@ -1171,7 +1167,8 @@ export class ForumController {
             const topics: Topic[] = [];
 
             res.json(new ApiResponse(
-                'Trending topics retrieved successfully'            topics,
+                'Trending topics retrieved successfully',
+                topics,
                 StatusCodes.OK
             ));
         } catch (error) {
@@ -1180,7 +1177,7 @@ export class ForumController {
     });
 
     // Notifications
-    getForumNotifications = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    getForumNotifications = asyncHandler(async (req: AuthenticatedRequees: Response) => {
         const { page = 1, limit = 20, unreadOnly = false } = req.query;
 
         try {
@@ -1196,12 +1193,12 @@ export class ForumController {
         }
     });
 
-    markNotificationAsRead = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    markNotificatioead = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
         const { notificationId } = req.params;
 
         try {
             res.json(new ApiResponse(
-                'Notion marked as read successfully',
+                'Notification marked as read successfully',
                 { notificationId, isRead: true },
                 StatusCodes.OK
             ));
@@ -1211,12 +1208,12 @@ export class ForumController {
     });
 
     // Polls and voting
-    createPoll = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    creoll = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
         const { discussionId } = req.params;
         const { question, options } = req.body;
 
         try {
-            con = {
+            const poll = {
                 id: Date.now().toString(),
                 discussionId,
                 question,
@@ -1226,13 +1223,13 @@ export class ForumController {
                 totalVotes: 0
             };
 
-            res.status(StatusCodes.CREATED).json(new ApiResponse(
+            res.status(StatusCodes.CREATED).json(new Apiponse(
                 'Poll created successfully',
                 poll,
                 StatusCodes.CREATED
             ));
         } catch (error) {
-            throw new ApiError('Failed to create StatusCodes.INTERNAL_SERVER_ERROR);
+            throw new ApiError('Failed to create poll', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     });
 
@@ -1248,7 +1245,7 @@ export class ForumController {
                 StatusCodes.OK
             ));
         } catch (error) {
-            throw new Apr('Failed to cast vote', StatusCodes.INTERNAL_SERVER_ERROR);
+            throw new ApiError('Failed to cast vote', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     });
 
@@ -1259,14 +1256,14 @@ export class ForumController {
             const results = {
                 pollId,
                 totalVotes: 50,
-                results: [
+         results: [
                     { optionId: '1', votes: 20 },
                     { optionId: '2', votes: 30 }
                 ]
             };
 
             res.json(new ApiResponse(
-                'Poults retrieved successfully',
+                'Poll results retrieved successfully',
                 results,
                 StatusCodes.OK
             ));
