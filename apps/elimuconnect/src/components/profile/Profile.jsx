@@ -606,16 +606,16 @@ const UserProfile = () => {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Achievements</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               {achievements.map((achievement) => (
+                {achievements.map((achievement) => (
                   <div key={achievement.id} className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg">
                     <div className="flex-shrink-0 w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
                       {getAchievementIcon(achievement.type)}
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-medium text-gray-900">{achievement.title}</h4
+                      <h4 className="font-medium text-gray-900">{achievement.title}</h4>
                       <p className="text-sm text-gray-600">{achievement.description}</p>
                       <p className="text-xs text-gray-500 mt-1">
-                        Earned {formatDistanceToNow(new Date(achievement.earnedAt), { addSuffix: true })}
+                        Earned {formatDistanceToNow(new Date(achievement.earnedAt), { addSuffix: tru}
                       </p>
                     </div>
                   </div>
@@ -627,65 +627,65 @@ const UserProfile = () => {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Qu Stats */}
+          {/* Quick Stats */}
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <h3 className="font-semibold text-gray-900 mb-4">Quick Stats</h3>
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-be>
                 <span className="text-sm text-gray-600">Study Groups</span>
                 <span className="font-medium">{stats.groupsJoined}</span>
               </div>
               <div className="flex items-center justify-between">
-             <span className="text-sm text-gray-600">Friends</span>
+                <span className="text-sm text-gray-600">Friends</span>
                 <span className="font-medium">{stats.friendsCount}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Current Streak</span>
+                <span className="text-sm ext-gray-600">Current Streak</span>
                 <span className="font-medium">{stats.streakDays} days</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-6">Total Points</span>
+                <span className="text-sm text-gray-600">Total Points</span>
                 <span className="font-medium text-blue-600">{stats.totalPoints}</span>
               </div>
             </div>
           </div>
 
           {/* Privacy Settings */}
-          <div className="bg-white rounded-lg shadow-sm border p-6">
+          <div className="bg-white rounded-lg shadow-sm p-6">
             <h3 className="font-semibold text-gray-900 mb-4">Privacy</h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700">Profibility</span>
+                <span className="text-sm text-gray-700">Profile Visibility</span>
                 <button className="text-blue-600 hover:text-blue-700">
                   <Globe className="w-4 h-4" />
                 </button>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700">Activity status</span>
+            span className="text-sm text-gray-700">Activity Status</span>
                 <button className="text-green-600 hover:text-green-700">
                   <Eye className="w-4 h-4" />
                 </button>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700">Contact info</span>
+                <span className="text-sm text-gray-700">Contact Info</span>
                 <button className="text-yellow-600 hover:text-yellow-700">
                   <Lock className="w-4 h-4" />
-                </button>
+                </bu
               </div>
             </div>
           </div>
 
           {/* Recent Achievements */}
           <div className="bg-white rounded-lg shadow-sm border p-6">
-            <h3 className="font-semibold text-gray-900 mb-4">Recent Achievemen3>
+            <h3 className="font-semibold text-gray-900 mb-4">Recent Achievements</h3>
             <div className="space-y-3">
               {achievements.slice(0, 3).map((achievement) => (
                 <div key={achievement.id} className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-yellow-100 rounded-full flex center justify-center">
                     <Award className="w-4 h-4 text-yellow-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">{achievement.tit</p>
+                    <p className="text-sm font-medium text-gray-900">{achievement.title}</p>
                     <p className="text-xs text-gray-500">
                       {formatDistanceToNow(new Date(achievement.earnedAt), { addSuffix: true })}
                     </p>
@@ -693,7 +693,7 @@ const UserProfile = () => {
                 </div>
               ))}
               
-              {achievements.length === 0 && (
+           {achievements.length === 0 && (
                 <p className="text-sm text-gray-500 text-center py-4">
                   No achievements yet. Keep studying to earn your first badge!
                 </p>
