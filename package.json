@@ -17,6 +17,9 @@
   },
   "private": true,
   "dependencies": {
+    "@types/aws-sdk": "^0.0.42",
+    "@types/winston": "^2.4.4",
+    "aws-sdk": "^2.1692.0",
     "bcryptjs": "^2.4.3",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
@@ -36,7 +39,10 @@
     "react-router-dom": "6.26.1",
     "redis": "^4.6.10",
     "socket.io": "^4.7.4",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "twilio": "^5.10.0",
+    "winston": "^3.17.0",
+    "zod": "^4.1.9"
   },
   "devDependencies": {
     "@nx/eslint": "21.5.2",

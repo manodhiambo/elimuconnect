@@ -1,7 +1,7 @@
 import { authMiddleware } from "./../middleware";
 import { Router } from 'express';
 import { AnalyticsController } from '../controllers/analytics.controller';
-import { validationMiddleware } from '../middleware/validation.middleware';
+import { validationMiddleware, validate, validateQuery, validateParams, validateMultiple } from '../middleware/validation.middleware';
 import { 
   analyticsQuerySchema,
   progressTrackingSchema,
@@ -50,7 +50,7 @@ router.post('/events',
 );
 
 router.get('/events', 
-  validationMiddleware(analyticsQuerySchema, 'query'),
+  validateQuery(analyticsQuerySchema),
   analyticsController.getCustomEvents
 );
 

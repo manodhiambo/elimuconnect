@@ -95,7 +95,7 @@ export const mongoErrorHandler = (error: any): void => {
 
 // Unhandled rejection handler
 export const unhandledRejectionHandler = (reason: any, promise: Promise<any>): void => {
-  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  logger.error('Unhandled Rejection at: ' + promise + ' reason: ' + reason);
   
   // Close server gracefully
   if (!isOperationalError(reason)) {

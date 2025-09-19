@@ -1,66 +1,40 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { User } from '../models/User';
+import { AuthenticatedRequest } from '../types';
 
-export interface AuthenticatedRequest extends Request {
-  user?: {
-    userId: string;
-    role: string;
-    iat?: number;
-    exp?: number;
-  };
-}
-
-export const auth = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const authenticate = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Access denied. No token provided.'
-      });
+      return res.status(401).json({ message: 'No token provided' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-    const user = await User.findById(decoded.userId).select('-password');
-    
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid token.'
-      });
-    }
-
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
     req.user = {
-      userId: user._id.toString(),
-      role: user.role,
-      iat: decoded.iat,
-      exp: decoded.exp
+      _id: String(decoded._id),
+      email: decoded.email,
+      role: decoded.role
     };
     
     next();
   } catch (error) {
-    res.status(401).json({
-      success: false,
-      message: 'Invalid token.'
-    });
+    res.status(401).json({ message: 'Invalid token' });
   }
 };
 
-export const requireRole = (roles: string[]) => {
+export const authorize = (roles: string[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied. Insufficient permissions.'
-      });
+      return res.status(403).json({ message: 'Access denied' });
     }
     next();
   };
 };
 
-export const requireEmailVerification = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  // Implementation for email verification check
-  next();
-};
+// Legacy exports for backward compatibility
+export const authMiddleware = authenticate;

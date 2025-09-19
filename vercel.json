@@ -1,39 +1,30 @@
 {
   "version": 2,
-  "name": "elimuconnect",
   "builds": [
     {
       "src": "dist/apps/elimuconnect/**",
       "use": "@vercel/static"
     },
     {
-      "src": "api/dist/**/*.js",
+      "src": "api/dist/index.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/dist/$1"
+      "dest": "/api/dist/index.js"
     },
     {
       "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
-      "dest": "/dist/apps/elimuconnect/$1",
-      "headers": {
-        "Cache-Control": "public, max-age=31536000, immutable"
-      }
+      "dest": "/dist/apps/elimuconnect/$1"
     },
     {
       "src": "/(.*)",
       "dest": "/dist/apps/elimuconnect/index.html"
     }
   ],
-  "outputDirectory": "dist/apps/elimuconnect",
-  "installCommand": "npm install",
   "buildCommand": "npm run build",
-  "functions": {
-    "api/dist/**/*.js": {
-      "runtime": "nodejs18.x"
-    }
-  }
+  "outputDirectory": "dist/apps/elimuconnect",
+  "installCommand": "npm install"
 }

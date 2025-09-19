@@ -1,7 +1,7 @@
 import { authMiddleware } from "./../middleware";
 import { Router } from 'express';
 import { BookController } from '../controllers/book.controller';
-import { validationMiddleware } from '../middleware/validation.middleware';
+import { validationMiddleware, validate, validateQuery, validateParams, validateMultiple } from '../middleware/validation.middleware';
 import { uploadMiddleware } from '../middleware/upload.middleware';
 import { 
   createBookSchema, 
@@ -16,12 +16,12 @@ const bookController = new BookController();
 
 // Public routes
 router.get('/', 
-  validationMiddleware(bookSearchSchema, 'query'),
+  validateQuery(bookSearchSchema),
   bookController.getAllBooks
 );
 
 router.get('/search', 
-  validationMiddleware(bookSearchSchema, 'query'),
+  validateQuery(bookSearchSchema),
   bookController.searchBooks
 );
 

@@ -1,7 +1,7 @@
 import { authMiddleware } from "./../middleware";
 import { Router } from 'express';
 import { PaperController } from '../controllers/paper.controller';
-import { validationMiddleware } from '../middleware/validation.middleware';
+import { validationMiddleware, validate, validateQuery, validateParams, validateMultiple } from '../middleware/validation.middleware';
 import { uploadMiddleware } from '../middleware/upload.middleware';
 import { 
   createPaperSchema, 
@@ -15,12 +15,12 @@ const paperController = new PaperController();
 
 // Public routes
 router.get('/', 
-  validationMiddleware(paperSearchSchema, 'query'),
+  validateQuery(paperSearchSchema),
   paperController.getAllPapers
 );
 
 router.get('/search', 
-  validationMiddleware(paperSearchSchema, 'query'),
+  validateQuery(paperSearchSchema),
   paperController.searchPapers
 );
 

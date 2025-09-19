@@ -1,7 +1,7 @@
 import { authMiddleware } from "./../middleware";
 import { Router } from 'express';
 import { MessageController } from '../controllers/message.controller';
-import { validationMiddleware } from '../middleware/validation.middleware';
+import { validationMiddleware, validate, validateQuery, validateParams, validateMultiple } from '../middleware/validation.middleware';
 import { uploadMiddleware } from '../middleware/upload.middleware';
 import { 
   sendMessageSchema, 
@@ -67,7 +67,7 @@ router.post('/messages/:messageId/share', messageController.shareMessage);
 
 // Search and filters
 router.get('/search', 
-  validationMiddleware(messageSearchSchema, 'query'),
+  validateQuery(messageSearchSchema),
   messageController.searchMessages
 );
 

@@ -1,7 +1,7 @@
 import { authMiddleware } from "./../middleware";
 import { Router } from 'express';
 import { SchoolController } from '../controllers/school.controller';
-import { validationMiddleware } from '../middleware/validation.middleware';
+import { validationMiddleware, validate, validateQuery, validateParams, validateMultiple } from '../middleware/validation.middleware';
 import { uploadMiddleware } from '../middleware/upload.middleware';
 import { 
   createSchoolSchema, 
@@ -15,12 +15,12 @@ const schoolController = new SchoolController();
 
 // Public routes
 router.get('/', 
-  validationMiddleware(schoolSearchSchema, 'query'),
+  validateQuery(schoolSearchSchema),
   schoolController.getAllSchools
 );
 
 router.get('/search', 
-  validationMiddleware(schoolSearchSchema, 'query'),
+  validateQuery(schoolSearchSchema),
   schoolController.searchSchools
 );
 

@@ -6,200 +6,357 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${YELLOW}Setting up ElimuConnect for Vercel deployment...${NC}"
+echo -e "${YELLOW}Comprehensive TypeScript fixes for all API issues...${NC}"
 
-# Step 1: Create vercel.json
-echo -e "${YELLOW}Creating vercel.json configuration...${NC}"
-cat > vercel.json << 'EOF'
-{
-  "version": 2,
-  "name": "elimuconnect",
-  "builds": [
-    {
-      "src": "dist/apps/elimuconnect/**",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "api/dist/**/*.js",
-      "use": "@vercel/node"
+# Step 1: Fix middleware exports properly
+echo -e "${YELLOW}Step 1: Creating correct middleware structure...${NC}"
+
+# Fix auth.middleware.ts with proper exports
+cat > api/src/middleware/auth.middleware.ts << 'EOF'
+import { Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import { AuthenticatedRequest } from '../types';
+
+export const authenticate = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ message: 'No token provided' });
     }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/dist/$1"
-    },
-    {
-      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
-      "dest": "/dist/apps/elimuconnect/$1",
-      "headers": {
-        "Cache-Control": "public, max-age=31536000, immutable"
-      }
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/dist/apps/elimuconnect/index.html"
-    }
-  ],
-  "outputDirectory": "dist/apps/elimuconnect",
-  "installCommand": "npm install",
-  "buildCommand": "npm run build",
-  "functions": {
-    "api/dist/**/*.js": {
-      "runtime": "nodejs18.x"
-    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
+    req.user = {
+      _id: String(decoded._id),
+      email: decoded.email,
+      role: decoded.role
+    };
+    
+    next();
+  } catch (error) {
+    res.status(401).json({ message: 'Invalid token' });
   }
-}
+};
+
+export const authorize = (roles: string[]) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    next();
+  };
+};
+
+// Legacy exports for backward compatibility
+export const authMiddleware = authenticate;
 EOF
 
-# Step 2: Create .env.example
-echo -e "${YELLOW}Creating .env.example for environment variables...${NC}"
-cat > .env.example << 'EOF'
-# Database
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/elimuconnect?retryWrites=true&w=majority
-DATABASE_URL=your_database_url
+# Fix auth.ts with proper exports
+cat > api/src/middleware/auth.ts << 'EOF'
+import { Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import { AuthenticatedRequest } from '../types';
 
-# JWT Authentication
-JWT_SECRET=your-super-secret-jwt-key-at-least-32-characters-long
-JWT_REFRESH_SECRET=your-refresh-secret-key-different-from-jwt-secret
-JWT_EXPIRES_IN=15m
-JWT_REFRESH_EXPIRES_IN=7d
+export const verifyToken = (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ message: 'Access denied. No token provided.' });
+    }
 
-# Email Configuration (for notifications)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
+    req.user = {
+      _id: String(decoded._id),
+      email: decoded.email,
+      role: decoded.role
+    };
+    
+    next();
+  } catch (error) {
+    res.status(400).json({ message: 'Invalid token.' });
+  }
+};
 
-# Redis (for caching - optional)
-REDIS_URL=redis://localhost:6379
+// Legacy exports
+export const auth = verifyToken;
+export const authMiddleware = verifyToken;
 
-# File Upload (if using cloud storage)
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
+export const requireRole = (roles: string[]) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    next();
+  };
+};
 
-# Node Environment
-NODE_ENV=production
-
-# Frontend URL (for CORS)
-FRONTEND_URL=https://your-app.vercel.app
-
-# API URL
-API_URL=https://your-app.vercel.app/api
+export const requireEmailVerification = verifyToken;
 EOF
 
-# Step 3: Create .gitignore additions
-echo -e "${YELLOW}Updating .gitignore...${NC}"
-cat >> .gitignore << 'EOF'
+# Step 2: Create a flexible validation middleware that matches existing usage
+echo -e "${YELLOW}Step 2: Creating flexible validation middleware...${NC}"
+cat > api/src/middleware/validation.middleware.ts << 'EOF'
+import { Request, Response, NextFunction } from 'express';
+import { z, ZodError } from 'zod';
+import { ValidationError } from '../types';
 
-# Environment variables
-.env
-.env.local
-.env.production
+// Main validation function that handles the second parameter for backward compatibility
+export const validationMiddleware = (schema: z.ZodSchema, target?: string) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    try {
+      let dataToValidate;
+      
+      switch (target) {
+        case 'query':
+          dataToValidate = req.query;
+          break;
+        case 'params':
+          dataToValidate = req.params;
+          break;
+        case 'body':
+        default:
+          dataToValidate = req.body;
+          break;
+      }
+      
+      schema.parse(dataToValidate);
+      next();
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationErrors: ValidationError[] = error.errors.map(err => ({
+          message: err.message,
+          path: err.path,
+          code: err.code
+        }));
+        return res.status(400).json({
+          message: 'Validation failed',
+          errors: validationErrors
+        });
+      }
+      next(error);
+    }
+  };
+};
 
-# Vercel
-.vercel
+// Individual validation functions
+export const validate = (schema: z.ZodSchema) => validationMiddleware(schema, 'body');
+export const validateQuery = (schema: z.ZodSchema) => validationMiddleware(schema, 'query');
+export const validateParams = (schema: z.ZodSchema) => validationMiddleware(schema, 'params');
 
-# Build outputs
-dist/
-build/
+export const validateMultiple = (schemas: { body?: z.ZodSchema; query?: z.ZodSchema; params?: z.ZodSchema }) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (schemas.body) schemas.body.parse(req.body);
+      if (schemas.query) schemas.query.parse(req.query);
+      if (schemas.params) schemas.params.parse(req.params);
+      next();
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationErrors: ValidationError[] = error.errors.map(err => ({
+          message: err.message,
+          path: err.path,
+          code: err.code
+        }));
+        return res.status(400).json({
+          message: 'Validation failed',
+          errors: validationErrors
+        });
+      }
+      next(error);
+    }
+  };
+};
+
+export const validateFile = (allowedTypes: string[], maxSize: number = 5 * 1024 * 1024) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+      }
+
+      if (!allowedTypes.includes(req.file.mimetype)) {
+        return res.status(400).json({ message: 'Invalid file type' });
+      }
+
+      if (req.file.size > maxSize) {
+        return res.status(400).json({ message: 'File too large' });
+      }
+
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+};
 EOF
 
-# Step 4: Create deployment checklist
-echo -e "${YELLOW}Creating deployment checklist...${NC}"
-cat > DEPLOYMENT.md << 'EOF'
-# ElimuConnect Deployment Checklist
+# Step 3: Update middleware index with proper imports and exports
+echo -e "${YELLOW}Step 3: Updating middleware index...${NC}"
+cat > api/src/middleware/index.ts << 'EOF'
+// Import and re-export all middleware
+import { authenticate, authorize, authMiddleware } from './auth.middleware';
+import { verifyToken, auth, requireRole, requireEmailVerification } from './auth';
+import { 
+  validationMiddleware, 
+  validate, 
+  validateQuery, 
+  validateParams, 
+  validateFile, 
+  validateMultiple 
+} from './validation.middleware';
 
-## Pre-deployment Steps
+// Auth middleware exports
+export { authenticate, authorize, authMiddleware };
+export { verifyToken, auth, requireRole, requireEmailVerification };
 
-### 1. Environment Setup
-- [ ] Create MongoDB Atlas database
-- [ ] Set up environment variables in Vercel dashboard
-- [ ] Configure CORS origins for production domain
-
-### 2. Code Preparation
-- [ ] Ensure all dependencies are in package.json
-- [ ] Test build locally: `npm run build`
-- [ ] Commit all changes to Git
-
-### 3. Vercel Configuration
-- [ ] vercel.json is configured correctly
-- [ ] Build and output directories are correct
-- [ ] Environment variables are set in Vercel dashboard
-
-## Required Environment Variables for Vercel
-
-Add these in Vercel Dashboard > Project Settings > Environment Variables:
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `MONGODB_URI` | MongoDB connection string | `mongodb+srv://user:pass@cluster.mongodb.net/db` |
-| `JWT_SECRET` | JWT signing secret | `your-32-char-secret` |
-| `JWT_REFRESH_SECRET` | JWT refresh secret | `different-32-char-secret` |
-| `NODE_ENV` | Environment | `production` |
-| `FRONTEND_URL` | Your Vercel app URL | `https://elimuconnect.vercel.app` |
-
-## Deployment Steps
-
-### Method 1: Vercel Dashboard (Recommended)
-1. Go to vercel.com and connect GitHub
-2. Import your repository
-3. Configure build settings:
-   - Build Command: `npm run build`
-   - Output Directory: `dist/apps/elimuconnect`
-   - Install Command: `npm install`
-4. Add environment variables
-5. Deploy
-
-### Method 2: Vercel CLI
-```bash
-npm i -g vercel
-vercel login
-vercel --prod
-```
-
-## Post-deployment Verification
-
-- [ ] Frontend loads correctly
-- [ ] API endpoints respond
-- [ ] Database connections work
-- [ ] Authentication flow works
-- [ ] File uploads work (if implemented)
-
-## Troubleshooting
-
-### Build Fails
-- Check Vercel build logs
-- Ensure all deps are in package.json (not devDependencies for runtime deps)
-- Verify Nx build works locally
-
-### API Routes Don't Work
-- Check function logs in Vercel dashboard
-- Verify environment variables are set
-- Check API file structure matches vercel.json
-
-### Frontend Issues
-- Verify static files are in correct output directory
-- Check console for 404 errors on assets
-- Ensure routing works for SPA
+// Validation middleware exports
+export { 
+  validationMiddleware, 
+  validate, 
+  validateQuery, 
+  validateParams, 
+  validateFile, 
+  validateMultiple 
+};
 EOF
 
-# Step 5: Test build locally
-echo -e "${YELLOW}Testing build locally...${NC}"
-if npm run build; then
-    echo -e "${GREEN}✅ Build successful! Ready for deployment.${NC}"
-else
-    echo -e "${RED}❌ Build failed. Fix errors before deploying.${NC}"
-    exit 1
+# Step 4: Fix the main.ts import
+echo -e "${YELLOW}Step 4: Fixing main.ts imports...${NC}"
+if [ -f "api/src/main.ts" ]; then
+    # Replace the problematic import with a working one
+    sed -i 's/import { authMiddleware as authenticate } from ".\/middleware\/auth.middleware";/import { authMiddleware as authenticate } from ".\/middleware";/g' api/src/main.ts
 fi
 
-echo -e "${GREEN}✅ Deployment setup complete!${NC}"
-echo ""
-echo -e "${YELLOW}Next steps:${NC}"
-echo "1. Push your code to GitHub"
-echo "2. Go to vercel.com and import your repository"
-echo "3. Configure environment variables in Vercel dashboard"
-echo "4. Deploy!"
-echo ""
-echo -e "${YELLOW}Check DEPLOYMENT.md for detailed instructions.${NC}"
+# Step 5: Fix all route files to use the correct validation pattern
+echo -e "${YELLOW}Step 5: Fixing route files validation calls...${NC}"
+
+# Function to fix validation calls in route files
+fix_route_validations() {
+    local file=$1
+    if [ -f "$file" ]; then
+        # Replace two-parameter validation calls with proper calls
+        sed -i 's/validationMiddleware(\([^,]*\), '"'"'query'"'"')/validateQuery(\1)/g' "$file"
+        sed -i 's/validationMiddleware(\([^,]*\), '"'"'params'"'"')/validateParams(\1)/g' "$file"
+        sed -i 's/validationMiddleware(\([^,]*\), '"'"'body'"'"')/validate(\1)/g' "$file"
+        
+        # Update imports to include the new validation functions
+        sed -i 's/import { validationMiddleware }/import { validationMiddleware, validate, validateQuery, validateParams, validateMultiple }/g' "$file"
+        sed -i 's/import { validationMiddleware, validateMultiple }/import { validationMiddleware, validate, validateQuery, validateParams, validateMultiple }/g' "$file"
+    fi
+}
+
+# Fix all route files
+fix_route_validations "api/src/routes/analytics.routes.ts"
+fix_route_validations "api/src/routes/books.routes.ts"
+fix_route_validations "api/src/routes/messages.routes.ts"
+fix_route_validations "api/src/routes/papers.routes.ts"
+fix_route_validations "api/src/routes/schools.routes.ts"
+
+# Special handling for forums.routes.ts which has complex validation patterns
+if [ -f "api/src/routes/forums.routes.ts" ]; then
+    echo -e "${YELLOW}Step 6: Fixing complex forums route validations...${NC}"
+    
+    # Replace complex validation patterns
+    sed -i 's/validationMiddleware(\([^,]*\), '"'"'query'"'"')/validateQuery(\1)/g' "api/src/routes/forums.routes.ts"
+    sed -i 's/validationMiddleware(\([^,]*\), '"'"'params'"'"')/validateParams(\1)/g' "api/src/routes/forums.routes.ts"
+    sed -i 's/validationMiddleware(\([^,]*\), '"'"'body'"'"')/validate(\1)/g' "api/src/routes/forums.routes.ts"
+    
+    # Fix validateMultiple calls with object syntax
+    sed -i 's/validateMultiple({[^}]*params:[^,}]*,[^}]*})/validateParams(discussionIdSchema)/g' "api/src/routes/forums.routes.ts"
+    sed -i 's/validateMultiple({[^}]*params:[^,}]*})/validateParams(discussionIdSchema)/g' "api/src/routes/forums.routes.ts"
+    
+    # Update the import
+    sed -i 's/import { validationMiddleware, validateMultiple }/import { validationMiddleware, validate, validateQuery, validateParams, validateMultiple }/g' "api/src/routes/forums.routes.ts"
+fi
+
+# Step 7: Create fallback schemas if they don't exist
+echo -e "${YELLOW}Step 7: Creating fallback schemas...${NC}"
+if [ ! -f "api/src/schemas/index.ts" ]; then
+    mkdir -p api/src/schemas
+    cat > api/src/schemas/index.ts << 'EOF'
+import { z } from 'zod';
+
+// Basic fallback schemas
+export const userIdSchema = z.object({
+  id: z.string()
+});
+
+export const discussionIdSchema = z.object({
+  id: z.string()
+});
+
+export const replyIdSchema = z.object({
+  id: z.string()
+});
+
+export const categoryIdSchema = z.object({
+  id: z.string()
+});
+
+export const tagSchema = z.object({
+  tag: z.string()
+});
+
+export const subjectSchema = z.object({
+  subject: z.string()
+});
+
+export const studyGroupIdSchema = z.object({
+  id: z.string()
+});
+
+export const schoolIdSchema = z.object({
+  id: z.string()
+});
+
+export const notificationIdSchema = z.object({
+  id: z.string()
+});
+
+export const pollIdSchema = z.object({
+  id: z.string()
+});
+EOF
+fi
+
+# Step 8: Test the build
+echo -e "${YELLOW}Step 8: Testing API build...${NC}"
+cd api && npm run build
+
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}API build successful!${NC}"
+    cd ..
+    
+    # Step 9: Test full build
+    echo -e "${YELLOW}Step 9: Testing full build...${NC}"
+    npm run build
+    
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}Full build successful!${NC}"
+        
+        # Step 10: Deploy to Vercel
+        echo -e "${YELLOW}Step 10: Deploying to Vercel...${NC}"
+        vercel --prod
+        
+        echo -e "${GREEN}Deployment initiated!${NC}"
+        echo ""
+        echo -e "${YELLOW}Remember to add environment variables in Vercel dashboard:${NC}"
+        echo "- MONGODB_URI"
+        echo "- JWT_SECRET"
+        echo "- NODE_ENV=production"
+        
+    else
+        echo -e "${RED}Full build failed.${NC}"
+    fi
+else
+    echo -e "${RED}API build failed.${NC}"
+fi

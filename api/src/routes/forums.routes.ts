@@ -1,7 +1,7 @@
 import { authMiddleware } from "./../middleware";
 import { Router } from 'express';
 import { ForumController } from '../controllers/forum.controller';
-import { validationMiddleware, validateMultiple } from '../middleware/validation.middleware';
+import { validationMiddleware, validate, validateQuery, validateParams, validateMultiple } from '../middleware/validation.middleware';
 import { uploadMiddleware } from '../middleware/upload.middleware';
 import { 
   createDiscussionSchema, 
@@ -30,12 +30,12 @@ const forumController = new ForumController();
 
 // Public routes
 router.get('/discussions', 
-  validationMiddleware(discussionSearchSchema, 'query'),
+  validateQuery(discussionSearchSchema),
   forumController.getAllDiscussions
 );
 
 router.get('/discussions/search', 
-  validationMiddleware(discussionSearchSchema, 'query'),
+  validateQuery(discussionSearchSchema),
   forumController.searchDiscussions
 );
 
@@ -44,12 +44,12 @@ router.get('/discussions/recent', forumController.getRecentDiscussions);
 router.get('/discussions/featured', forumController.getFeaturedDiscussions);
 
 router.get('/discussions/:discussionId', 
-  validationMiddleware(discussionIdSchema, 'params'),
+  validateParams(discussionIdSchema),
   forumController.getDiscussionById
 );
 
 router.get('/discussions/:discussionId/replies', 
-  validationMiddleware(discussionIdSchema, 'params'),
+  validateParams(discussionIdSchema),
   forumController.getDiscussionReplies
 );
 
@@ -57,14 +57,14 @@ router.get('/discussions/:discussionId/replies',
 router.get('/categories', forumController.getAllCategories);
 
 router.get('/categories/:categoryId/discussions', 
-  validationMiddleware(categoryIdSchema, 'params'),
+  validateParams(categoryIdSchema),
   forumController.getDiscussionsByCategory
 );
 
 router.get('/tags', forumController.getAllTags);
 
 router.get('/tags/:tag/discussions', 
-  validationMiddleware(tagSchema, 'params'),
+  validateParams(tagSchema),
   forumController.getDiscussionsByTag
 );
 
@@ -72,7 +72,7 @@ router.get('/tags/:tag/discussions',
 router.get('/subjects', forumController.getAllSubjects);
 
 router.get('/subjects/:subject/discussions', 
-  validationMiddleware(subjectSchema, 'params'),
+  validateParams(subjectSchema),
   forumController.getDiscussionsBySubject
 );
 
@@ -81,7 +81,7 @@ router.use(authMiddleware);
 
 // Discussion management
 router.post('/discussions', 
-  validationMiddleware(createDiscussionSchema, 'body'),
+  validate(createDiscussionSchema),
   uploadMiddleware.array('attachments', 5),
   forumController.createDiscussion
 );
@@ -95,40 +95,40 @@ router.put('/discussions/:discussionId',
 );
 
 router.delete('/discussions/:discussionId', 
-  validationMiddleware(discussionIdSchema, 'params'),
+  validateParams(discussionIdSchema),
   forumController.deleteDiscussion
 );
 
 // Discussion interactions
 router.post('/discussions/:discussionId/like', 
-  validationMiddleware(discussionIdSchema, 'params'),
+  validateParams(discussionIdSchema),
   forumController.likeDiscussion
 );
 
 router.delete('/discussions/:discussionId/like', 
-  validationMiddleware(discussionIdSchema, 'params'),
+  validateParams(discussionIdSchema),
   forumController.unlikeDiscussion
 );
 
 router.post('/discussions/:discussionId/bookmark', 
-  validationMiddleware(discussionIdSchema, 'params'),
+  validateParams(discussionIdSchema),
   forumController.bookmarkDiscussion
 );
 
 router.delete('/discussions/:discussionId/bookmark', 
-  validationMiddleware(discussionIdSchema, 'params'),
+  validateParams(discussionIdSchema),
   forumController.unbookmarkDiscussion
 );
 
 router.get('/bookmarks', forumController.getBookmarkedDiscussions);
 
 router.post('/discussions/:discussionId/follow', 
-  validationMiddleware(discussionIdSchema, 'params'),
+  validateParams(discussionIdSchema),
   forumController.followDiscussion
 );
 
 router.delete('/discussions/:discussionId/follow', 
-  validationMiddleware(discussionIdSchema, 'params'),
+  validateParams(discussionIdSchema),
   forumController.unfollowDiscussion
 );
 
@@ -161,18 +161,18 @@ router.put('/replies/:replyId',
 );
 
 router.delete('/replies/:replyId', 
-  validationMiddleware(replyIdSchema, 'params'),
+  validateParams(replyIdSchema),
   forumController.deleteReply
 );
 
 // Reply interactions
 router.post('/replies/:replyId/like', 
-  validationMiddleware(replyIdSchema, 'params'),
+  validateParams(replyIdSchema),
   forumController.likeReply
 );
 
 router.delete('/replies/:replyId/like', 
-  validationMiddleware(replyIdSchema, 'params'),
+  validateParams(replyIdSchema),
   forumController.unlikeReply
 );
 
@@ -194,29 +194,29 @@ router.post('/replies/:replyId/replies',
 );
 
 router.get('/replies/:replyId/replies', 
-  validationMiddleware(replyIdSchema, 'params'),
+  validateParams(replyIdSchema),
   forumController.getNestedReplies
 );
 
 // Best answers and solutions
 router.post('/replies/:replyId/mark-as-solution', 
-  validationMiddleware(replyIdSchema, 'params'),
+  validateParams(replyIdSchema),
   forumController.markAsSolution
 );
 
 router.delete('/replies/:replyId/unmark-as-solution', 
-  validationMiddleware(replyIdSchema, 'params'),
+  validateParams(replyIdSchema),
   forumController.unmarkAsSolution
 );
 
 // User activity
 router.get('/users/:userId/discussions', 
-  validationMiddleware(userIdSchema, 'params'),
+  validateParams(userIdSchema),
   forumController.getUserDiscussions
 );
 
 router.get('/users/:userId/replies', 
-  validationMiddleware(userIdSchema, 'params'),
+  validateParams(userIdSchema),
   forumController.getUserReplies
 );
 
@@ -238,13 +238,13 @@ router.post('/questions/:questionId/close',
 );
 
 router.post('/questions/:questionId/reopen', 
-  validationMiddleware(discussionIdSchema, 'params'),
+  validateParams(discussionIdSchema),
   forumController.reopenQuestion
 );
 
 // Study groups discussions
 router.get('/study-groups/:groupId/discussions', 
-  validationMiddleware(studyGroupIdSchema, 'params'),
+  validateParams(studyGroupIdSchema),
   forumController.getStudyGroupDiscussions
 );
 
@@ -258,7 +258,7 @@ router.post('/study-groups/:groupId/discussions',
 
 // School-specific discussions
 router.get('/schools/:schoolId/discussions', 
-  validationMiddleware(schoolIdSchema, 'params'),
+  validateParams(schoolIdSchema),
   forumController.getSchoolDiscussions
 );
 
@@ -272,12 +272,12 @@ router.post('/schools/:schoolId/discussions',
 
 // Moderation features (require additional permission checks in controller)
 router.post('/discussions/:discussionId/pin', 
-  validationMiddleware(discussionIdSchema, 'params'),
+  validateParams(discussionIdSchema),
   forumController.pinDiscussion
 );
 
 router.delete('/discussions/:discussionId/pin', 
-  validationMiddleware(discussionIdSchema, 'params'),
+  validateParams(discussionIdSchema),
   forumController.unpinDiscussion
 );
 
@@ -290,17 +290,17 @@ router.post('/discussions/:discussionId/lock',
 );
 
 router.delete('/discussions/:discussionId/lock', 
-  validationMiddleware(discussionIdSchema, 'params'),
+  validateParams(discussionIdSchema),
   forumController.unlockDiscussion
 );
 
 router.post('/discussions/:discussionId/feature', 
-  validationMiddleware(discussionIdSchema, 'params'),
+  validateParams(discussionIdSchema),
   forumController.featureDiscussion
 );
 
 router.delete('/discussions/:discussionId/feature', 
-  validationMiddleware(discussionIdSchema, 'params'),
+  validateParams(discussionIdSchema),
   forumController.unfeatureDiscussion
 );
 
@@ -308,7 +308,7 @@ router.delete('/discussions/:discussionId/feature',
 router.get('/stats/overview', forumController.getForumStats);
 
 router.get('/stats/user/:userId', 
-  validationMiddleware(userIdSchema, 'params'),
+  validateParams(userIdSchema),
   forumController.getUserStats
 );
 
@@ -318,7 +318,7 @@ router.get('/stats/trending-topics', forumController.getTrendingTopics);
 router.get('/notifications', forumController.getForumNotifications);
 
 router.put('/notifications/:notificationId/read', 
-  validationMiddleware(notificationIdSchema, 'params'),
+  validateParams(notificationIdSchema),
   forumController.markNotificationAsRead
 );
 
@@ -340,7 +340,7 @@ router.post('/polls/:pollId/vote',
 );
 
 router.get('/polls/:pollId/results', 
-  validationMiddleware(pollIdSchema, 'params'),
+  validateParams(pollIdSchema),
   forumController.getPollResults
 );
 
