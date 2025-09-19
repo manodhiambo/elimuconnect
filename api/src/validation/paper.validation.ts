@@ -1,4 +1,4 @@
-import { body, param, query } from 'express-validator';
+const { body, param, query } = require('express-validator');
 
 export const createPaperValidation = [
   body('title').notEmpty().withMessage('Title is required'),
@@ -9,7 +9,6 @@ export const createPaperValidation = [
 ];
 
 export const updatePaperValidation = [
-  param('id').isMongoId().withMessage('Valid paper ID required'),
   body('title').optional().notEmpty().withMessage('Title cannot be empty'),
   body('subject').optional().notEmpty().withMessage('Subject cannot be empty'),
   body('year').optional().isInt({ min: 2000, max: new Date().getFullYear() }).withMessage('Valid year required')

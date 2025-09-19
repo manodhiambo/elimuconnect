@@ -1,6 +1,12 @@
-// Create: /home/manodhiambo/elimuconnect/api/src/services/base.service.ts
+import { Document, Model, FilterQuery, UpdateQuery } from 'mongoose';
 
-import { Model, Document, FilterQuery, UpdateQuery } from 'mongoose';
+export interface QueryOptions {
+  populate?: string | string[];
+  select?: string;
+  sort?: any;
+  limit?: number;
+  skip?: number;
+}
 
 export class BaseService<T extends Document> {
   protected model: Model<T>;
@@ -9,93 +15,39 @@ export class BaseService<T extends Document> {
     this.model = model;
   }
 
-  async create(data: Partial<T>): Promise<T> {
-    const document = new this.model(data);
-    return await document.save();
+  async findById(id: string): Promise<T | null> {
+    return this.model.findById(id).exec() as Promise<T | null>;
   }
 
-  async findById(id: string): Promise<T | null> {
-    return await this.model.findById(id);
+  async create(data: Partial<T>): Promise<T> {
+    return this.model.create(data) as Promise<T>;
+  }
+
+  async findByIdAndUpdate(id: string, update: UpdateQuery<T>): Promise<T | null> {
+    return this.model.findByIdAndUpdate(id, update, { new: true }).exec() as Promise<T | null>;
+  }
+
+  async findByIdAndDelete(id: string): Promise<T | null> {
+    return this.model.findByIdAndDelete(id).exec() as Promise<T | null>;
+  }
+
+  async find(filter: FilterQuery<T> = {}): Promise<T[]> {
+    return this.model.find(filter).exec() as Promise<T[]>;
   }
 
   async findOne(filter: FilterQuery<T>): Promise<T | null> {
-    return await this.model.findOne(filter);
-  }
-
-  async find(filter: FilterQuery<T> = {}, options: any = {}): Promise<T[]> {
-    let query = this.model.find(filter);
-    
-    if (options.sort) {
-      query = query.sort(options.sort);
-    }
-    
-    if (options.populate) {
-      query = query.populate(options.populate);
-    }
-    
-    if (options.limit) {
-      query = query.limit(options.limit);
-    }
-    
-    if (options.skip) {
-      query = query.skip(options.skip);
-    }
-
-    return await query.exec();
-  }
-
-  async update(id: string, data: UpdateQuery<T>): Promise<T | null> {
-    return await this.model.findByIdAndUpdate(id, data, { new: true });
-  }
-
-  async updateOne(filter: FilterQuery<T>, data: UpdateQuery<T>): Promise<T | null> {
-    return await this.model.findOneAndUpdate(filter, data, { new: true });
-  }
-
-  async delete(id: string): Promise<T | null> {
-    return await this.model.findByIdAndDelete(id);
-  }
-
-  async deleteOne(filter: FilterQuery<T>): Promise<T | null> {
-    return await this.model.findOneAndDelete(filter);
+    return this.model.findOne(filter).exec() as Promise<T | null>;
   }
 
   async count(filter: FilterQuery<T> = {}): Promise<number> {
-    return await this.model.countDocuments(filter);
+    return this.model.countDocuments(filter).exec();
   }
 
-  async exists(filter: FilterQuery<T>): Promise<boolean> {
-    const doc = await this.model.findOne(filter).select('_id');
-    return !!doc;
+  async updateMany(filter: FilterQuery<T>, update: UpdateQuery<T>): Promise<any> {
+    return this.model.updateMany(filter, update).exec();
   }
 
-  async paginate(filter: FilterQuery<T> = {}, page: number = 1, limit: number = 10, options: any = {}) {
-    const skip = (page - 1) * limit;
-    const total = await this.count(filter);
-    const totalPages = Math.ceil(total / limit);
-    
-    let query = this.model.find(filter).skip(skip).limit(limit);
-    
-    if (options.sort) {
-      query = query.sort(options.sort);
-    }
-    
-    if (options.populate) {
-      query = query.populate(options.populate);
-    }
-
-    const data = await query.exec();
-
-    return {
-      data,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-        hasNext: page < totalPages,
-        hasPrev: page > 1
-      }
-    };
+  async deleteMany(filter: FilterQuery<T>): Promise<any> {
+    return this.model.deleteMany(filter).exec();
   }
 }

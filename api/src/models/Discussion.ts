@@ -1,54 +1,71 @@
 import { Schema, model, Document } from 'mongoose';
-import { Discussion as IDiscussion, Reply as IReply } from '@elimuconnect/shared/types';
-
-export interface ReplyDocument extends Document {
-  content: string;
-  author: string;
-  parentId?: string;
-  upvotes: string[];
-  downvotes: string[];
-}
 
 export interface DiscussionDocument extends Document {
   title: string;
   content: string;
-  author: string;
-  category: string;
+  author: Schema.Types.ObjectId;
+  subject: string;
   tags: string[];
-  subject?: string;
-  level?: string;
-  pinned: boolean;
-  locked: boolean;
+  category: string;
   views: number;
-  upvotes: string[];
-  downvotes: string[];
-  replies: ReplyDocument[];
+  likes: number;
+  replies: number;
+  isPinned: boolean;
+  isLocked: boolean;
+  isFeatured: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-const replySchema = new Schema<ReplyDocument>({
-  content: { type: String, required: true },
-  author: { type: String, required: true },
-  parentId: String,
-  upvotes: [String],
-  downvotes: [String]
-}, { timestamps: true });
-
 const discussionSchema = new Schema<DiscussionDocument>({
-  title: { type: String, required: true },
-  content: { type: String, required: true },
-  author: { type: String, required: true },
-  category: String,
+  title: {
+    type: String,
+    required: true
+  },
+  content: {
+    type: String,
+    required: true
+  },
+  author: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  subject: {
+    type: String,
+    required: true
+  },
   tags: [String],
-  subject: String,
-  level: String,
-  pinned: { type: Boolean, default: false },
-  locked: { type: Boolean, default: false },
-  views: { type: Number, default: 0 },
-  upvotes: [String],
-  downvotes: [String],
-  replies: [replySchema]
-}, { timestamps: true });
+  category: {
+    type: String,
+    default: 'general'
+  },
+  views: {
+    type: Number,
+    default: 0
+  },
+  likes: {
+    type: Number,
+    default: 0
+  },
+  replies: {
+    type: Number,
+    default: 0
+  },
+  isPinned: {
+    type: Boolean,
+    default: false
+  },
+  isLocked: {
+    type: Boolean,
+    default: false
+  },
+  isFeatured: {
+    type: Boolean,
+    default: false
+  }
+}, {
+  timestamps: true
+});
 
-export const Reply = model<ReplyDocument>('Reply', replySchema);
-export const Discussion = model<DiscussionDocument>('Discussion', discussionSchema);
 export default model<DiscussionDocument>('Discussion', discussionSchema);

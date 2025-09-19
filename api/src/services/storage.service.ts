@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 export class StorageService {
-  private s3: AWS.S3;
+  private s3?: AWS.S3;
   private bucketName: string;
   private useLocalStorage: boolean;
   private localStoragePath: string;
@@ -41,7 +41,7 @@ export class StorageService {
       
       fs.writeFileSync(filePath, file.buffer);
       return `uploads/${fileName}`;
-    } else {
+    } else if (this.s3) {
       const params = {
         Bucket: this.bucketName,
         Key: fileName,
@@ -52,6 +52,8 @@ export class StorageService {
       const result = await this.s3.upload(params).promise();
       return result.Location;
     }
+    
+    throw new Error('Storage service not configured');
   }
 
   async deleteFile(fileUrl: string): Promise<boolean> {
@@ -62,13 +64,14 @@ export class StorageService {
           fs.unlinkSync(filePath);
         }
         return true;
-      } else {
+      } else if (this.s3) {
         const key = fileUrl.split('/').pop();
         if (key) {
           await this.s3.deleteObject({ Bucket: this.bucketName, Key: key }).promise();
         }
         return true;
       }
+      return false;
     } catch (error) {
       console.error('Delete file error:', error);
       return false;

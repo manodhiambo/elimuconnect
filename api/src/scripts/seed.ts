@@ -1,59 +1,46 @@
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-import User, { UserRole, EducationLevel } from '../models/User';
-import School from '../models/School';
-
-dotenv.config();
+import { User, UserRole, EducationLevel } from '../models/User';
+import { School } from '../models/School';
+import { connectDB } from '../config/database';
 
 async function seedDatabase() {
-  try {
-    await mongoose.connect(process.env.DATABASE_URL!);
-    console.log('Connected to database');
-
-    // Clear existing data
-    await User.deleteMany({});
-    await School.deleteMany({});
-
-    // Create sample schools
-    const schools = await School.create([
-      {
-        name: 'Nairobi High School',
-        code: 'NHS001',
-        level: 'Secondary',
-        county: 'Nairobi',
-        district: 'Nairobi Central'
-      },
-      {
-        name: 'Mombasa Primary School', 
-        code: 'MPS001',
-        level: 'Primary',
-        county: 'Mombasa',
-        district: 'Mombasa Central'
-      }
-    ]);
-
-    // Create admin user
-    const admin = await User.create({
-      email: 'admin@elimuconnect.com',
-      password: 'admin123',
-      role: UserRole.ADMIN,
-      verified: true,
-      profile: {
-        firstName: 'Admin',
-        lastName: 'User',
-        level: EducationLevel.SECONDARY,
-        subjects: ['Mathematics', 'Science']
-      }
-    });
-
-    console.log('Database seeded successfully');
-    console.log('Admin user created:', admin.email);
-
-  } catch (error) {
-    console.error('Seeding failed:', error);
-  } finally {
-    await mongoose.disconnect();
-  }
+  await connectDB();
+  
+  console.log('Seeding database...');
+  
+  // Create sample users
+  const user = new User({
+    email: 'admin@elimuconnect.com',
+    password: 'hashedpassword',
+    role: UserRole.ADMIN,
+    profile: {
+      firstName: 'Admin',
+      lastName: 'User',
+      level: EducationLevel.SECONDARY
+    }
+  });
+  
+  await user.save();
+  console.log('Sample user created');
+  
+  // Create sample school
+  const school = new School({
+    name: 'Sample High School',
+    nemisCode: 'SHS001',
+    type: 'Public',
+    level: 'Secondary',
+    educationLevels: ['Secondary'],
+    location: {
+      county: 'Nairobi',
+      subCounty: 'Westlands',
+      ward: 'Parklands'
+    },
+    contactInfo: {
+      email: 'info@samplehs.ac.ke'
+    }
+  });
+  
+  await school.save();
+  console.log('Sample school created');
 }
 
-seedDatabase();
+seedDatabase().catch(console.error);

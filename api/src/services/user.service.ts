@@ -1,112 +1,43 @@
-// api/src/services/user.service.ts
-import { BaseService } from './base.service';
 import { User, UserDocument } from '../models/User';
-import { helpers } from '@elimuconnect/shared/utils';
-import bcrypt from 'bcryptjs';
 
-export class UserService extends BaseService<UserDocument> {
-  constructor() {
-    super(User);
-  }
-
-  protected getSearchFields(): string[] {
-    return ['profile.firstName', 'profile.lastName', 'email'];
-  }
-
+export class UserService {
   async findByEmail(email: string): Promise<UserDocument | null> {
-    return await this.model.findOne({ email: email.toLowerCase() });
+    return await User.findOne({ email });
   }
 
-  async findByPhone(phone: string): Promise<UserDocument | null> {
-    const formattedPhone = helpers.formatPhone(phone);
-    return await this.model.findOne({ phone: formattedPhone });
+  async findById(id: string): Promise<UserDocument | null> {
+    return await User.findById(id);
   }
 
-  async verifyUser(userId: string): Promise<UserDocument | null> {
-    return await this.model.findByIdAndUpdate(
-      userId,
-      { verified: true },
-      { new: true }
-    );
-  }
-
-  async updateLastActive(userId: string): Promise<void> {
-    await this.model.findByIdAndUpdate(userId, { lastActive: new Date() });
-  }
-
-  async updatePassword(userId: string, newPassword: string): Promise<UserDocument | null> {
-    const salt = await bcrypt.genSalt(12);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
+  async createUser(userData: any): Promise<UserDocument> {
+    if (userData.phone) {
+      userData.phone = userData.phone.replace(/\D/g, '');
+    }
     
-    return await this.model.findByIdAndUpdate(
-      userId,
-      { password: hashedPassword },
-      { new: true }
-    );
+    const user = new User(userData);
+    return await user.save();
   }
 
-  async addPoints(userId: string, points: number): Promise<UserDocument | null> {
-    return await this.model.findByIdAndUpdate(
-      userId,
-      { 
-        $inc: { 
-          'progress.totalPoints': points,
-          'progress.experience': points 
-        }
-      },
-      { new: true }
-    );
+  async updateUser(id: string, updateData: any): Promise<UserDocument | null> {
+    return await User.findByIdAndUpdate(id, updateData, { new: true });
   }
 
-  async addBadge(userId: string, badge: string): Promise<UserDocument | null> {
-    return await this.model.findByIdAndUpdate(
-      userId,
-      { $addToSet: { 'progress.badges': badge } },
-      { new: true }
-    );
+  async deleteUser(id: string): Promise<boolean> {
+    const result = await User.findByIdAndDelete(id);
+    return !!result;
   }
 
-  async updateStreak(userId: string, days: number): Promise<UserDocument | null> {
-    return await this.model.findByIdAndUpdate(
-      userId,
-      { 'progress.streakDays': days },
-      { new: true }
-    );
+  async addBadge(userId: string, badgeId: string): Promise<void> {
+    await User.findByIdAndUpdate(userId, {
+      $addToSet: { 'progress.badges': badgeId }
+    });
   }
 
-  async incrementBooksRead(userId: string): Promise<UserDocument | null> {
-    return await this.model.findByIdAndUpdate(
-      userId,
-      { $inc: { 'progress.booksRead': 1 } },
-      { new: true }
-    );
-  }
-
-  async incrementTestsCompleted(userId: string): Promise<UserDocument | null> {
-    return await this.model.findByIdAndUpdate(
-      userId,
-      { $inc: { 'progress.testsCompleted': 1 } },
-      { new: true }
-    );
-  }
-
-  sanitizeUser(user: UserDocument): Partial<UserDocument> {
-    const { password, ...sanitizedUser } = user.toObject();
-    return sanitizedUser;
-  }
-
-  async getLeaderboard(limit = 10, level?: string, grade?: string): Promise<UserDocument[]> {
-    const filter: any = { verified: true };
-    
-    if (level) filter['profile.level'] = level;
-    if (grade) filter['profile.grade'] = grade;
-
-    return await this.model
-      .find(filter)
-      .sort({ 'progress.totalPoints': -1 })
-      .limit(limit)
-      .select('-password')
-      .populate('profile.school', 'name')
-      .exec();
+  async addPoints(userId: string, points: number): Promise<void> {
+    await User.findByIdAndUpdate(userId, {
+      $inc: { 'progress.points': points }
+    });
   }
 }
+
+export const userService = new UserService();

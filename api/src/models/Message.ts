@@ -1,17 +1,50 @@
 import { Schema, model, Document } from 'mongoose';
-import { Message as IMessage } from '@elimuconnect/shared/types';
 
-export interface MessageDocument extends Document, Omit<IMessage, '_id'> {}
+export interface MessageDocument extends Document {
+  sender: Schema.Types.ObjectId;
+  recipient: Schema.Types.ObjectId;
+  content: string;
+  messageType: 'text' | 'image' | 'file';
+  attachments?: string[];
+  isRead: boolean;
+  readAt?: Date;
+  conversation?: Schema.Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 const messageSchema = new Schema<MessageDocument>({
-  sender: { type: String, required: true },
-  recipient: { type: String, required: true },
-  subject: String,
-  content: { type: String, required: true },
+  sender: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  recipient: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  content: {
+    type: String,
+    required: true
+  },
+  messageType: {
+    type: String,
+    enum: ['text', 'image', 'file'],
+    default: 'text'
+  },
   attachments: [String],
-  read: { type: Boolean, default: false },
-  readAt: Date
-}, { timestamps: true });
+  isRead: {
+    type: Boolean,
+    default: false
+  },
+  readAt: Date,
+  conversation: {
+    type: Schema.Types.ObjectId,
+    ref: 'Conversation'
+  }
+}, {
+  timestamps: true
+});
 
-export const Message = model<MessageDocument>('Message', messageSchema);
 export default model<MessageDocument>('Message', messageSchema);

@@ -1,7 +1,7 @@
 import twilio from 'twilio';
 
 export class SmsService {
-  private client: twilio.Twilio;
+  private client?: twilio.Twilio;
   private fromNumber: string;
   private isEnabled: boolean;
 
@@ -21,7 +21,7 @@ export class SmsService {
   }
 
   async sendSMS(to: string, message: string): Promise<boolean> {
-    if (!this.isEnabled) {
+    if (!this.isEnabled || !this.client) {
       console.log(`SMS would be sent to ${to}: ${message}`);
       return true;
     }

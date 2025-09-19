@@ -1,6 +1,6 @@
 // api/src/services/book.service.ts
 import { BaseService } from './base.service';
-import { Book, BookDocument } from '../models/Book';
+import Book, { BookDocument } from "../models/Book";
 
 export class BookService extends BaseService<BookDocument> {
   constructor() {

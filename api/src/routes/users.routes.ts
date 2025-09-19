@@ -1,3 +1,4 @@
+import { requireEmailVerification } from "../middleware/auth";
 import { authMiddleware } from "./../middleware";
 import { Router } from 'express';
 import { UserController } from '../controllers/user.controller';
