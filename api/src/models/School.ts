@@ -45,3 +45,5 @@ const schoolSchema = new Schema<SchoolDocument>({
 });
 
 export const School = model<SchoolDocument>('School', schoolSchema);
+
+export default School;

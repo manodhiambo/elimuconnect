@@ -1,5 +1,5 @@
 export { User, UserDocument } from './User';
 export { School, SchoolDocument } from './School';
-export { PastPaper } from './PastPaper';
-export { Quiz } from './Quiz';
-export { StudyGroup } from './StudyGroup';
+export { PastPaper, PastPaperDocument } from './PastPaper';
+export { Quiz, QuizDocument } from './Quiz';
+export { StudyGroup, StudyGroupDocument } from './StudyGroup';

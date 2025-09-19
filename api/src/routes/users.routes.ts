@@ -1,107 +1,84 @@
-import { requireEmailVerification } from "../middleware/auth";
-import { authMiddleware } from "./../middleware";
 import { Router } from 'express';
-import { UserController } from '../controllers/user.controller';
-import { validationMiddleware } from '../middleware/validation.middleware';
-import { rateLimitMiddleware } from '../middleware/rateLimit.middleware';
-import { 
-  updateProfileSchema,
-  updateSettingsSchema,
-  updatePreferencesSchema,
-  userSearchSchema,
-  changePasswordSchema,
-  deleteAccountSchema,
-  blockUserSchema
-} from '../schemas/user.schemas';
+import { authMiddleware, requireEmailVerification } from '../middleware/auth';
+import { userController } from '../controllers/user.controller';
 
 const router = Router();
-const userController = new UserController();
 
-// All routes require authentication
-router.use(authMiddleware);
+// Profile routes
+router.get('/profile', authMiddleware, userController.getProfile);
+router.put('/profile', authMiddleware, userController.updateProfile);
 
-// Get current user profile
-router.get('/profile', 
-  userController.getProfile
-);
-
-// Update user profile
-router.put('/profile',
+// Settings routes
+router.put(
+  '/settings',
+  authMiddleware,
   requireEmailVerification,
-  validationMiddleware(updateProfileSchema),
-  userController.updateProfile
-);
-
-// Update user settings
-router.put('/settings',
-  validationMiddleware(updateSettingsSchema),
   userController.updateSettings
 );
 
-// Update user preferences
-router.put('/preferences',
-  validationMiddleware(updatePreferencesSchema),
+router.put(
+  '/preferences',
+  authMiddleware,
+  requireEmailVerification,
   userController.updatePreferences
 );
 
-// Change password
-router.post('/change-password',
-  rateLimitMiddleware.api,
-  validationMiddleware(changePasswordSchema),
+// Security routes
+router.put(
+  '/change-password',
+  authMiddleware,
+  requireEmailVerification,
   userController.changePassword
 );
 
-// Delete account
-router.delete('/account',
-  rateLimitMiddleware.api,
-  validationMiddleware(deleteAccountSchema),
+router.delete(
+  '/account',
+  authMiddleware,
+  requireEmailVerification,
   userController.deleteAccount
 );
 
-// Get user by ID
-router.get('/:userId',
-  userController.getUserById
-);
+// Public user routes
+router.get('/user/:id', userController.getUserById);
 
-// Search users
-router.get('/',
-  validationMiddleware(userSearchSchema, 'query'),
+// Search routes
+router.get(
+  '/search',
+  authMiddleware,
   userController.searchUsers
 );
 
-// Block user
-router.post('/:userId/block',
+// Social routes
+router.post(
+  '/users/:id/block',
+  authMiddleware,
   requireEmailVerification,
-  validationMiddleware(blockUserSchema),
   userController.blockUser
 );
 
-// Unblock user
-router.delete('/:userId/block',
+router.delete(
+  '/users/:id/block',
+  authMiddleware,
   requireEmailVerification,
   userController.unblockUser
 );
 
-// Follow user
-router.post('/:userId/follow',
+router.post(
+  '/users/:id/follow',
+  authMiddleware,
   requireEmailVerification,
   userController.followUser
 );
 
-// Unfollow user
-router.delete('/:userId/follow',
+router.delete(
+  '/users/:id/follow',
+  authMiddleware,
   requireEmailVerification,
   userController.unfollowUser
 );
 
-// Get user's followers
-router.get('/:userId/followers',
-  userController.getFollowers
-);
+router.get('/followers', authMiddleware, userController.getFollowers);
 
-// Get user's following
-router.get('/:userId/following',
-  userController.getFollowing
-);
+router.get('/following', authMiddleware, userController.getFollowing);
 
 export default router;

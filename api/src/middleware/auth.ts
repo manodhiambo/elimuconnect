@@ -29,3 +29,26 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     res.status(401).json({ message: 'Invalid token' });
   }
 };
+
+// Additional exports for compatibility
+export const auth = authMiddleware;
+
+export const requireRole = (roles: string[]) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const authRequest = req as AuthenticatedRequest;
+    if (!authRequest.user || !roles.includes(authRequest.user.role)) {
+      return res.status(403).json({ message: 'Insufficient permissions' });
+    }
+    next();
+  };
+};
+
+export const requireEmailVerification = async (req: Request, res: Response, next: NextFunction) => {
+  const authRequest = req as AuthenticatedRequest;
+  const user = await User.findById(authRequest.user?.userId);
+  
+  if (!user || !user.isEmailVerified) {
+    return res.status(403).json({ message: 'Email verification required' });
+  }
+  next();
+};

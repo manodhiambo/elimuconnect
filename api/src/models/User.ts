@@ -90,3 +90,5 @@ userSchema.methods.getLastActiveDate = function(): Date {
 };
 
 export const User = model<UserDocument>('User', userSchema);
+
+export default User;

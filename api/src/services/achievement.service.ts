@@ -1,5 +1,5 @@
-import { UserService } from './user.service';
-import { NotificationService } from './notification.service';
+import { userService } from './user.service';
+import { notificationService } from './notification.service';
 import { NotificationType } from '../models/User';
 
 interface Badge {
@@ -10,61 +10,66 @@ interface Badge {
   icon: string;
 }
 
-const BADGES: Record<string, Badge> = {
-  FIRST_LOGIN: {
-    id: 'first_login',
-    name: 'Welcome Aboard',
-    description: 'Logged in for the first time',
-    points: 10,
-    icon: '👋'
-  },
-  FIRST_BOOK_READ: {
-    id: 'first_book_read',
-    name: 'Book Explorer',
-    description: 'Read your first book',
-    points: 25,
-    icon: '📚'
-  },
-  QUIZ_MASTER: {
-    id: 'quiz_master',
-    name: 'Quiz Master',
-    description: 'Completed 10 quizzes',
-    points: 100,
-    icon: '🧠'
-  }
-};
-
 export class AchievementService {
-  constructor(
-    private userService: UserService,
-    private notificationService: NotificationService
-  ) {}
+  private userService = userService;
+  private notificationService = notificationService;
 
-  async checkAchievements(userId: string, action: string, data?: any) {
-    const user = await this.userService.findById(userId);
-    if (!user) return;
+  private badges: Badge[] = [
+    {
+      id: 'first_login',
+      name: 'Welcome Aboard',
+      description: 'Completed first login',
+      points: 10,
+      icon: '🎉'
+    },
+    {
+      id: 'book_reader',
+      name: 'Book Reader',
+      description: 'Read 5 books',
+      points: 50,
+      icon: '📚'
+    },
+    {
+      id: 'quiz_master',
+      name: 'Quiz Master',
+      description: 'Completed 10 quizzes',
+      points: 75,
+      icon: '🏆'
+    }
+  ];
 
-    const currentBadges = user.progress?.badges || [];
+  async trackUserProgress(userId: string, action: string, metadata?: any) {
+    try {
+      const user = await this.userService.findById(userId);
+      if (!user) return;
 
-    switch (action) {
-      case 'book_read':
+      const currentBadges = user.progress?.badges || [];
+
+      if (action === 'book_read') {
         await this.checkBookReader(userId, (user.progress?.booksRead || 0) + 1, currentBadges);
-        break;
-      case 'quiz_completed':
+      } else if (action === 'quiz_completed') {
         await this.checkQuizMaster(userId, (user.progress?.testsCompleted || 0) + 1, currentBadges);
-        break;
+      }
+    } catch (error) {
+      console.error('Error tracking user progress:', error);
     }
   }
 
   private async checkBookReader(userId: string, booksRead: number, currentBadges: string[]) {
-    if (booksRead === 1 && !currentBadges.includes(BADGES.FIRST_BOOK_READ.id)) {
-      await this.awardBadge(userId, BADGES.FIRST_BOOK_READ);
+    if (booksRead >= 5 && !currentBadges.includes('book_reader')) {
+      const badge = this.badges.find(b => b.id === 'book_reader');
+      if (badge) {
+        await this.awardBadge(userId, badge);
+      }
     }
   }
 
-  private async checkQuizMaster(userId: string, testsCompleted: number, currentBadges: string[]) {
-    if (testsCompleted === 10 && !currentBadges.includes(BADGES.QUIZ_MASTER.id)) {
-      await this.awardBadge(userId, BADGES.QUIZ_MASTER);
+  private async checkQuizMaster(userId: string, quizzesCompleted: number, currentBadges: string[]) {
+    if (quizzesCompleted >= 10 && !currentBadges.includes('quiz_master')) {
+      const badge = this.badges.find(b => b.id === 'quiz_master');
+      if (badge) {
+        await this.awardBadge(userId, badge);
+      }
     }
   }
 
@@ -72,12 +77,27 @@ export class AchievementService {
     await this.userService.addBadge(userId, badge.id);
     await this.userService.addPoints(userId, badge.points);
 
-    await this.notificationService.create(
+    // Create notification
+    await this.notificationService.create({
       userId,
-      NotificationType.ACHIEVEMENT,
-      `Achievement Unlocked!`,
-      `You've earned the "${badge.name}" badge! +${badge.points} points`,
-      { badge: badge.id, points: badge.points }
-    );
+      type: NotificationType.ACHIEVEMENT,
+      title: 'Achievement Unlocked!',
+      message: `You've earned the "${badge.name}" badge! +${badge.points} points`,
+      data: { badge: badge.id, points: badge.points }
+    });
+  }
+
+  async getUserBadges(userId: string): Promise<Badge[]> {
+    const user = await this.userService.findById(userId);
+    if (!user || !user.progress?.badges) return [];
+
+    return this.badges.filter(badge => user.progress?.badges?.includes(badge.id));
+  }
+
+  async getUserPoints(userId: string): Promise<number> {
+    const user = await this.userService.findById(userId);
+    return user?.progress?.points || 0;
   }
 }
+
+export const achievementService = new AchievementService();

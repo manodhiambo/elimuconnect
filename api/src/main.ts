@@ -4,7 +4,7 @@ import { Server as SocketIOServer } from 'socket.io';
 import compression from 'compression';
 import morgan from 'morgan';
 import cors from 'cors';
-import { auth as authenticate } from "./middleware/auth";
+import { authMiddleware as authenticate } from "./middleware/auth";
 
 export class Main {
   public app: express.Application;

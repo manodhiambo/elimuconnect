@@ -20,7 +20,6 @@ export class UploadController {
     res.json({ message: 'File deleted' });
   });
 
-  // Specific upload types
   uploadMultipleFiles = asyncHandler(async (req: MulterRequest, res: Response) => {
     res.json({ message: 'Multiple files uploaded', files: req.files });
   });
@@ -69,7 +68,6 @@ export class UploadController {
     res.json({ message: 'Video uploaded', file: req.file });
   });
 
-  // File management
   getUserFiles = asyncHandler(async (req: Request, res: Response) => {
     res.json({ files: [] });
   });
@@ -110,7 +108,6 @@ export class UploadController {
     res.json({ thumbnail: 'data' });
   });
 
-  // Bulk operations
   bulkDeleteFiles = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     res.json({ message: 'Files bulk deleted' });
   });
@@ -123,7 +120,6 @@ export class UploadController {
     res.json({ message: 'Files bulk shared' });
   });
 
-  // Folder management
   createFolder = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     res.json({ message: 'Folder created' });
   });
@@ -144,7 +140,6 @@ export class UploadController {
     res.json({ message: 'File moved' });
   });
 
-  // Upload sessions
   createUploadSession = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     res.json({ sessionId: 'new-session-id' });
   });
@@ -161,7 +156,6 @@ export class UploadController {
     res.json({ message: 'Upload cancelled' });
   });
 
-  // File conversion
   convertFile = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     res.json({ message: 'File conversion started' });
   });
@@ -170,7 +164,6 @@ export class UploadController {
     res.json({ status: 'completed' });
   });
 
-  // Security scanning
   getFileScanStatus = asyncHandler(async (req: Request, res: Response) => {
     res.json({ status: 'clean' });
   });
@@ -179,7 +172,6 @@ export class UploadController {
     res.json({ message: 'File rescanned' });
   });
 
-  // Storage management
   getStorageUsage = asyncHandler(async (req: Request, res: Response) => {
     res.json({ usage: '1GB', limit: '10GB' });
   });
@@ -192,7 +184,6 @@ export class UploadController {
     res.json({ message: 'Storage cleaned up' });
   });
 
-  // Temporary files
   uploadTemporaryFile = asyncHandler(async (req: MulterRequest, res: Response) => {
     res.json({ tempId: 'temp-id', file: req.file });
   });
@@ -205,16 +196,14 @@ export class UploadController {
     res.json({ message: 'Temporary file deleted' });
   });
 
-  // Analytics
   getUploadAnalytics = asyncHandler(async (req: Request, res: Response) => {
     res.json({ analytics: {} });
   });
 
-  getStorageTrends = asyncHandler(async (req: Requess: Response) => {
+  getStorageTrends = asyncHandler(async (req: Request, res: Response) => {
     res.json({ trends: {} });
   });
 
-  // Admin functions
   getAllFiles = asyncHandler(async (req: Request, res: Response) => {
     res.json({ files: [] });
   });
@@ -227,7 +216,6 @@ export class UploadController {
     res.json({ message: 'File deleted by admin' });
   });
 
-  // Alias for route compatibility
   uploadFile = asyncHandler(async (req: MulterRequest, res: Response) => {
     res.json({ message: 'File uploaded', file: req.file });
   });
