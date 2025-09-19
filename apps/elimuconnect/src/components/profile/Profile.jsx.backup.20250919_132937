@@ -50,6 +50,7 @@ const UserProfile = () => {
   const [avatarFile, setAvatarFile] = useState(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
+  // Profile stats
   const [stats, setStats] = useState({
     totalPoints: 0,
     streakDays: 0,
@@ -61,6 +62,7 @@ const UserProfile = () => {
     friendsCount: 0
   });
 
+  // Recent activities
   const [activities, setActivities] = useState([]);
   const [achievements, setAchievements] = useState([]);
 
@@ -76,6 +78,7 @@ const UserProfile = () => {
     'Kitale', 'Garissa', 'Kakamega', 'Machakos', 'Meru', 'Nyeri', 'Kericho'
   ];
 
+  // Load profile data
   useEffect(() => {
     const loadProfile = async () => {
       try {
@@ -168,10 +171,12 @@ const UserProfile = () => {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
+      {/* Profile Header */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-8 mb-6 text-white relative overflow-hidden">
         <div className="relative z-10">
           <div className="flex items-start justify-between mb-6">
             <div className="flex items-center space-x-6">
+              {/* Avatar */}
               <div className="relative">
                 <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg">
                   {uploadingAvatar ? (
@@ -203,6 +208,7 @@ const UserProfile = () => {
                 />
               </div>
 
+              {/* Basic Info */}
               <div>
                 <h1 className="text-3xl font-bold mb-2">
                   {profile?.firstName} {profile?.lastName}
@@ -228,6 +234,7 @@ const UserProfile = () => {
               </div>
             </div>
 
+            {/* Action Buttons */}
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => setEditing(!editing)}
@@ -247,6 +254,7 @@ const UserProfile = () => {
             </div>
           </div>
 
+          {/* Stats Row */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold">{stats.totalPoints}</div>
@@ -267,12 +275,14 @@ const UserProfile = () => {
           </div>
         </div>
 
+        {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-4 right-4 w-32 h-32 border-2 border-white rounded-full"></div>
           <div className="absolute bottom-4 left-4 w-24 h-24 border-2 border-white rounded-full"></div>
         </div>
       </div>
 
+      {/* Navigation Tabs */}
       <div className="bg-white rounded-lg shadow-sm border mb-6">
         <div className="flex space-x-1 p-1">
           {[
@@ -297,7 +307,9 @@ const UserProfile = () => {
         </div>
       </div>
 
+      {/* Tab Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Content */}
         <div className="lg:col-span-2">
           {activeTab === 'overview' && (
             <motion.div
@@ -305,6 +317,7 @@ const UserProfile = () => {
               animate={{ opacity: 1, y: 0 }}
               className="space-y-6"
             >
+              {/* Personal Information */}
               <div className="bg-white rounded-lg shadow-sm border p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
@@ -380,7 +393,7 @@ const UserProfile = () => {
                           onChange={(e) => setEditForm(prev => ({ ...prev, location: e.target.value }))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
-                          <option value="">Select county</option>
+                          <option value=">Select county</option>
                           {counties.map(county => (
                             <option key={county} value={county}>{county}</option>
                           ))}
@@ -441,6 +454,7 @@ const UserProfile = () => {
                 )}
               </div>
 
+              {/* Study Preferences */}
               <div className="bg-white rounded-lg shadow-sm border p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Study Preferences</h3>
                 <div className="space-y-4">
@@ -499,6 +513,7 @@ const UserProfile = () => {
                   </div>
                 </div>
 
+                {/* Performance Overview */}
                 <div>
                   <h4 className="font-medium text-gray-900 mb-3">Performance Overview</h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -523,6 +538,7 @@ const UserProfile = () => {
                   </div>
                 </div>
 
+                {/* Subject Performance */}
                 {profile?.subjectPerformance && (
                   <div>
                     <h4 className="font-medium text-gray-900 mb-3">Subject Performance</h4>
@@ -594,7 +610,7 @@ const UserProfile = () => {
                   <div key={achievement.id} className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg">
                     <div className="flex-shrink-0 w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
                       {getAchievementIcon(achievement.type)}
-                    </div>
+                </div>
                     <div className="flex-1">
                       <h4 className="font-medium text-gray-900">{achievement.title}</h4>
                       <p className="text-sm text-gray-600">{achievement.description}</p>
@@ -604,37 +620,40 @@ const UserProfile = () => {
                     </div>
                   </div>
                 ))}
-              </div>
+             </div>
             </motion.div>
           )}
         </div>
 
+        {/* Sidebar */}
         <div className="space-y-6">
+          {/* Quick Stats */}
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <h3 className="font-semibold text-gray-900 mb-4">Quick Stats</h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Study Groups</span>
-                <span className="font-medium">{stats.groupsJoined}</span>
+                <span ame="font-medium">{stats.groupsJoined}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Friends</span>
-                <span className="ont-medium">{stats.friendsCount}</span>
+                <span className="font-medium">{stats.friendsCount}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Current Streak</span>
-                <span className="font-medium">{stats.streakDays} days</span>
+                <span className="font-medium">{stats.streakDays} daysn>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Total Points</span>
-                <span className="font-medium text-blue-600">{stats.otalPoints}</span>
+                <span className="font-medium text-blue-600">{stats.totalPoints}</span>
               </div>
             </div>
           </div>
 
+          {/* Privacy Settings */}
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <h3 className="font-semibold text-gray-900 mb-4">Privacy</h3>
-            <div className="space-y-3">
+            <div classNe="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-700">Profile Visibility</span>
                 <button className="text-blue-600 hover:text-blue-700">
@@ -643,38 +662,39 @@ const UserProfile = () => {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-700">Activity Status</span>
-                <button className="text-green-600 hover:text-green-700">
+                <button className="texn-600 hover:text-green-700">
                   <Eye className="w-4 h-4" />
                 </button>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-700">Contact Info</span>
-          <button className="text-yellow-600 hover:text-yellow-700">
+                <button className="text-yellow-600 hover:text-yellow-700">
                   <Lock className="w-4 h-4" />
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border p-6">
+          {/* Recent Achievements */}
+       <div className="bg-white rounded-lg shadow-sm border p-6">
             <h3 className="font-semibold text-gray-900 mb-4">Recent Achievements</h3>
             <div className="space-y-3">
               {achievements.slice(0, 3).map((achievement) => (
-                <div key={achievement.id} className="fltems-center space-x-3">
+                <div key={achievement.id} className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
                     <Award className="w-4 h-4 text-yellow-600" />
-                  </div>
+               </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-900">{achievement.title}</p>
                     <p className="text-xs text-gray-500">
                       {formatDistanceToNow(new Date(achievement.earnedAt), { addSuffix: true })}
-             </p>
+                    </p>
                   </div>
                 </div>
               ))}
               
               {achievements.length === 0 && (
-                <p className="text-sm text-gray-500 text-center py-4">
+                <p className="text-sm text-gray-500 texnter py-4">
                   No achievements yet. Keep studying to earn your first badge!
                 </p>
               )}
