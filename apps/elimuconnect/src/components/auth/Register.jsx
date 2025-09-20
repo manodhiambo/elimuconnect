@@ -16,6 +16,7 @@ const Register = () => {
   const [searchingSchools, setSearchingSchools] = useState(false);
   const [selectedSchool, setSelectedSchool] = useState(null);
   const [schoolSearchQuery, setSchoolSearchQuery] = useState('');
+  const [schoolValidationError, setSchoolValidationError] = useState('');
 
   const {
     register,
@@ -26,7 +27,7 @@ const Register = () => {
     trigger,
     clearErrors,
   } = useForm({
-    mode: 'onBlur', // Only validate on blur, not on change
+    mode: 'onBlur',
     defaultValues: {
       schoolId: '',
       schoolName: ''
@@ -55,8 +56,9 @@ const Register = () => {
     try {
       const response = await schoolAPI.searchSchools(query);
       
-      if (response.data && response.data.schools) {
-        setSchools(response.data.schools);
+      // Check the correct nested path: response.data.data.schools
+      if (response.data && response.data.data && response.data.data.schools) {
+        setSchools(response.data.data.schools);
       } else {
         setSchools([]);
       }
@@ -74,12 +76,16 @@ const Register = () => {
     setValue('schoolId', school._id, { shouldValidate: false });
     setValue('schoolName', school.name, { shouldValidate: false });
     setSchools([]);
+    setSchoolValidationError(''); // Clear any validation errors
     clearErrors(['schoolId', 'schoolName']);
   };
 
   const handleSchoolSearchChange = (e) => {
     const value = e.target.value;
     setSchoolSearchQuery(value);
+    
+    // Clear validation error when user starts typing
+    setSchoolValidationError('');
     
     if (!value || (selectedSchool && !selectedSchool.name.toLowerCase().includes(value.toLowerCase()))) {
       setSelectedSchool(null);
@@ -107,7 +113,7 @@ const Register = () => {
     if (step === 1) {
       fieldsToValidate = ['firstName', 'lastName', 'email', 'phone', 'role'];
     } else if (step === 2) {
-      // Don't validate schoolId here - handle it separately
+      // Validate role-specific fields first
       if (watchedRole === 'student') {
         fieldsToValidate.push('level', 'grade', 'studentId');
       } else if (watchedRole === 'teacher') {
@@ -117,9 +123,9 @@ const Register = () => {
       // Validate other fields first
       const isValid = await trigger(fieldsToValidate);
       
-      // Check school selection separately
+      // Check school selection separately with custom validation
       if (!selectedSchool) {
-        alert('Please search and select a school before proceeding.');
+        setSchoolValidationError(t('pleaseSelectSchool') || 'Please search and select a school before proceeding.');
         return;
       }
       
@@ -316,10 +322,17 @@ const Register = () => {
                   className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white ${
                     selectedSchool
                       ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                      : schoolValidationError
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
                       : 'border-gray-300 dark:border-gray-600'
                   }`}
                   placeholder={t('typeSchoolName')}
                 />
+                
+                {/* Custom validation error for school selection */}
+                {schoolValidationError && (
+                  <p className="mt-1 text-sm text-red-600">{schoolValidationError}</p>
+                )}
                 
                 {/* Selected school indicator */}
                 {selectedSchool && (
@@ -356,7 +369,7 @@ const Register = () => {
                   </div>
                 )}
 
-                {/* Show helpful messages instead of validation errors */}
+                {/* Helpful messages */}
                 {!selectedSchool && schoolSearchQuery.length >= 3 && schools.length === 0 && !searchingSchools && (
                   <p className="mt-1 text-sm text-amber-600">{t('noSchoolsFound')}</p>
                 )}
@@ -365,18 +378,16 @@ const Register = () => {
                   <p className="mt-1 text-sm text-gray-500">{t('typeAtLeast3Characters')}</p>
                 )}
 
-                {/* Hidden inputs - NO validation, just for form submission */}
+                {/* Hidden inputs for form submission - NO validation attributes */}
                 <input
-                  {...register('schoolId')}
                   type="hidden"
                   value={selectedSchool?._id || ''}
-                  readOnly
+                  {...register('schoolId')}
                 />
                 <input
-                  {...register('schoolName')}
                   type="hidden"
                   value={selectedSchool?.name || ''}
-                  readOnly
+                  {...register('schoolName')}
                 />
               </div>
 
@@ -469,12 +480,7 @@ const Register = () => {
                 <button
                   type="button"
                   onClick={nextStep}
-                  disabled={!selectedSchool}
-                  className={`flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                    selectedSchool
-                      ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
-                      : 'bg-gray-400 cursor-not-allowed'
-                  }`}
+                  className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
                 >
                   {t('next')}
                 </button>
@@ -569,7 +575,7 @@ const Register = () => {
               </div>
             </div>
           )}
-        </motion.form>
+    </motion.form>
 
         {/* Additional Info */}
         <motion.div
@@ -586,4 +592,5 @@ const Register = () => {
     </div>
   );
 };
+
 export default Register;
