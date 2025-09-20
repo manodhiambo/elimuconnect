@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
@@ -14,6 +14,8 @@ const Register = () => {
   const [step, setStep] = useState(1);
   const [schools, setSchools] = useState([]);
   const [searchingSchools, setSearchingSchools] = useState(false);
+  const [selectedSchool, setSelectedSchool] = useState(null);
+  const [schoolSearchQuery, setSchoolSearchQuery] = useState('');
 
   const {
     register,
@@ -22,26 +24,77 @@ const Register = () => {
     watch,
     setValue,
     trigger,
-  } = useForm();
+    clearErrors,
+  } = useForm({
+    mode: 'onBlur', // Only validate on blur, not on change
+    defaultValues: {
+      schoolId: '',
+      schoolName: ''
+    }
+  });
 
   const watchedRole = watch('role');
-  const watchedSchoolSearch = watch('schoolSearch');
+
+  // Search schools with debouncing
+  useEffect(() => {
+    const delayedSearch = setTimeout(() => {
+      if (schoolSearchQuery && schoolSearchQuery.length >= 3) {
+        searchSchools(schoolSearchQuery);
+      } else {
+        setSchools([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayedSearch);
+  }, [schoolSearchQuery]);
 
   const searchSchools = async (query) => {
     if (query?.length < 3) return;
     
     setSearchingSchools(true);
     try {
-      const response = await schoolAPI.search(query);
-      setSchools(response.data.schools);
+      const response = await schoolAPI.searchSchools(query);
+      
+      if (response.data && response.data.schools) {
+        setSchools(response.data.schools);
+      } else {
+        setSchools([]);
+      }
     } catch (error) {
       console.error('Error searching schools:', error);
+      setSchools([]);
     } finally {
       setSearchingSchools(false);
     }
   };
 
+  const handleSchoolSelect = (school) => {
+    setSelectedSchool(school);
+    setSchoolSearchQuery(school.name);
+    setValue('schoolId', school._id, { shouldValidate: false });
+    setValue('schoolName', school.name, { shouldValidate: false });
+    setSchools([]);
+    clearErrors(['schoolId', 'schoolName']);
+  };
+
+  const handleSchoolSearchChange = (e) => {
+    const value = e.target.value;
+    setSchoolSearchQuery(value);
+    
+    if (!value || (selectedSchool && !selectedSchool.name.toLowerCase().includes(value.toLowerCase()))) {
+      setSelectedSchool(null);
+      setValue('schoolId', '', { shouldValidate: false });
+      setValue('schoolName', '', { shouldValidate: false });
+    }
+  };
+
   const onSubmit = async (data) => {
+    // Ensure school data is included in submission
+    if (selectedSchool) {
+      data.schoolId = selectedSchool._id;
+      data.schoolName = selectedSchool.name;
+    }
+    
     const result = await registerUser(data);
     if (result.success) {
       navigate('/verify', { state: { email: data.email } });
@@ -54,12 +107,26 @@ const Register = () => {
     if (step === 1) {
       fieldsToValidate = ['firstName', 'lastName', 'email', 'phone', 'role'];
     } else if (step === 2) {
-      fieldsToValidate = ['schoolId'];
+      // Don't validate schoolId here - handle it separately
       if (watchedRole === 'student') {
         fieldsToValidate.push('level', 'grade', 'studentId');
       } else if (watchedRole === 'teacher') {
         fieldsToValidate.push('tscNumber');
       }
+      
+      // Validate other fields first
+      const isValid = await trigger(fieldsToValidate);
+      
+      // Check school selection separately
+      if (!selectedSchool) {
+        alert('Please search and select a school before proceeding.');
+        return;
+      }
+      
+      if (isValid) {
+        setStep(step + 1);
+      }
+      return;
     }
     
     const isValid = await trigger(fieldsToValidate);
@@ -239,16 +306,32 @@ const Register = () => {
                 {t('schoolInformation')}
               </h3>
 
-              <div>
+              <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   {t('searchSchool')}
                 </label>
                 <input
-                  {...register('schoolSearch')}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  value={schoolSearchQuery}
+                  onChange={handleSchoolSearchChange}
+                  className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white ${
+                    selectedSchool
+                      ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                      : 'border-gray-300 dark:border-gray-600'
+                  }`}
                   placeholder={t('typeSchoolName')}
-                  onChange={(e) => searchSchools(e.target.value)}
                 />
+                
+                {/* Selected school indicator */}
+                {selectedSchool && (
+                  <div className="mt-2 flex items-center space-x-2 text-green-600 dark:text-green-400">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-sm font-medium">
+                      {t('schoolSelected')}: {selectedSchool.name}
+                    </span>
+                  </div>
+                )}
                 
                 {searchingSchools && (
                   <div className="mt-2 flex items-center space-x-2">
@@ -257,19 +340,14 @@ const Register = () => {
                   </div>
                 )}
 
-                {schools.length > 0 && (
-                  <div className="mt-2 max-h-40 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700">
+                {schools.length > 0 && !selectedSchool && (
+                  <div className="absolute z-10 mt-1 w-full max-h-40 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 shadow-lg">
                     {schools.map((school) => (
                       <button
                         key={school._id}
                         type="button"
-                        onClick={() => {
-                          setValue('schoolId', school._id);
-                          setValue('schoolName', school.name);
-                          setValue('schoolSearch', school.name);
-                          setSchools([]);
-                        }}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 text-sm transition-colors duration-200"
+                        onClick={() => handleSchoolSelect(school)}
+                        className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 text-sm transition-colors duration-200 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-600"
                       >
                         <div className="font-medium text-gray-900 dark:text-white">{school.name}</div>
                         <div className="text-gray-500 dark:text-gray-400 text-xs">{school.county}</div>
@@ -278,14 +356,28 @@ const Register = () => {
                   </div>
                 )}
 
-                {/* Hidden input for schoolId */}
-                <input
-                  {...register('schoolId', { required: t('schoolRequired') })}
-                  type="hidden"
-                />
-                {errors.schoolId && (
-                  <p className="mt-1 text-sm text-red-600">{errors.schoolId.message}</p>
+                {/* Show helpful messages instead of validation errors */}
+                {!selectedSchool && schoolSearchQuery.length >= 3 && schools.length === 0 && !searchingSchools && (
+                  <p className="mt-1 text-sm text-amber-600">{t('noSchoolsFound')}</p>
                 )}
+                
+                {!selectedSchool && schoolSearchQuery.length > 0 && schoolSearchQuery.length < 3 && (
+                  <p className="mt-1 text-sm text-gray-500">{t('typeAtLeast3Characters')}</p>
+                )}
+
+                {/* Hidden inputs - NO validation, just for form submission */}
+                <input
+                  {...register('schoolId')}
+                  type="hidden"
+                  value={selectedSchool?._id || ''}
+                  readOnly
+                />
+                <input
+                  {...register('schoolName')}
+                  type="hidden"
+                  value={selectedSchool?.name || ''}
+                  readOnly
+                />
               </div>
 
               {watchedRole === 'student' && (
@@ -377,7 +469,12 @@ const Register = () => {
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                  disabled={!selectedSchool}
+                  className={`flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                    selectedSchool
+                      ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+                      : 'bg-gray-400 cursor-not-allowed'
+                  }`}
                 >
                   {t('next')}
                 </button>
@@ -489,5 +586,4 @@ const Register = () => {
     </div>
   );
 };
-
 export default Register;

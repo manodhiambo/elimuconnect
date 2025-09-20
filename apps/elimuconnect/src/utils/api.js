@@ -111,10 +111,123 @@ export const userAPI = {
   updateSettings: (settings) => api.put('/users/settings', settings),
 };
 
+// FIXED SCHOOL API - This is the main fix for your registration issue
 export const schoolAPI = {
-  searchSchools: (query) => api.get(`/schools/search?q=${encodeURIComponent(query)}`),
+  // Fixed search method to handle backend response properly
+  searchSchools: async (query) => {
+    try {
+      if (!query || query.length < 3) {
+        return { data: { schools: [], total: 0 } };
+      }
+      
+      const response = await api.get(`/schools/search`, {
+        params: { q: query, limit: 20 }
+      });
+      
+      // Handle the backend response format: { success: true, data: { schools: [...] } }
+      if (response.data.success) {
+        return {
+          data: {
+            schools: response.data.data.schools || [],
+            total: response.data.data.total || 0
+          }
+        };
+      } else {
+        return { data: { schools: [], total: 0 } };
+      }
+    } catch (error) {
+      console.error('School search failed:', error);
+      return { data: { schools: [], total: 0 } };
+    }
+  },
+
+  // Enhanced method to get school by ID
   getSchoolById: (id) => api.get(`/schools/${id}`),
-  verifySchool: (schoolData) => api.post('/schools/verify', schoolData),
+  
+  // Method to get all schools with filtering
+  getAllSchools: (params = {}) => api.get('/schools', { params }),
+  
+  // Method to get schools by county
+  getSchoolsByCounty: (county, params = {}) => 
+    api.get(`/schools/counties/${encodeURIComponent(county)}/schools`, { params }),
+  
+  // Method to get all counties
+  getCounties: () => api.get('/schools/counties/all'),
+  
+  // Method to get school types
+  getSchoolTypes: () => api.get('/schools/types/all'),
+  
+  // Method to get school categories/education levels
+  getSchoolCategories: () => api.get('/schools/categories/all'),
+  
+  // Method to get schools by region
+  getSchoolsByRegion: (region, params = {}) => 
+    api.get(`/schools/regions/${encodeURIComponent(region)}/schools`, { params }),
+  
+  // Method to get public school info
+  getSchoolPublicInfo: (id) => api.get(`/schools/${id}/public-info`),
+  
+  // School verification method (for admin users)
+  verifySchool: (schoolId, verificationData) => 
+    api.post(`/schools/${schoolId}/verify`, verificationData),
+  
+  // Request school verification
+  requestVerification: (schoolId) => 
+    api.post(`/schools/${schoolId}/request-verification`),
+  
+  // School management methods (for authenticated users)
+  createSchool: (schoolData) => api.post('/schools', schoolData),
+  updateSchool: (schoolId, schoolData) => api.put(`/schools/${schoolId}`, schoolData),
+  deleteSchool: (schoolId) => api.delete(`/schools/${schoolId}`),
+  
+  // School media methods
+  uploadSchoolLogo: (schoolId, logoFile) => {
+    const formData = new FormData();
+    formData.append('logo', logoFile);
+    return api.post(`/schools/${schoolId}/logo`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  
+  uploadSchoolImages: (schoolId, imageFiles) => {
+    const formData = new FormData();
+    imageFiles.forEach(file => formData.append('images', file));
+    return api.post(`/schools/${schoolId}/images`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  
+  deleteSchoolImage: (schoolId, imageId) => 
+    api.delete(`/schools/${schoolId}/images/${imageId}`),
+  
+  // School membership methods
+  joinSchool: (schoolId) => api.post(`/schools/${schoolId}/join`),
+  leaveSchool: (schoolId) => api.delete(`/schools/${schoolId}/leave`),
+  getSchoolMembers: (schoolId) => api.get(`/schools/${schoolId}/members`),
+  
+  // School administration methods
+  addSchoolAdmin: (schoolId, userId) => 
+    api.post(`/schools/${schoolId}/admins`, { userId }),
+  removeSchoolAdmin: (schoolId, userId) => 
+    api.delete(`/schools/${schoolId}/admins/${userId}`),
+  getSchoolAdmins: (schoolId) => api.get(`/schools/${schoolId}/admins`),
+  
+  // School resources methods
+  getSchoolBooks: (schoolId, params = {}) => 
+    api.get(`/schools/${schoolId}/books`, { params }),
+  getSchoolPapers: (schoolId, params = {}) => 
+    api.get(`/schools/${schoolId}/papers`, { params }),
+  getSchoolDiscussions: (schoolId, params = {}) => 
+    api.get(`/schools/${schoolId}/discussions`, { params }),
+  
+  // School analytics methods
+  getSchoolStatistics: (schoolId) => api.get(`/schools/${schoolId}/stats`),
+  getSchoolPerformance: (schoolId) => api.get(`/schools/${schoolId}/performance`),
+  
+  // School settings methods (for school admins)
+  getSchoolSettings: (schoolId) => api.get(`/schools/${schoolId}/settings`),
+  updateSchoolSettings: (schoolId, settings) => 
+    api.put(`/schools/${schoolId}/settings`, settings),
 };
 
 export const libraryAPI = {
@@ -282,8 +395,49 @@ export const notificationAPI = {
   subscribeToNotifications: (subscription) => api.post('/notifications/subscribe', subscription),
 };
 
+// Debug utility for testing API endpoints
+export const debugAPI = {
+  testSchoolSearch: async (query = 'Alliance') => {
+    console.log('Testing school search with query:', query);
+    try {
+      const result = await schoolAPI.searchSchools(query);
+      console.log('Search result:', result);
+      return result;
+    } catch (error) {
+      console.error('Search test failed:', error);
+      return error;
+    }
+  },
+  
+  testAllSchoolEndpoints: async () => {
+    console.log('Testing all school API endpoints...');
+    
+    const tests = [
+      { name: 'Search Schools', fn: () => schoolAPI.searchSchools('test') },
+      { name: 'Get Counties', fn: () => schoolAPI.getCounties() },
+      { name: 'Get School Types', fn: () => schoolAPI.getSchoolTypes() },
+      { name: 'Get Categories', fn: () => schoolAPI.getSchoolCategories() }
+    ];
+    
+    for (const test of tests) {
+      try {
+        console.log(`Testing ${test.name}...`);
+        const result = await test.fn();
+        console.log(`✅ ${test.name} passed:`, result);
+      } catch (error) {
+        console.error(`❌ ${test.name} failed:`, error);
+      }
+    }
+  }
+};
+
 // Listen for online/offline events
 window.addEventListener('online', processOfflineQueue);
+
+// Expose debug utilities in development
+if (process.env.NODE_ENV === 'development') {
+  window.debugAPI = debugAPI;
+}
 
 // Export the main api instance as both default and named export
 export { api };

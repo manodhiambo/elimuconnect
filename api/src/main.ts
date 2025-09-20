@@ -6,6 +6,12 @@ import morgan from 'morgan';
 import cors from 'cors';
 import { authMiddleware as authenticate } from "./middleware";
 
+// Import your route files
+import schoolRoutes from './routes/schools.routes';
+import authRoutes from './routes/auth.routes';
+import userRoutes from './routes/users.routes';
+// Import other routes as needed
+
 export class Main {
   public app: express.Application;
   public server: http.Server;
@@ -20,7 +26,9 @@ export class Main {
         methods: ["GET", "POST"]
       }
     });
+    
     this.initializeMiddleware();
+    this.initializeRoutes(); // Add this line
   }
 
   private initializeMiddleware(): void {
@@ -29,6 +37,28 @@ export class Main {
     this.app.use(cors());
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
+  }
+
+  // Add this method to mount your routes
+  private initializeRoutes(): void {
+    // API routes
+    this.app.use('/api/schools', schoolRoutes);
+    this.app.use('/api/auth', authRoutes);
+    this.app.use('/api/users', userRoutes);
+    // Add other routes as needed
+    
+    // Health check endpoint
+    this.app.get('/health', (req, res) => {
+      res.json({ status: 'OK', message: 'ElimuConnect API is running' });
+    });
+    
+    // 404 handler for undefined routes
+    this.app.use('*', (req, res) => {
+      res.status(404).json({ 
+        success: false, 
+        message: `Route ${req.originalUrl} not found` 
+      });
+    });
   }
 
   public listen(port: number): void {
