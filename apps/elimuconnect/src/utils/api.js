@@ -1,67 +1,46 @@
+// src/utils/api.js
 import axios from 'axios';
 import { API_CONFIG, STORAGE_KEYS, ERROR_MESSAGES } from './constants';
 
-// Create axios instance with proper baseURL configuration
+// Create axios instance
 const api = axios.create({
   baseURL: API_CONFIG.baseURL,
   timeout: API_CONFIG.timeout,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  headers: { 'Content-Type': 'application/json' }
 });
 
-// Request interceptor to add auth token
+// Attach auth token + cache busting
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
-    // Add timestamp to prevent caching issues
-    config.params = {
-      ...config.params,
-      _t: new Date().getTime()
-    };
-    
-    console.log('API Request:', config.method?.toUpperCase(), config.url);
+    config.params = { ...config.params, _t: Date.now() };
     return config;
   },
-  (error) => {
-    console.error('Request interceptor error:', error);
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor for error handling
+// Handle errors globally
 api.interceptors.response.use(
-  (response) => {
-    console.log('API Response:', response.status, response.config.url);
-    return response;
-  },
+  (response) => response,
   (error) => {
-    console.error('API Error:', error);
-    
     if (error.response) {
-      // Server responded with error status
       const { status, data } = error.response;
-      
       switch (status) {
         case 401:
-          // Unauthorized - clear token and redirect to login
           localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
           localStorage.removeItem(STORAGE_KEYS.USER_DATA);
           window.location.href = '/login';
           break;
         case 403:
-          // Forbidden
-          error.message = 'You do not have permission to perform this action';
+          error.message = ERROR_MESSAGES.FORBIDDEN || 'Not allowed';
           break;
         case 404:
           error.message = ERROR_MESSAGES.NOT_FOUND;
           break;
         case 422:
-          // Validation error
           error.message = data.message || ERROR_MESSAGES.VALIDATION_ERROR;
           error.validationErrors = data.errors;
           break;
@@ -72,18 +51,15 @@ api.interceptors.response.use(
           error.message = data.message || ERROR_MESSAGES.SERVER_ERROR;
       }
     } else if (error.request) {
-      // Network error
       error.message = ERROR_MESSAGES.NETWORK_ERROR;
     } else {
-      // Something else happened
-      error.message = error.message || 'An unexpected error occurred';
+      error.message = error.message || 'Unexpected error occurred';
     }
-    
     return Promise.reject(error);
   }
 );
 
-// API endpoints
+/* ---------------- AUTH API ---------------- */
 export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   register: (userData) => api.post('/auth/register', userData),
@@ -95,15 +71,14 @@ export const authAPI = {
   resendVerification: (email) => api.post('/auth/resend-verification', { email }),
 };
 
+/* ---------------- USER API ---------------- */
 export const userAPI = {
   getProfile: () => api.get('/users/profile'),
   updateProfile: (data) => api.put('/users/profile', data),
   uploadAvatar: (file) => {
     const formData = new FormData();
     formData.append('avatar', file);
-    return api.post('/users/avatar', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    return api.post('/users/avatar', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
   },
   changePassword: (passwords) => api.put('/users/password', passwords),
   deleteAccount: () => api.delete('/users/account'),
@@ -111,160 +86,95 @@ export const userAPI = {
   updateSettings: (settings) => api.put('/users/settings', settings),
 };
 
-// FIXED SCHOOL API - This is the main fix for your registration issue
+/* ---------------- SCHOOL API ---------------- */
 export const schoolAPI = {
-  // Fixed search method to handle backend response properly
   searchSchools: async (query) => {
     try {
-      if (!query || query.length < 3) {
-        return { data: { schools: [], total: 0 } };
-      }
-      
-      const response = await api.get(`/schools/search`, {
-        params: { q: query, limit: 20 }
-      });
-      
-      // Handle the backend response format: { success: true, data: { schools: [...] } }
-      if (response.data.success) {
+      if (!query || query.length < 3) return { data: { schools: [], total: 0 } };
+      const res = await api.get('/schools/search', { params: { q: query, limit: 20 } });
+      if (res.data.success) {
         return {
           data: {
-            schools: response.data.data.schools || [],
-            total: response.data.data.total || 0
+            schools: res.data.data.schools || [],
+            total: res.data.data.total || 0,
           }
         };
-      } else {
-        return { data: { schools: [], total: 0 } };
       }
-    } catch (error) {
-      console.error('School search failed:', error);
+      return { data: { schools: [], total: 0 } };
+    } catch (e) {
+      console.error('School search failed:', e);
       return { data: { schools: [], total: 0 } };
     }
   },
-
-  // Enhanced method to get school by ID
   getSchoolById: (id) => api.get(`/schools/${id}`),
-  
-  // Method to get all schools with filtering
   getAllSchools: (params = {}) => api.get('/schools', { params }),
-  
-  // Method to get schools by county
-  getSchoolsByCounty: (county, params = {}) => 
-    api.get(`/schools/counties/${encodeURIComponent(county)}/schools`, { params }),
-  
-  // Method to get all counties
+  getSchoolsByCounty: (county, params = {}) => api.get(`/schools/counties/${encodeURIComponent(county)}/schools`, { params }),
   getCounties: () => api.get('/schools/counties/all'),
-  
-  // Method to get school types
   getSchoolTypes: () => api.get('/schools/types/all'),
-  
-  // Method to get school categories/education levels
   getSchoolCategories: () => api.get('/schools/categories/all'),
-  
-  // Method to get schools by region
-  getSchoolsByRegion: (region, params = {}) => 
-    api.get(`/schools/regions/${encodeURIComponent(region)}/schools`, { params }),
-  
-  // Method to get public school info
+  getSchoolsByRegion: (region, params = {}) => api.get(`/schools/regions/${encodeURIComponent(region)}/schools`, { params }),
   getSchoolPublicInfo: (id) => api.get(`/schools/${id}/public-info`),
-  
-  // School verification method (for admin users)
-  verifySchool: (schoolId, verificationData) => 
-    api.post(`/schools/${schoolId}/verify`, verificationData),
-  
-  // Request school verification
-  requestVerification: (schoolId) => 
-    api.post(`/schools/${schoolId}/request-verification`),
-  
-  // School management methods (for authenticated users)
-  createSchool: (schoolData) => api.post('/schools', schoolData),
-  updateSchool: (schoolId, schoolData) => api.put(`/schools/${schoolId}`, schoolData),
-  deleteSchool: (schoolId) => api.delete(`/schools/${schoolId}`),
-  
-  // School media methods
-  uploadSchoolLogo: (schoolId, logoFile) => {
+  verifySchool: (id, data) => api.post(`/schools/${id}/verify`, data),
+  requestVerification: (id) => api.post(`/schools/${id}/request-verification`),
+  createSchool: (data) => api.post('/schools', data),
+  updateSchool: (id, data) => api.put(`/schools/${id}`, data),
+  deleteSchool: (id) => api.delete(`/schools/${id}`),
+  uploadSchoolLogo: (id, file) => {
     const formData = new FormData();
-    formData.append('logo', logoFile);
-    return api.post(`/schools/${schoolId}/logo`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    formData.append('logo', file);
+    return api.post(`/schools/${id}/logo`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
   },
-  
-  uploadSchoolImages: (schoolId, imageFiles) => {
+  uploadSchoolImages: (id, files) => {
     const formData = new FormData();
-    imageFiles.forEach(file => formData.append('images', file));
-    return api.post(`/schools/${schoolId}/images`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    files.forEach(file => formData.append('images', file));
+    return api.post(`/schools/${id}/images`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
   },
-  
-  deleteSchoolImage: (schoolId, imageId) => 
-    api.delete(`/schools/${schoolId}/images/${imageId}`),
-  
-  // School membership methods
-  joinSchool: (schoolId) => api.post(`/schools/${schoolId}/join`),
-  leaveSchool: (schoolId) => api.delete(`/schools/${schoolId}/leave`),
-  getSchoolMembers: (schoolId) => api.get(`/schools/${schoolId}/members`),
-  
-  // School administration methods
-  addSchoolAdmin: (schoolId, userId) => 
-    api.post(`/schools/${schoolId}/admins`, { userId }),
-  removeSchoolAdmin: (schoolId, userId) => 
-    api.delete(`/schools/${schoolId}/admins/${userId}`),
-  getSchoolAdmins: (schoolId) => api.get(`/schools/${schoolId}/admins`),
-  
-  // School resources methods
-  getSchoolBooks: (schoolId, params = {}) => 
-    api.get(`/schools/${schoolId}/books`, { params }),
-  getSchoolPapers: (schoolId, params = {}) => 
-    api.get(`/schools/${schoolId}/papers`, { params }),
-  getSchoolDiscussions: (schoolId, params = {}) => 
-    api.get(`/schools/${schoolId}/discussions`, { params }),
-  
-  // School analytics methods
-  getSchoolStatistics: (schoolId) => api.get(`/schools/${schoolId}/stats`),
-  getSchoolPerformance: (schoolId) => api.get(`/schools/${schoolId}/performance`),
-  
-  // School settings methods (for school admins)
-  getSchoolSettings: (schoolId) => api.get(`/schools/${schoolId}/settings`),
-  updateSchoolSettings: (schoolId, settings) => 
-    api.put(`/schools/${schoolId}/settings`, settings),
+  deleteSchoolImage: (id, imgId) => api.delete(`/schools/${id}/images/${imgId}`),
+  joinSchool: (id) => api.post(`/schools/${id}/join`),
+  leaveSchool: (id) => api.delete(`/schools/${id}/leave`),
+  getSchoolMembers: (id) => api.get(`/schools/${id}/members`),
+  addSchoolAdmin: (id, userId) => api.post(`/schools/${id}/admins`, { userId }),
+  removeSchoolAdmin: (id, userId) => api.delete(`/schools/${id}/admins/${userId}`),
+  getSchoolAdmins: (id) => api.get(`/schools/${id}/admins`),
+  getSchoolBooks: (id, params = {}) => api.get(`/schools/${id}/books`, { params }),
+  getSchoolPapers: (id, params = {}) => api.get(`/schools/${id}/papers`, { params }),
+  getSchoolDiscussions: (id, params = {}) => api.get(`/schools/${id}/discussions`, { params }),
+  getSchoolStatistics: (id) => api.get(`/schools/${id}/stats`),
+  getSchoolPerformance: (id) => api.get(`/schools/${id}/performance`),
+  getSchoolSettings: (id) => api.get(`/schools/${id}/settings`),
+  updateSchoolSettings: (id, settings) => api.put(`/schools/${id}/settings`, settings),
 };
 
+/* ---------------- LIBRARY API ---------------- */
 export const libraryAPI = {
   getBooks: (params) => api.get('/library/books', { params }),
   getBookById: (id) => api.get(`/library/books/${id}`),
-  searchBooks: (query, filters) => api.get('/library/search', { 
-    params: { q: query, ...filters } 
-  }),
+  searchBooks: (query, filters) => api.get('/library/search', { params: { q: query, ...filters } }),
   getBookmarks: () => api.get('/library/bookmarks'),
   addBookmark: (bookId, page) => api.post('/library/bookmarks', { bookId, page }),
   removeBookmark: (bookmarkId) => api.delete(`/library/bookmarks/${bookmarkId}`),
   getReadingProgress: (bookId) => api.get(`/library/progress/${bookId}`),
   updateReadingProgress: (bookId, progress) => api.put(`/library/progress/${bookId}`, progress),
-  downloadBook: (bookId) => api.get(`/library/books/${bookId}/download`, { 
-    responseType: 'blob' 
-  }),
+  downloadBook: (bookId) => api.get(`/library/books/${bookId}/download`, { responseType: 'blob' }),
 };
 
+/* ---------------- PAPERS API ---------------- */
 export const papersAPI = {
   getPapers: (params) => api.get('/papers', { params }),
   getPaperById: (id) => api.get(`/papers/${id}`),
-  searchPapers: (query, filters) => api.get('/papers/search', { 
-    params: { q: query, ...filters } 
-  }),
-  downloadPaper: (paperId) => api.get(`/papers/${paperId}/download`, { 
-    responseType: 'blob' 
-  }),
-  getMarkingScheme: (paperId) => api.get(`/papers/${paperId}/marking-scheme`),
-  submitTest: (testData) => api.post('/papers/tests', testData),
-  getTestResults: (testId) => api.get(`/papers/tests/${testId}/results`),
+  searchPapers: (query, filters) => api.get('/papers/search', { params: { q: query, ...filters } }),
+  downloadPaper: (id) => api.get(`/papers/${id}/download`, { responseType: 'blob' }),
+  getMarkingScheme: (id) => api.get(`/papers/${id}/marking-scheme`),
+  submitTest: (data) => api.post('/papers/tests', data),
+  getTestResults: (id) => api.get(`/papers/tests/${id}/results`),
 };
 
+/* ---------------- FORUM API ---------------- */
 export const forumAPI = {
   getPosts: (params) => api.get('/forums/posts', { params }),
   getPostById: (id) => api.get(`/forums/posts/${id}`),
-  createPost: (postData) => api.post('/forums/posts', postData),
-  updatePost: (id, postData) => api.put(`/forums/posts/${id}`, postData),
+  createPost: (data) => api.post('/forums/posts', data),
+  updatePost: (id, data) => api.put(`/forums/posts/${id}`, data),
   deletePost: (id) => api.delete(`/forums/posts/${id}`),
   getComments: (postId) => api.get(`/forums/posts/${postId}/comments`),
   addComment: (postId, comment) => api.post(`/forums/posts/${postId}/comments`, comment),
@@ -272,173 +182,100 @@ export const forumAPI = {
   getCategories: () => api.get('/forums/categories'),
 };
 
+/* ---------------- MESSAGES API ---------------- */
 export const messageAPI = {
   getConversations: () => api.get('/messages/conversations'),
-  getMessages: (conversationId) => api.get(`/messages/conversations/${conversationId}`),
-  sendMessage: (messageData) => api.post('/messages', messageData),
-  markAsRead: (messageId) => api.put(`/messages/${messageId}/read`),
-  deleteMessage: (messageId) => api.delete(`/messages/${messageId}`),
+  getMessages: (id) => api.get(`/messages/conversations/${id}`),
+  sendMessage: (data) => api.post('/messages', data),
+  markAsRead: (id) => api.put(`/messages/${id}/read`),
+  deleteMessage: (id) => api.delete(`/messages/${id}`),
   searchUsers: (query) => api.get(`/messages/users/search?q=${encodeURIComponent(query)}`),
 };
 
+/* ---------------- ANALYTICS API ---------------- */
 export const analyticsAPI = {
   getProgress: (userId) => api.get(`/analytics/progress/${userId}`),
-  getPerformance: (userId, subject) => api.get(`/analytics/performance/${userId}`, { 
-    params: { subject } 
-  }),
+  getPerformance: (userId, subject) => api.get(`/analytics/performance/${userId}`, { params: { subject } }),
   getLeaderboard: (type) => api.get(`/analytics/leaderboard/${type}`),
-  logActivity: (activityData) => api.post('/analytics/activity', activityData),
+  logActivity: (data) => api.post('/analytics/activity', data),
 };
 
-// File upload utility
-export const uploadFile = async (file, type = 'general') => {
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('type', type);
-    
-    const response = await api.post('/uploads', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-      onUploadProgress: (progressEvent) => {
-        const percentCompleted = Math.round(
-          (progressEvent.loaded * 100) / progressEvent.total
-        );
-        console.log('Upload progress:', percentCompleted);
-      },
-    });
-    
-    return response.data;
-  } catch (error) {
-    console.error('File upload error:', error);
-    throw error;
-  }
-};
-
-// Retry utility for failed requests
-export const retryRequest = async (requestFn, maxRetries = API_CONFIG.retries) => {
-  let lastError;
-  
-  for (let i = 0; i <= maxRetries; i++) {
-    try {
-      return await requestFn();
-    } catch (error) {
-      lastError = error;
-      
-      // Don't retry on client errors (4xx)
-      if (error.response && error.response.status >= 400 && error.response.status < 500) {
-        throw error;
-      }
-      
-      // Wait before retrying (exponential backoff)
-      if (i < maxRetries) {
-        const delay = Math.pow(2, i) * 1000; // 1s, 2s, 4s, 8s...
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-    }
-  }
-  
-  throw lastError;
-};
-
-// Check if user is online
-export const isOnline = () => {
-  return navigator.onLine;
-};
-
-// Handle offline requests
-export const handleOfflineRequest = (requestData) => {
-  const offlineQueue = JSON.parse(
-    localStorage.getItem(STORAGE_KEYS.OFFLINE_DATA) || '[]'
-  );
-  
-  offlineQueue.push({
-    ...requestData,
-    timestamp: new Date().toISOString(),
-  });
-  
-  localStorage.setItem(STORAGE_KEYS.OFFLINE_DATA, JSON.stringify(offlineQueue));
-};
-
-// Process offline queue when back online
-export const processOfflineQueue = async () => {
-  if (!isOnline()) return;
-  
-  const offlineQueue = JSON.parse(
-    localStorage.getItem(STORAGE_KEYS.OFFLINE_DATA) || '[]'
-  );
-  
-  if (offlineQueue.length === 0) return;
-  
-  console.log('Processing offline queue:', offlineQueue.length, 'items');
-  
-  for (const request of offlineQueue) {
-    try {
-      await api.request(request);
-      console.log('Offline request processed:', request);
-    } catch (error) {
-      console.error('Failed to process offline request:', error);
-    }
-  }
-  
-  // Clear processed queue
-  localStorage.removeItem(STORAGE_KEYS.OFFLINE_DATA);
-};
-
+/* ---------------- NOTIFICATIONS API ---------------- */
 export const notificationAPI = {
   getNotifications: () => api.get('/notifications'),
-  markAsRead: (notificationId) => api.put(`/notifications/${notificationId}/read`),
+  markAsRead: (id) => api.put(`/notifications/${id}/read`),
   markAllAsRead: () => api.put('/notifications/mark-all-read'),
-  deleteNotification: (notificationId) => api.delete(`/notifications/${notificationId}`),
+  deleteNotification: (id) => api.delete(`/notifications/${id}`),
   getUnreadCount: () => api.get('/notifications/unread-count'),
   subscribeToNotifications: (subscription) => api.post('/notifications/subscribe', subscription),
 };
 
-// Debug utility for testing API endpoints
-export const debugAPI = {
-  testSchoolSearch: async (query = 'Alliance') => {
-    console.log('Testing school search with query:', query);
-    try {
-      const result = await schoolAPI.searchSchools(query);
-      console.log('Search result:', result);
-      return result;
-    } catch (error) {
-      console.error('Search test failed:', error);
-      return error;
+/* ---------------- UTILITIES ---------------- */
+export const uploadFile = async (file, type = 'general') => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('type', type);
+  const res = await api.post('/uploads', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: (e) => console.log('Upload progress:', Math.round((e.loaded * 100) / e.total)),
+  });
+  return res.data;
+};
+
+export const retryRequest = async (fn, maxRetries = API_CONFIG.retries) => {
+  let lastError;
+  for (let i = 0; i <= maxRetries; i++) {
+    try { return await fn(); } 
+    catch (err) {
+      lastError = err;
+      if (err.response && err.response.status >= 400 && err.response.status < 500) throw err;
+      if (i < maxRetries) await new Promise(res => setTimeout(res, Math.pow(2, i) * 1000));
     }
-  },
-  
+  }
+  throw lastError;
+};
+
+export const isOnline = () => navigator.onLine;
+
+export const handleOfflineRequest = (data) => {
+  const queue = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE_DATA) || '[]');
+  queue.push({ ...data, timestamp: new Date().toISOString() });
+  localStorage.setItem(STORAGE_KEYS.OFFLINE_DATA, JSON.stringify(queue));
+};
+
+export const processOfflineQueue = async () => {
+  if (!isOnline()) return;
+  const queue = JSON.parse(localStorage.getItem(STORAGE_KEYS.OFFLINE_DATA) || '[]');
+  for (const req of queue) {
+    try { await api.request(req); } 
+    catch (err) { console.error('Failed offline req:', err); }
+  }
+  localStorage.removeItem(STORAGE_KEYS.OFFLINE_DATA);
+};
+
+window.addEventListener('online', processOfflineQueue);
+
+/* ---------------- DEBUG (DEV ONLY) ---------------- */
+export const debugAPI = {
+  testSchoolSearch: (query = 'Alliance') => schoolAPI.searchSchools(query),
   testAllSchoolEndpoints: async () => {
-    console.log('Testing all school API endpoints...');
-    
     const tests = [
       { name: 'Search Schools', fn: () => schoolAPI.searchSchools('test') },
       { name: 'Get Counties', fn: () => schoolAPI.getCounties() },
-      { name: 'Get School Types', fn: () => schoolAPI.getSchoolTypes() },
-      { name: 'Get Categories', fn: () => schoolAPI.getSchoolCategories() }
+      { name: 'Get Types', fn: () => schoolAPI.getSchoolTypes() },
+      { name: 'Get Categories', fn: () => schoolAPI.getSchoolCategories() },
     ];
-    
-    for (const test of tests) {
-      try {
-        console.log(`Testing ${test.name}...`);
-        const result = await test.fn();
-        console.log(`✅ ${test.name} passed:`, result);
-      } catch (error) {
-        console.error(`❌ ${test.name} failed:`, error);
-      }
+    for (const t of tests) {
+      try { console.log(`✅ ${t.name}:`, await t.fn()); }
+      catch (e) { console.error(`❌ ${t.name}`, e); }
     }
   }
 };
 
-// Listen for online/offline events
-window.addEventListener('online', processOfflineQueue);
-
-// Expose debug utilities in development
 if (process.env.NODE_ENV === 'development') {
   window.debugAPI = debugAPI;
 }
 
-// Export the main api instance as both default and named export
+/* ---------------- EXPORTS ---------------- */
 export { api };
 export default api;
