@@ -4,13 +4,13 @@ import { Server as SocketIOServer } from 'socket.io';
 import compression from 'compression';
 import morgan from 'morgan';
 import cors from 'cors';
+import { connectDB } from './config/database'; // Add this import
 import { authMiddleware as authenticate } from "./middleware";
 
 // Import your route files
 import schoolRoutes from './routes/schools.routes';
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/users.routes';
-// Import other routes as needed
 
 export class Main {
   public app: express.Application;
@@ -27,8 +27,20 @@ export class Main {
       }
     });
     
+    this.initializeDatabase(); // Add this line
     this.initializeMiddleware();
-    this.initializeRoutes(); // Add this line
+    this.initializeRoutes();
+  }
+
+  // Add this method for database connection
+  private async initializeDatabase(): Promise<void> {
+    try {
+      await connectDB();
+      console.log('✅ Database connected successfully');
+    } catch (error) {
+      console.error('❌ Database connection failed:', error);
+      process.exit(1);
+    }
   }
 
   private initializeMiddleware(): void {
@@ -39,13 +51,11 @@ export class Main {
     this.app.use(express.urlencoded({ extended: true }));
   }
 
-  // Add this method to mount your routes
   private initializeRoutes(): void {
     // API routes
     this.app.use('/api/schools', schoolRoutes);
     this.app.use('/api/auth', authRoutes);
     this.app.use('/api/users', userRoutes);
-    // Add other routes as needed
     
     // Health check endpoint
     this.app.get('/health', (req, res) => {
@@ -63,7 +73,7 @@ export class Main {
 
   public listen(port: number): void {
     this.server.listen(port, () => {
-      console.log(`Server running on port ${port}`);
+      console.log(`🚀 Server running on port ${port}`);
     });
   }
 }
