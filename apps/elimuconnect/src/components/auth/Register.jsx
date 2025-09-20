@@ -54,12 +54,20 @@ const Register = () => {
     
     setSearchingSchools(true);
     try {
+      console.log('Searching for:', query);
       const response = await schoolAPI.searchSchools(query);
       
-      // Check the correct nested path: response.data.data.schools
-      if (response.data && response.data.data && response.data.data.schools) {
-        setSchools(response.data.data.schools);
+      // Debug: Log the exact response structure
+      console.log('Full API response:', response);
+      console.log('response.data:', response.data);
+      console.log('response.data.schools:', response.data?.schools);
+      
+      // Your API returns { data: { schools: [...], total: 0 } }
+      if (response.data && response.data.schools && Array.isArray(response.data.schools)) {
+        console.log('Found schools:', response.data.schools);
+        setSchools(response.data.schools);
       } else {
+        console.log('No schools found - response structure:', response);
         setSchools([]);
       }
     } catch (error) {
@@ -568,19 +576,19 @@ const Register = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  className="flex-1 py-2 px-4 border border-transparent rounded-md sh text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                 >
                   {isLoading ? <LoadingSpinner size="sm" /> : t('createAccount')}
                 </button>
               </div>
             </div>
           )}
-    </motion.form>
+        </motion.form>
 
         {/* Additional Info */}
         <motion.div
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+       animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
           className="text-center"
         >
