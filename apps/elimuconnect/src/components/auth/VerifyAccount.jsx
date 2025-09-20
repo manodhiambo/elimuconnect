@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { authAPI } from '../../utils/api';
 import LoadingSpinner from '../common/LoadingSpinner';
 
 const VerifyAccount = () => {
@@ -12,6 +13,8 @@ const VerifyAccount = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [resendLoading, setResendLoading] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
+  const [resendError, setResendError] = useState('');
 
   const email = location.state?.email;
 
@@ -20,7 +23,10 @@ const VerifyAccount = () => {
     handleSubmit,
     formState: { errors },
     setValue,
+    watch,
   } = useForm();
+
+  const watchedCode = watch('verificationCode');
 
   useEffect(() => {
     if (!email) {
@@ -29,27 +35,44 @@ const VerifyAccount = () => {
   }, [email, navigate]);
 
   const onSubmit = async (data) => {
-    const result = await verifyAccount({
-      email,
-      ...data,
-    });
-    
-    if (result.success) {
-      navigate('/dashboard');
+    try {
+      const result = await verifyAccount({
+        email,
+        token: data.verificationCode,
+        schoolVerificationCode: data.schoolVerificationCode,
+      });
+      
+      if (result.success) {
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Verification failed:', error);
     }
   };
 
   const handleResendVerification = async () => {
+    if (!email) return;
+    
     setResendLoading(true);
+    setResendError('');
+    setResendSuccess(false);
+    
     try {
-      // Call resend verification API
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
-      toast.success('Verification email sent!');
+      await authAPI.resendVerification(email);
+      setResendSuccess(true);
+      setTimeout(() => setResendSuccess(false), 5000);
     } catch (error) {
-      toast.error('Failed to resend verification email');
+      setResendError(error.message || 'Failed to resend verification email');
+      setTimeout(() => setResendError(''), 5000);
     } finally {
       setResendLoading(false);
     }
+  };
+
+  // Auto-format verification code input
+  const handleCodeChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setValue('verificationCode', value);
   };
 
   if (!email) {
@@ -67,13 +90,15 @@ const VerifyAccount = () => {
         {/* Header */}
         <div className="text-center">
           <div className="mx-auto h-16 w-16 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl flex items-center justify-center">
-            <span className="text-white font-bold text-2xl">✓</span>
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
           </div>
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">
-            Verify Your Account
+            {t('verifyYourAccount') || 'Verify Your Account'}
           </h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            We've sent a verification email to{' '}
+            {t('verificationEmailSent') || "We've sent a verification email to"}{' '}
             <span className="font-medium text-blue-600 dark:text-blue-400">
               {email}
             </span>
@@ -91,19 +116,21 @@ const VerifyAccount = () => {
             {/* Verification Code */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Verification Code
+                {t('verificationCode') || 'Verification Code'}
               </label>
               <input
                 {...register('verificationCode', {
-                  required: 'Verification code is required',
+                  required: t('verificationCodeRequired') || 'Verification code is required',
                   pattern: {
                     value: /^[0-9]{6}$/,
-                    message: 'Please enter a 6-digit code',
+                    message: t('verificationCodeFormat') || 'Please enter a 6-digit code',
                   },
                 })}
                 type="text"
                 maxLength="6"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-center text-lg tracking-widest"
+                value={watchedCode || ''}
+                onChange={handleCodeChange}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-center text-lg tracking-widest font-mono"
                 placeholder="000000"
                 autoComplete="one-time-code"
               />
@@ -117,16 +144,17 @@ const VerifyAccount = () => {
             {/* School Verification (for students/teachers) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                School Verification Code (if applicable)
+                {t('schoolVerificationCode') || 'School Verification Code'} 
+                <span className="text-gray-500">({t('optional') || 'optional'})</span>
               </label>
               <input
                 {...register('schoolVerificationCode')}
                 type="text"
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                placeholder="Enter school verification code"
+                placeholder={t('enterSchoolCode') || 'Enter school verification code'}
               />
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                This code is provided by your school administration
+                {t('schoolCodeHelp') || 'This code is provided by your school administration'}
               </p>
             </div>
           </div>
@@ -135,24 +163,43 @@ const VerifyAccount = () => {
           <div>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !watchedCode || watchedCode.length !== 6}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             >
-              {isLoading ? <LoadingSpinner size="sm" /> : 'Verify Account'}
+              {isLoading ? (
+                <LoadingSpinner size="sm" />
+              ) : (
+                t('verifyAccount') || 'Verify Account'
+              )}
             </button>
           </div>
 
           {/* Resend Code */}
-          <div className="text-center">
+          <div className="text-center space-y-2">
+            {resendSuccess && (
+              <p className="text-sm text-green-600 dark:text-green-400">
+                {t('verificationEmailResent') || 'Verification email sent successfully!'}
+              </p>
+            )}
+            
+            {resendError && (
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {resendError}
+              </p>
+            )}
+            
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Didn't receive the code?{' '}
+              {t('didntReceiveCode') || "Didn't receive the code?"}{' '}
               <button
                 type="button"
                 onClick={handleResendVerification}
                 disabled={resendLoading}
-                className="font-medium text-purple-600 hover:text-purple-500 dark:text-purple-400 disabled:opacity-50"
+                className="font-medium text-purple-600 hover:text-purple-500 dark:text-purple-400 disabled:opacity-50 transition-colors duration-200"
               >
-                {resendLoading ? 'Sending...' : 'Resend verification email'}
+                {resendLoading 
+                  ? (t('sending') || 'Sending...')
+                  : (t('resendEmail') || 'Resend verification email')
+                }
               </button>
             </p>
           </div>
@@ -174,18 +221,33 @@ const VerifyAccount = () => {
               </div>
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                  Verification Help
+                  {t('verificationHelp') || 'Verification Help'}
                 </h3>
                 <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
                   <ul className="list-disc list-inside space-y-1">
-                    <li>Check your email inbox and spam folder</li>
-                    <li>The verification code expires in 15 minutes</li>
-                    <li>Contact support if you continue having issues</li>
+                    <li>{t('checkEmailSpam') || 'Check your email inbox and spam folder'}</li>
+                    <li>{t('codeExpires') || 'The verification code expires in 15 minutes'}</li>
+                    <li>{t('contactSupport') || 'Contact support if you continue having issues'}</li>
                   </ul>
                 </div>
               </div>
             </div>
           </div>
+        </motion.div>
+
+        {/* Back to Registration */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          className="text-center"
+        >
+          <Link
+            to="/register"
+            className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-200"
+          >
+            ← {t('backToRegistration') || 'Back to Registration'}
+          </Link>
         </motion.div>
       </motion.div>
     </div>

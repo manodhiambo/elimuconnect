@@ -95,7 +95,7 @@ function App() {
                   element={isAuthenticated ? <Navigate to={ROUTES.DASHBOARD} replace /> : <ForgotPassword />} 
                 />
                 <Route 
-                  path="/verify-account" 
+                  path="/verify" 
                   element={<VerifyAccount />} 
                 />
 
