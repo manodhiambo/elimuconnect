@@ -1,11 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card';
 import { Users, School, BookOpen, AlertCircle } from 'lucide-react';
-import { useAuthStore } from '../../../store/authStore';
+// import { useAuthStore } from '../../../store/authStore';
 import { Button } from '../../../components/ui/Button';
 import { Link } from 'react-router-dom';
 
 export const AdminDashboard = () => {
-  const user = useAuthStore((state) => state.user);
+ // const user = useAuthStore((state) => state.user);
 
   const stats = [
     {

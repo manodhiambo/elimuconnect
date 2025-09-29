@@ -6,7 +6,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
-import { Select } from '../../../components/ui/Select';
+// import { Select } from '../../../components/ui/Select';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card';
 import { Alert, AlertDescription } from '../../../components/ui/Alert';
 import { authService } from '../services/authService';

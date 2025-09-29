@@ -62,17 +62,21 @@ export const LibraryPage = () => {
               </div>
             </div>
             <Select
-              placeholder="Select Subject"
-              value={selectedSubject}
-              onChange={(e) => setSelectedSubject(e.target.value)}
-              options={SUBJECTS.map(s => ({ value: s, label: s }))}
-            />
-            <Select
-              placeholder="Select Grade"
-              value={selectedGrade}
-              onChange={(e) => setSelectedGrade(e.target.value)}
-              options={GRADES.map(g => ({ value: g, label: g }))}
-            />
+	       value={selectedSubject}
+	       onChange={(e) => setSelectedSubject(e.target.value)}
+	       options={[
+		       { value: '', label: 'Select Subject' },
+		       ...SUBJECTS.map(s => ({ value: s, label: s }))
+	       ]}
+	       />
+	       <Select
+	       value={selectedGrade}
+	       onChange={(e) => setSelectedGrade(e.target.value)}
+	       options={[
+		       { value: '', label: 'Select Grade' },
+		       ...GRADES.map(g => ({ value: g, label: g }))
+	       ]}
+	       />
           </div>
         </CardContent>
       </Card>
