@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: elimuconnect-backend
+  
+  data:
+    mongodb:
+      uri: ${DATABASE_URL:mongodb+srv://manodhiambo:owinoko26121995@cluster0.tkogq.mongodb.net/elimuconnect?retryWrites=true&w=majority&appName=Cluster0}
+      auto-index-creation: false
+  
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+  
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: manodhiambo@gmail.com
+    password: ${EMAIL_PASS:owinoko26121995}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+server:
+  port: ${PORT:5000}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:83f6c0c536c0e22a83dd9a70b13acbc3ba4c05892b36223ed5541cb3373a9967b68e7263d7b3897074a81a947f84109126ba08fe05109ec30a4d4cd4f0dcff4d}
+    expiration: 86400000
+  
+  client:
+    url: ${CLIENT_URL:https://elimuconnect.vercel.app}
+  
+  file:
+    upload-dir: ${FILE_UPLOAD_DIR:/var/app/uploads}
+    max-size: 52428800
+
+logging:
+  level:
+    ke.elimuconnect: INFO
+    org.springframework.security: WARN
