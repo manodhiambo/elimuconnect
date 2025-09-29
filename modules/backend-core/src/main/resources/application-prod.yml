@@ -23,8 +23,10 @@ server:
   port: ${PORT:8080}
 
 management:
-  server:
-    port: ${PORT:8080}
+  endpoints:
+    enabled-by-default: false
+  health:
+    enabled: true
 
 app:
   jwt:
