@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
@@ -10,10 +10,16 @@ import { Select } from '../../../components/ui/Select';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card';
 import { Alert, AlertDescription } from '../../../components/ui/Alert';
 import { authService } from '../services/authService';
+import { schoolService } from '../../school/services/schoolService';
 
 const KENYAN_COUNTIES = [
   'Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret', 'Thika', 'Malindi',
   'Kitale', 'Garissa', 'Kakamega', 'Meru', 'Nyeri', 'Machakos', 'Kiambu'
+];
+
+const CLASSES = [
+  'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6',
+  'Grade 7', 'Grade 8', 'Grade 9', 'Form 1', 'Form 2', 'Form 3', 'Form 4'
 ];
 
 const studentSchema = z.object({
@@ -21,7 +27,7 @@ const studentSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   admissionNumber: z.string().min(1, 'Admission number is required'),
-  schoolId: z.string().min(1, 'School ID is required'),
+  schoolId: z.string().min(1, 'School is required'),
   className: z.string().min(1, 'Class is required'),
   dateOfBirth: z.string().min(1, 'Date of birth is required'),
   parentGuardianContact: z.string().regex(/^\+254[0-9]{9}$/, 'Invalid phone number'),
@@ -34,6 +40,16 @@ export const StudentRegistrationForm = () => {
   const navigate = useNavigate();
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const { data: schoolsData } = useQuery({
+    queryKey: ['schools', searchQuery],
+    queryFn: () => searchQuery 
+      ? schoolService.searchSchools(searchQuery) 
+      : schoolService.getAllSchools(),
+  });
+
+  const schools = schoolsData?.data || [];
 
   const { register, handleSubmit, formState: { errors } } = useForm<StudentFormData>({
     resolver: zodResolver(studentSchema),
@@ -113,17 +129,28 @@ export const StudentRegistrationForm = () => {
               {...register('admissionNumber')}
             />
 
-            <Input
-              label="School ID"
-              placeholder="SCH001"
-              error={errors.schoolId?.message}
-              {...register('schoolId')}
-            />
+            <div className="md:col-span-2">
+              <Input
+                label="Search School"
+                placeholder="Type to search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <Select
+                label="Select School *"
+                error={errors.schoolId?.message}
+                options={schools.map((school: any) => ({ 
+                  value: school.id, 
+                  label: `${school.name} (${school.nemisCode})` 
+                }))}
+                {...register('schoolId')}
+              />
+            </div>
 
-            <Input
-              label="Class"
-              placeholder="Grade 7"
+            <Select
+              label="Class *"
               error={errors.className?.message}
+              options={CLASSES.map(c => ({ value: c, label: c }))}
               {...register('className')}
             />
 
@@ -146,7 +173,6 @@ export const StudentRegistrationForm = () => {
               error={errors.countyOfResidence?.message}
               options={KENYAN_COUNTIES.map(county => ({ value: county, label: county }))}
               {...register('countyOfResidence')}
-              className="md:col-span-2"
             />
           </div>
 

@@ -1,0 +1,35 @@
+package ke.elimuconnect.backend.controller;
+
+import ke.elimuconnect.backend.entity.School;
+import ke.elimuconnect.backend.repository.SchoolRepository;
+import ke.elimuconnect.domain.common.ApiResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/v1/schools")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "*")
+public class SchoolController {
+    
+    private final SchoolRepository schoolRepository;
+    
+    @GetMapping
+    public ApiResponse<List<School>> getAllSchools() {
+        List<School> schools = schoolRepository.findByActive(true);
+        return ApiResponse.success(schools);
+    }
+    
+    @GetMapping("/search")
+    public ApiResponse<List<School>> searchSchools(@RequestParam String query) {
+        // Simple search by name or NEMIS code
+        List<School> schools = schoolRepository.findAll().stream()
+                .filter(s -> s.isActive() && 
+                       (s.getName().toLowerCase().contains(query.toLowerCase()) ||
+                        s.getNemisCode().toLowerCase().contains(query.toLowerCase())))
+                .toList();
+        return ApiResponse.success(schools);
+    }
+}
