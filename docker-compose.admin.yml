@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: elimuconnect-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: elimuconnect
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - elimuconnect-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: elimuconnect-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - elimuconnect-network
+
+  backend:
+    build:
+      context: ./modules/backend-core
+      dockerfile: Dockerfile
+    container_name: elimuconnect-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://admin:password@mongodb:27017/elimuconnect?authSource=admin
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      ADMIN_EMAIL: manodhiambo@gmail.com
+      ADMIN_PHONE: 0703445756
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - elimuconnect-network
+
+  admin-dashboard:
+    build:
+      context: ./modules/admin-dashboard
+      dockerfile: Dockerfile
+    container_name: elimuconnect-admin
+    ports:
+      - "3001:80"
+    environment:
+      VITE_API_URL: http://backend:8080
+    depends_on:
+      - backend
+    networks:
+      - elimuconnect-network
+
+volumes:
+  mongodb_data:
+  redis_data:
+
+networks:
+  elimuconnect-network:
+    driver: bridge

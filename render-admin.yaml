@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: elimuconnect-admin-dashboard
+    env: static
+    buildCommand: cd modules/admin-dashboard && npm install && npm run build
+    staticPublishPath: modules/admin-dashboard/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://elimuconnect-backend.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

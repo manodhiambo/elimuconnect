@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: elimuconnect-backend
+    env: java
+    buildCommand: cd modules/backend-core && mvn clean package -DskipTests
+    startCommand: java -jar modules/backend-core/target/backend-core-1.0.0-SNAPSHOT.jar
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: ADMIN_EMAIL
+        value: manodhiambo@gmail.com
+      - key: ADMIN_PHONE
+        value: 0703445756
+    healthCheckPath: /actuator/health
+
+databases:
+  - name: elimuconnect-mongodb
+    plan: starter
+
+  - name: elimuconnect-redis
+    plan: starter
