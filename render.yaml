@@ -7,9 +7,7 @@ services:
     region: oregon
     envVars:
       - key: SPRING_DATA_MONGODB_URI
-        value: mongodb+srv://manodhiambo:WEg0h4iCbhMCDlGw@elimuconnect.vgasa.mongodb.net/elimuconnect?retryWrites=true&w=majority&appName=ElimuConnect
+        value: mongodb+srv://manodhiambo:owinoko26121995@cluster0.tkogq.mongodb.net/elimuconnect?retryWrites=true&w=majority&appName=Cluster0
       - key: JWT_SECRET
         generateValue: true
-      - key: PORT
-        value: 8080
     healthCheckPath: /actuator/health
