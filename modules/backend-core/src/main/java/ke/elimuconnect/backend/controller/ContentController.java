@@ -32,7 +32,7 @@ public class ContentController {
     public ResponseEntity<ApiResponse<String>> uploadFile(
             @RequestParam("file") MultipartFile file,
             @RequestParam("category") String category) {
-        String fileUrl = fileStorageService.storeFile(file, category);
+        String fileUrl = fileStorageService.uploadFile(file, category);
         return ResponseEntity.ok(ApiResponse.success(fileUrl, "File uploaded successfully"));
     }
     

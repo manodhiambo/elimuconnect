@@ -12,25 +12,22 @@ import java.util.List;
 @Repository
 public interface ContentRepository extends MongoRepository<Content, String> {
     
+    Page<Content> findByPublished(boolean published, Pageable pageable);
+    
     Page<Content> findByPublishedTrue(Pageable pageable);
+    
+    Page<Content> findBySubject(String subject, Pageable pageable);
+    
+    Page<Content> findByGrade(String grade, Pageable pageable);
+    
+    Page<Content> findBySubjectAndGrade(String subject, String grade, Pageable pageable);
     
     Page<Content> findBySubjectAndGradeAndPublishedTrue(String subject, String grade, Pageable pageable);
     
-    Page<Content> findByContentTypeAndPublishedTrue(String contentType, Pageable pageable);
+    Page<Content> findByApprovedFalse(Pageable pageable);
     
     List<Content> findByUploadedByAndPublishedTrue(String uploadedBy);
     
-    List<Content> findByUploadedByAndApprovedFalse(String uploadedBy);
-    
-    Page<Content> findByApprovedFalse(Pageable pageable);
-    
-    @Query("{ 'published': true, 'tags': { $in: ?0 } }")
-    Page<Content> findByTags(List<String> tags, Pageable pageable);
-    
-    @Query("{ 'published': true, $text: { $search: ?0 } }")
+    @Query("{ $text: { $search: ?0 } }")
     Page<Content> searchByText(String searchText, Pageable pageable);
-    
-    List<Content> findByIsPublisherContentTrue();
-    
-    List<Content> findByPublisher(String publisher);
 }

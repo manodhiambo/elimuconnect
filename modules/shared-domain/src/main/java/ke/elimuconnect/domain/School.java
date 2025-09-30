@@ -4,24 +4,40 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.util.List;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "schools")
 public class School {
-    @Id
     private String id;
+    private String nemisCode;
     private String name;
+    private String type;
+    private String category;
     private String county;
     private String subCounty;
-    private String type; // PUBLIC, PRIVATE, BOARDING, DAY
-    private String level; // PRIMARY, SECONDARY
-    private String principal;
+    private String ward;
+    private String location;
+    private Double latitude;
+    private Double longitude;
+    private String phoneNumber;
     private String email;
-    private String phone;
-    private Integer studentCount;
+    private String principalName;
+    private String principalContact;
+    private List<String> grades;
+    private List<String> streams;
+    private Integer totalStudents;
+    private Integer totalTeachers;
+    private boolean hasElectricity;
+    private boolean hasInternet;
+    private boolean hasComputerLab;
+    private boolean hasLibrary;
+    private Integer numberOfComputers;
+    private boolean active;
+    private String subscriptionTier;
+    private String createdAt;
+    private String updatedAt;
 }

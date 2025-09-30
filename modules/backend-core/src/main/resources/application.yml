@@ -18,3 +18,40 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+
+# Email Configuration
+spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:your-email@gmail.com}
+    password: ${MAIL_PASSWORD:your-app-password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+# Admin Configuration
+app:
+  admin:
+    email: manodhiambo@gmail.com
+    phone: 0703445756
+
+# File Upload Configuration
+app:
+  upload:
+    dir: ${user.home}/elimuconnect-uploads
+    max-file-size: 100MB
+    max-request-size: 100MB
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB

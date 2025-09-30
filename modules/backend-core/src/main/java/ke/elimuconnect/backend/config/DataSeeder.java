@@ -7,7 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
+import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
@@ -16,49 +17,76 @@ import java.util.List;
 public class DataSeeder implements CommandLineRunner {
     
     private final SchoolRepository schoolRepository;
-
+    
     @Override
-    public void run(String... args) {
+    public void run(String... args) throws Exception {
         if (schoolRepository.count() == 0) {
-            log.info("Seeding initial school data...");
-            
-            List<School> schools = new ArrayList<>();
-            
-            // Nairobi County Schools
-            schools.add(createSchool("Alliance High School", "Nairobi", "Westlands", "PUBLIC", "SECONDARY", 
-                "Principal John Kamau", "alliance@schools.ke", "+254712345601", 800));
-            schools.add(createSchool("Kenya High School", "Nairobi", "Nairobi Central", "PUBLIC", "SECONDARY",
-                "Principal Mary Wanjiru", "kenyahigh@schools.ke", "+254712345602", 750));
-            
-            // Mombasa County Schools
-            schools.add(createSchool("Mombasa Academy", "Mombasa", "Mvita", "PRIVATE", "SECONDARY",
-                "Principal Ahmed Hassan", "mombasa.academy@schools.ke", "+254712345603", 600));
-            schools.add(createSchool("Coast Secondary School", "Mombasa", "Kisauni", "PUBLIC", "SECONDARY",
-                "Principal Grace Muthoni", "coast.secondary@schools.ke", "+254712345604", 850));
-            
-            // Add more schools (shortened for brevity)
-            schools.add(createSchool("Nakuru High School", "Nakuru", "Nakuru East", "PUBLIC", "SECONDARY",
-                "Principal Peter Njoroge", "nakuru.high@schools.ke", "+254712345605", 900));
-            
-            schoolRepository.saveAll(schools);
-            log.info("Successfully seeded {} schools", schools.size());
-        } else {
-            log.info("School data already exists, skipping seeding");
+            seedSchools();
         }
     }
-
-    private School createSchool(String name, String county, String subCounty, String type, 
-                               String level, String principal, String email, String phone, Integer studentCount) {
-        return School.builder()
-                .name(name)
-                .county(county)
-                .subCounty(subCounty)
-                .type(type)
-                .level(level)
-                .principal(principal)
-                .email(email)
-                .phone(phone)
-                .studentCount(studentCount)
-                .build();
+    
+    private void seedSchools() {
+        List<School> schools = Arrays.asList(
+            School.builder()
+                .nemisCode("001001001")
+                .name("Nairobi Primary School")
+                .type("PRIMARY")
+                .category("PUBLIC")
+                .county("Nairobi")
+                .subCounty("Westlands")
+                .ward("Parklands")
+                .location("Parklands, Nairobi")
+                .latitude(-1.2634)
+                .longitude(36.8081)
+                .phoneNumber("+254701234567")
+                .email("info@nairobiprimary.ac.ke")
+                .principalName("John Kamau")
+                .principalContact("+254712345678")
+                .grades(Arrays.asList("Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6"))
+                .streams(Arrays.asList("A", "B", "C"))
+                .totalStudents(450)
+                .totalTeachers(25)
+                .hasElectricity(true)
+                .hasInternet(true)
+                .hasComputerLab(true)
+                .hasLibrary(true)
+                .numberOfComputers(30)
+                .active(true)
+                .subscriptionTier("PREMIUM")
+                .createdAt(LocalDateTime.now().toString())
+                .build(),
+                
+            School.builder()
+                .nemisCode("002002002")
+                .name("Mombasa Secondary School")
+                .type("SECONDARY")
+                .category("PUBLIC")
+                .county("Mombasa")
+                .subCounty("Mvita")
+                .ward("Tononoka")
+                .location("Tononoka, Mombasa")
+                .latitude(-4.0435)
+                .longitude(39.6682)
+                .phoneNumber("+254702345678")
+                .email("info@mombasasecondary.ac.ke")
+                .principalName("Mary Otieno")
+                .principalContact("+254723456789")
+                .grades(Arrays.asList("Form 1", "Form 2", "Form 3", "Form 4"))
+                .streams(Arrays.asList("A", "B"))
+                .totalStudents(320)
+                .totalTeachers(20)
+                .hasElectricity(true)
+                .hasInternet(true)
+                .hasComputerLab(true)
+                .hasLibrary(true)
+                .numberOfComputers(25)
+                .active(true)
+                .subscriptionTier("BASIC")
+                .createdAt(LocalDateTime.now().toString())
+                .build()
+        );
+        
+        schoolRepository.saveAll(schools);
+        log.info("Seeded {} schools", schools.size());
     }
 }
