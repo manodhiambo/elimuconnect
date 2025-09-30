@@ -56,14 +56,12 @@ public class AuthService {
                 .subjectsTaught(request.getSubjectsTaught())
                 .classesAssigned(request.getClassesAssigned())
                 .qualification(request.getQualification())
-                .active(false) // Requires admin approval
+                .active(false)
                 .emailVerified(false)
                 .createdAt(LocalDateTime.now())
                 .build();
         
         User savedUser = userRepository.save(user);
-        
-        // Send notification to admin
         emailNotificationService.sendUserRegistrationNotification(savedUser);
         
         return savedUser;
@@ -71,6 +69,11 @@ public class AuthService {
     
     @Transactional
     public User registerStudent(StudentRegistrationRequest request) {
+        // Convert LocalDate to LocalDateTime if dateOfBirth is not null
+        LocalDateTime dateOfBirthDateTime = request.getDateOfBirth() != null 
+            ? request.getDateOfBirth().atStartOfDay() 
+            : null;
+        
         User user = User.builder()
                 .name(request.getName())
                 .email(request.getEmail())
@@ -79,17 +82,15 @@ public class AuthService {
                 .admissionNumber(request.getAdmissionNumber())
                 .schoolId(request.getSchoolId())
                 .className(request.getClassName())
-                .dateOfBirth(request.getDateOfBirth())
+                .dateOfBirth(dateOfBirthDateTime)
                 .parentGuardianContact(request.getParentGuardianContact())
                 .countyOfResidence(request.getCountyOfResidence())
-                .active(false) // Requires verification
+                .active(false)
                 .emailVerified(false)
                 .createdAt(LocalDateTime.now())
                 .build();
         
         User savedUser = userRepository.save(user);
-        
-        // Send notification to admin
         emailNotificationService.sendUserRegistrationNotification(savedUser);
         
         return savedUser;
@@ -107,21 +108,18 @@ public class AuthService {
                 .childrenAdmissionNumbers(request.getChildrenAdmissionNumbers())
                 .relationshipToChildren(request.getRelationshipToChildren())
                 .address(request.getAddress())
-                .active(false) // Requires verification
+                .active(false)
                 .emailVerified(false)
                 .createdAt(LocalDateTime.now())
                 .build();
         
         User savedUser = userRepository.save(user);
-        
-        // Send notification to admin
         emailNotificationService.sendUserRegistrationNotification(savedUser);
         
         return savedUser;
     }
     
     public String login(String email, String password) {
-        // Authentication logic
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new InvalidCredentialsException("Invalid credentials"));
         
