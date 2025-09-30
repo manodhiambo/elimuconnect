@@ -1,42 +1,11 @@
 spring:
   data:
     mongodb:
-      uri: mongodb://admin:admin123@localhost:27017/elimuconnect?authSource=admin
-      auto-index-creation: false
-  
-  redis:
-    host: localhost
-    port: 6379
-    password: redis123
-  
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: manodhiambo@gmail.com
-    password: owinoko26121995
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/elimuconnect}
+      
 server:
-  port: 8080
+  port: ${PORT:8080}
 
-app:
-  jwt:
-    secret: elimuconnect-dev-secret-key-for-development-only
-    expiration: 86400000
-  
-  client:
-    url: http://localhost:3000
-  
-  file:
-    upload-dir: ./uploads
-    max-size: 52428800
-
-logging:
-  level:
-    ke.elimuconnect: DEBUG
-    org.springframework.security: DEBUG
+jwt:
+  secret: ${JWT_SECRET:your-256-bit-secret-key-change-this-in-production}
+  expiration: 86400000
