@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: elimuconnect-backend
+    env: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
