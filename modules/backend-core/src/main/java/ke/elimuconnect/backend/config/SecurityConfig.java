@@ -9,6 +9,8 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -26,21 +28,15 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints - BOTH versions
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/schools/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        // Admin only endpoints
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                        // Teacher endpoints
                         .requestMatchers("/api/v1/teacher/**").hasAnyRole("ADMIN", "TEACHER")
-                        // Student endpoints
                         .requestMatchers("/api/v1/student/**").hasAnyRole("ADMIN", "TEACHER", "STUDENT")
-                        // Parent endpoints
                         .requestMatchers("/api/v1/parent/**").hasAnyRole("ADMIN", "PARENT")
-                        // All other requests must be authenticated
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
@@ -50,5 +46,10 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }
