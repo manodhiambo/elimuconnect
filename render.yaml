@@ -6,7 +6,7 @@ services:
     plan: free
     region: oregon
     envVars:
-      - key: MONGODB_URI
+      - key: SPRING_DATA_MONGODB_URI
         value: mongodb+srv://manodhiambo:WEg0h4iCbhMCDlGw@elimuconnect.vgasa.mongodb.net/elimuconnect?retryWrites=true&w=majority&appName=ElimuConnect
       - key: JWT_SECRET
         generateValue: true
