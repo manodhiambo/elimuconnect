@@ -3,8 +3,13 @@ services:
     name: elimuconnect-backend
     env: docker
     dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
     envVars:
       - key: MONGODB_URI
-        sync: false
+        value: mongodb+srv://manodhiambo:WEg0h4iCbhMCDlGw@elimuconnect.vgasa.mongodb.net/elimuconnect?retryWrites=true&w=majority&appName=ElimuConnect
       - key: JWT_SECRET
         generateValue: true
+      - key: PORT
+        value: 8080
+    healthCheckPath: /actuator/health
