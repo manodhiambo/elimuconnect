@@ -43,7 +43,9 @@ export const LoginForm = () => {
         };
         
         setAuth(user as any, token);
-        navigate('/dashboard');
+        
+        // Navigate to the correct route under /app
+        navigate('/app/dashboard');
       }
     },
     onError: (err: any) => {
@@ -68,7 +70,7 @@ export const LoginForm = () => {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          
+
           <Input
             label="Email"
             type="email"
@@ -76,7 +78,7 @@ export const LoginForm = () => {
             error={errors.email?.message}
             {...register('email')}
           />
-          
+
           <Input
             label="Password"
             type="password"
@@ -84,15 +86,15 @@ export const LoginForm = () => {
             error={errors.password?.message}
             {...register('password')}
           />
-          
-          <Button 
-            type="submit" 
+
+          <Button
+            type="submit"
             className="w-full"
             disabled={loginMutation.isPending}
           >
             {loginMutation.isPending ? 'Logging in...' : 'Login'}
           </Button>
-          
+
           <div className="text-center text-sm">
             <a href="/register" className="text-primary hover:underline">
               Don't have an account? Register
