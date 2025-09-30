@@ -60,3 +60,4 @@ uploads/
 # Database
 *.db
 .env*
+.vercel
