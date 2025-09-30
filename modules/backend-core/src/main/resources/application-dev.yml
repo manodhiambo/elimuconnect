@@ -9,3 +9,7 @@ server:
 jwt:
   secret: ${JWT_SECRET:your-256-bit-secret-key-change-this-in-production}
   expiration: 86400000
+
+app:
+  client:
+    url: ${APP_CLIENT_URL:http://localhost:5173}
