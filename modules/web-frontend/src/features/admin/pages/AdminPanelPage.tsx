@@ -8,7 +8,6 @@ export const AdminPanelPage = () => {
     const timer = setTimeout(() => {
       window.location.href = ADMIN_DASHBOARD_URL;
     }, 3000);
-
     return () => clearTimeout(timer);
   }, []);
 
@@ -19,13 +18,13 @@ export const AdminPanelPage = () => {
           Redirecting to Admin Dashboard
         </h1>
         <p className="text-gray-600 mb-6">
-          Redirecting you to the admin dashboard...
+          Redirecting you to the admin dashboard in 3 seconds...
         </p>
         
-          href={ADMIN_DASHBOARD_URL}
+          <a href={ADMIN_DASHBOARD_URL}
           className="inline-flex items-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
         >
-          Go to Admin Dashboard
+          <span>Go to Admin Dashboard</span>
           <ExternalLink className="ml-2 w-5 h-5" />
         </a>
         <p className="text-sm text-gray-500 mt-4">
