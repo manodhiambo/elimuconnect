@@ -5,7 +5,6 @@ export const AdminPanelPage = () => {
   const ADMIN_DASHBOARD_URL = 'https://elimuconnect-admin-dashboard.vercel.app';
 
   useEffect(() => {
-    // Auto-redirect after 3 seconds
     const timer = setTimeout(() => {
       window.location.href = ADMIN_DASHBOARD_URL;
     }, 3000);
@@ -20,7 +19,7 @@ export const AdminPanelPage = () => {
           Redirecting to Admin Dashboard
         </h1>
         <p className="text-gray-600 mb-6">
-          You&apos;re being redirected to the full-featured admin dashboard...
+          Redirecting you to the admin dashboard...
         </p>
         
           href={ADMIN_DASHBOARD_URL}
@@ -30,7 +29,7 @@ export const AdminPanelPage = () => {
           <ExternalLink className="ml-2 w-5 h-5" />
         </a>
         <p className="text-sm text-gray-500 mt-4">
-          If you&apos;re not redirected automatically, click the button above.
+          Click the button if not redirected automatically.
         </p>
       </div>
     </div>
