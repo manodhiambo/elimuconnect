@@ -20,7 +20,7 @@ export const AdminPanelPage = () => {
           Redirecting to Admin Dashboard
         </h1>
         <p className="text-gray-600 mb-6">
-          You're being redirected to the full-featured admin dashboard...
+          You&apos;re being redirected to the full-featured admin dashboard...
         </p>
         
           href={ADMIN_DASHBOARD_URL}
@@ -30,7 +30,7 @@ export const AdminPanelPage = () => {
           <ExternalLink className="ml-2 w-5 h-5" />
         </a>
         <p className="text-sm text-gray-500 mt-4">
-          If you're not redirected automatically, click the button above.
+          If you&apos;re not redirected automatically, click the button above.
         </p>
       </div>
     </div>
