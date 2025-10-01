@@ -21,7 +21,7 @@ export const AdminPanelPage = () => {
           Redirecting you to the admin dashboard in 3 seconds...
         </p>
         
-          href={ADMIN_DASHBOARD_URL}
+          <a href={ADMIN_DASHBOARD_URL}
           className="inline-flex items-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
         >
           <span>Go to Admin Dashboard</span>
