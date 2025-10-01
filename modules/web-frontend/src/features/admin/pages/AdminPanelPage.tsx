@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, FileText, Building2, Settings } from 'lucide-react';
+import { Users, FileText } from 'lucide-react';
 import { PendingUsersTable } from '../components/PendingUsersTable';
 
 export const AdminPanelPage = () => {
