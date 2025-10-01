@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { useAuthStore } from '../../../store/authStore';
+import { useAuthStore } from '../store/authStore';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://elimuconnect.onrender.com';
@@ -36,9 +36,10 @@ export const LoginForm: React.FC = () => {
             role: payload.role,
           };
           
+          // This will store using admin_token and admin_user keys
           setAuth(user as any, token);
           
-          // Use setTimeout to ensure state is updated before navigation
+          // Navigate after a brief delay to ensure state is saved
           setTimeout(() => {
             navigate('/dashboard', { replace: true });
           }, 100);
