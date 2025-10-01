@@ -28,7 +28,6 @@ export const LoginForm: React.FC = () => {
           const payload = JSON.parse(atob(token.split('.')[1]));
           console.log('Token payload:', payload);
           
-          // Check if user is admin
           if (!payload.role || !payload.role.includes('ADMIN')) {
             setError('Access denied. Admin privileges required.');
             return;
