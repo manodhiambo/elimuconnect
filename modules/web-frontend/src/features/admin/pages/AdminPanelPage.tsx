@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { ExternalLink } from 'lucide-react';
 
 export const AdminPanelPage = () => {
-  const ADMIN_DASHBOARD_URL = 'https://elimuconnect-admin-dashboard.vercel.app';
+  const ADMIN_DASHBOARD_URL = 'https://admin-dashboard-sigma-neon-32.vercel.app';
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -21,7 +21,7 @@ export const AdminPanelPage = () => {
           Redirecting you to the admin dashboard in 3 seconds...
         </p>
         
-          <a href={ADMIN_DASHBOARD_URL}
+          href={ADMIN_DASHBOARD_URL}
           className="inline-flex items-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
         >
           <span>Go to Admin Dashboard</span>
