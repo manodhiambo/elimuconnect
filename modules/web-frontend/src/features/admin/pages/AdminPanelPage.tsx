@@ -5,9 +5,18 @@ export const AdminPanelPage = () => {
   const ADMIN_DASHBOARD_URL = 'https://admin-dashboard-sigma-neon-32.vercel.app';
 
   useEffect(() => {
+    // Get the token from localStorage
+    const token = localStorage.getItem('token');
+    
+    // Redirect with token in URL
+    const redirectUrl = token 
+      ? `${ADMIN_DASHBOARD_URL}?token=${token}`
+      : ADMIN_DASHBOARD_URL;
+    
     const timer = setTimeout(() => {
-      window.location.href = ADMIN_DASHBOARD_URL;
+      window.location.href = redirectUrl;
     }, 3000);
+
     return () => clearTimeout(timer);
   }, []);
 
