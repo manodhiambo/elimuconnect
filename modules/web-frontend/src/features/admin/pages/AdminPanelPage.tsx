@@ -1,125 +1,55 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { adminService } from '../services/adminService';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card';
-import { Button } from '../../../components/ui/Button';
-import { User, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
-import { Alert, AlertDescription } from '../../../components/ui/Alert';
 import { useState } from 'react';
+import { Users, FileText, Building2, Settings } from 'lucide-react';
+import { PendingUsersTable } from '../components/PendingUsersTable';
 
 export const AdminPanelPage = () => {
-  const queryClient = useQueryClient();
-  const [syncMessage, setSyncMessage] = useState('');
-
-  const { data: usersData, isLoading } = useQuery({
-    queryKey: ['pending-users'],
-    queryFn: adminService.getPendingUsers,
-  });
-
-  const approveMutation = useMutation({
-    mutationFn: adminService.approveUser,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pending-users'] });
-    },
-  });
-
-  const rejectMutation = useMutation({
-    mutationFn: adminService.rejectUser,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pending-users'] });
-    },
-  });
-
-  const syncMutation = useMutation({
-    mutationFn: adminService.syncPublishers,
-    onSuccess: () => {
-      setSyncMessage('Publisher sync initiated successfully!');
-      setTimeout(() => setSyncMessage(''), 3000);
-    },
-  });
-
-  const pendingUsers = usersData?.data || [];
+  const [activeTab, setActiveTab] = useState('users');
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Admin Panel</h1>
-          <p className="text-muted-foreground">Manage users and system settings</p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+          </div>
         </div>
-        <Button onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending}>
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Sync Publishers
-        </Button>
       </div>
 
-      {syncMessage && (
-        <Alert>
-          <AlertDescription>{syncMessage}</AlertDescription>
-        </Alert>
-      )}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8 border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`${
+                activeTab === 'users'
+                  ? 'border-primary-500 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
+            >
+              <Users className="w-5 h-5 mr-2" />
+              User Management
+            </button>
+            <button
+              onClick={() => setActiveTab('content')}
+              className={`${
+                activeTab === 'content'
+                  ? 'border-primary-500 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
+            >
+              <FileText className="w-5 h-5 mr-2" />
+              Content
+            </button>
+          </nav>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Pending User Approvals ({pendingUsers.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8">Loading...</div>
-          ) : pendingUsers.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No pending approvals
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {pendingUsers.map((user: any) => (
-                <div key={user.id} className="flex items-center justify-between p-4 border rounded">
-                  <div className="flex-1">
-                    <p className="font-medium">{user.name}</p>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
-                    <div className="flex gap-2 mt-1">
-                      <span className="text-xs bg-secondary px-2 py-1 rounded">
-                        {user.role.replace('ROLE_', '')}
-                      </span>
-                      {user.tscNumber && (
-                        <span className="text-xs text-muted-foreground">
-                          TSC: {user.tscNumber}
-                        </span>
-                      )}
-                      {user.admissionNumber && (
-                        <span className="text-xs text-muted-foreground">
-                          Adm: {user.admissionNumber}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => approveMutation.mutate(user.id)}
-                      disabled={approveMutation.isPending}
-                    >
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      Approve
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => rejectMutation.mutate(user.id)}
-                      disabled={rejectMutation.isPending}
-                    >
-                      <XCircle className="h-4 w-4 mr-1" />
-                      Reject
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          {activeTab === 'users' && <PendingUsersTable />}
+          {activeTab === 'content' && (
+            <p className="text-gray-500">Content management coming soon...</p>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
