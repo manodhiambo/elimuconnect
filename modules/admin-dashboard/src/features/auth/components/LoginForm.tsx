@@ -15,31 +15,54 @@ export const LoginForm: React.FC = () => {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
+      console.log('Attempting login to:', `${API_URL}/api/auth/login`);
       const response = await axios.post(`${API_URL}/api/auth/login`, credentials);
+      console.log('Login response:', response.data);
       return response.data;
     },
     onSuccess: (data) => {
+      console.log('Login successful:', data);
       if (data.success && data.data) {
         const token = data.data;
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const user = {
-          id: payload.sub,
-          email: payload.email,
-          name: payload.name,
-          role: payload.role,
-        };
-        setAuth(user as any, token);
-        navigate('/dashboard');
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          console.log('Token payload:', payload);
+          
+          // Check if user is admin
+          if (!payload.role || !payload.role.includes('ADMIN')) {
+            setError('Access denied. Admin privileges required.');
+            return;
+          }
+          
+          const user = {
+            id: payload.sub,
+            email: payload.email,
+            name: payload.name,
+            role: payload.role,
+          };
+          setAuth(user as any, token);
+          navigate('/dashboard');
+        } catch (err) {
+          console.error('Token parsing error:', err);
+          setError('Invalid token received');
+        }
+      } else {
+        setError('Invalid response from server');
       }
     },
     onError: (err: any) => {
-      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+      console.error('Login error:', err);
+      const errorMessage = err.response?.data?.message 
+        || err.message 
+        || 'Login failed. Please check your credentials.';
+      setError(errorMessage);
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    console.log('Submitting login with email:', email);
     loginMutation.mutate({ email, password });
   };
 
@@ -86,6 +109,10 @@ export const LoginForm: React.FC = () => {
       >
         {loginMutation.isPending ? 'Signing in...' : 'Sign In'}
       </button>
+      
+      <p className="text-xs text-gray-500 text-center mt-2">
+        API: {API_URL}
+      </p>
     </form>
   );
 };
