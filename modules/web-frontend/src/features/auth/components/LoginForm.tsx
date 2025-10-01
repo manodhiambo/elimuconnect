@@ -31,20 +31,22 @@ export const LoginForm = () => {
     mutationFn: authService.login,
     onSuccess: (response) => {
       if (response.success && response.data) {
-        // Decode JWT to get user info (simple decode, not verification)
         const token = response.data;
         const payload = JSON.parse(atob(token.split('.')[1]));
+        
+        // Debug: Log the payload to see what's in the JWT
+        console.log('JWT Payload:', payload);
         
         const user = {
           id: payload.sub,
           email: payload.email,
           name: payload.name,
-          role: payload.role,
+          role: payload.role, // This should be the role from JWT
         };
         
-        setAuth(user as any, token);
+        console.log('User object:', user);
         
-        // Navigate to the correct route under /app
+        setAuth(user as any, token);
         navigate('/app/dashboard');
       }
     },
