@@ -1,60 +1,34 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { GraduationCap } from 'lucide-react';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
-import { authService } from '../services/authService';
+import React, { useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { LoginForm } from '../components/LoginForm';
 import { useAuthStore } from '../store/authStore';
-import toast from 'react-hot-toast';
-import { UserRole } from '@/types';
-
-const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
+import { GraduationCap } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { setAuth } = useAuthStore();
-  const [isLoading, setIsLoading] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-  });
-
-  const onSubmit = async (data: LoginFormData) => {
-    setIsLoading(true);
-    try {
-      const response = await authService.login(data);
-      
-      if (response.success && response.data) {
-        const { token, user } = response.data;
-        
-        // Check if user is an admin
-        if (user.role !== UserRole.ADMIN) {
-          toast.error('Access denied. Admin privileges required.');
-          return;
-        }
-
-        setAuth(user, token);
-        toast.success('Welcome back!');
+  useEffect(() => {
+    // Check if token is passed via URL
+    const token = searchParams.get('token');
+    if (token) {
+      // Decode and validate token
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const user = {
+          id: payload.sub,
+          email: payload.email,
+          name: payload.name,
+          role: payload.role,
+        };
+        setAuth(user as any, token);
         navigate('/dashboard');
+      } catch (error) {
+        console.error('Invalid token:', error);
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Login failed');
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [searchParams, setAuth, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-600 to-primary-800 px-4">
@@ -68,31 +42,7 @@ export const LoginPage: React.FC = () => {
             <p className="text-gray-600 mt-2">Sign in to manage ElimuConnect</p>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <Input
-              label="Email Address"
-              type="email"
-              placeholder="admin@elimuconnect.ke"
-              {...register('email')}
-              error={errors.email?.message}
-            />
-
-            <Input
-              label="Password"
-              type="password"
-              placeholder="Enter your password"
-              {...register('password')}
-              error={errors.password?.message}
-            />
-
-            <Button
-              type="submit"
-              className="w-full"
-              isLoading={isLoading}
-            >
-              Sign In
-            </Button>
-          </form>
+          <LoginForm />
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
