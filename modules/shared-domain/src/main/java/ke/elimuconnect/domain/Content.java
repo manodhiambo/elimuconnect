@@ -20,12 +20,15 @@ public class Content {
     private String contentType;
     private String mimeType;
     private String language;
+    private String difficultyLevel;
     private String fileUrl;
     private String thumbnailUrl;
     private String author;
     private String publisher;
     private String isbn;
     private String edition;
+    private String publishedYear;
+    private String externalApiSource;
     private boolean published;
     private String publishedAt;
     private boolean approved;
@@ -40,5 +43,6 @@ public class Content {
     private String updatedAt;
     private List<String> tags;
     private List<String> learningAreas;
+    private List<String> strands;
     private boolean isPublisherContent;
 }
