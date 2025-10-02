@@ -41,6 +41,7 @@ public class Content {
     private String approvedAt;
     private int viewCount;
     private int downloadCount;
+    private Double averageRating;
     private Long fileSizeBytes;
     private String uploadedBy;
     private String createdBy;

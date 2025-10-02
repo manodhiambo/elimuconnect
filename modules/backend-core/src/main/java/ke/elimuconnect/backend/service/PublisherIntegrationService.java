@@ -95,7 +95,7 @@ public class PublisherIntegrationService {
                         .accessLevel("PREMIUM")
                         .published(true)
                         .approved(true)
-                        .publishedAt(LocalDateTime.now())
+                        .publishedAt(LocalDateTime.now().toString())
                         .build();
                 
                 contentRepository.save(content);
@@ -138,7 +138,7 @@ public class PublisherIntegrationService {
                         .accessLevel("PREMIUM")
                         .published(true)
                         .approved(true)
-                        .publishedAt(LocalDateTime.now())
+                        .publishedAt(LocalDateTime.now().toString())
                         .build();
                 
                 contentRepository.save(content);
@@ -179,7 +179,7 @@ public class PublisherIntegrationService {
                         .accessLevel("PREMIUM")
                         .published(true)
                         .approved(true)
-                        .publishedAt(LocalDateTime.now())
+                        .publishedAt(LocalDateTime.now().toString())
                         .build();
                 
                 contentRepository.save(content);
@@ -220,7 +220,7 @@ public class PublisherIntegrationService {
                         .accessLevel("PREMIUM")
                         .published(true)
                         .approved(true)
-                        .publishedAt(LocalDateTime.now())
+                        .publishedAt(LocalDateTime.now().toString())
                         .build();
                 
                 contentRepository.save(content);
@@ -261,7 +261,7 @@ public class PublisherIntegrationService {
                         .accessLevel("PREMIUM")
                         .published(true)
                         .approved(true)
-                        .publishedAt(LocalDateTime.now())
+                        .publishedAt(LocalDateTime.now().toString())
                         .build();
                 
                 contentRepository.save(content);
@@ -302,7 +302,7 @@ public class PublisherIntegrationService {
                         .accessLevel("PREMIUM")
                         .published(true)
                         .approved(true)
-                        .publishedAt(LocalDateTime.now())
+                        .publishedAt(LocalDateTime.now().toString())
                         .build();
                 
                 contentRepository.save(content);
