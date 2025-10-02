@@ -25,6 +25,7 @@ public class Content {
     private String accessLevel;
     private Integer estimatedDurationMinutes;
     private boolean featured;
+    private boolean offlineAvailable;
     private String fileUrl;
     private String thumbnailUrl;
     private String author;
