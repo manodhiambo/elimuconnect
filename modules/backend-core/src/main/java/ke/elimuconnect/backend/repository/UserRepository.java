@@ -24,3 +24,5 @@ public interface UserRepository extends MongoRepository<User, String> {
     
     boolean existsByEmail(String email);
 }
+
+    Page<User> findByActiveAndRole(boolean active, org.springframework.data.domain.Pageable pageable);

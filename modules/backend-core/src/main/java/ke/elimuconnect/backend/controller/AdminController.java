@@ -1,47 +1,65 @@
 package ke.elimuconnect.backend.controller;
 
 import ke.elimuconnect.backend.entity.User;
-import ke.elimuconnect.backend.service.PublisherIntegrationService;
-import ke.elimuconnect.backend.service.UserService;
+import ke.elimuconnect.backend.repository.UserRepository;
 import ke.elimuconnect.domain.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
 @RestController
-@RequestMapping("/api/v1/admin")
+@RequestMapping("/api/admin")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
     
-    private final UserService userService;
-    private final PublisherIntegrationService publisherIntegrationService;
+    private final UserRepository userRepository;
     
     @GetMapping("/users/pending")
-    public ResponseEntity<ApiResponse<List<User>>> getPendingUsers() {
-        List<User> users = userService.getPendingApprovalUsers();
-        return ResponseEntity.ok(ApiResponse.success(users));
+    public ResponseEntity<ApiResponse<Page<User>>> getPendingUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        
+        Page<User> pendingUsers = userRepository.findByActiveAndRole(
+                false, 
+                PageRequest.of(page, size)
+        );
+        
+        return ResponseEntity.ok(ApiResponse.success(pendingUsers));
     }
     
-    @PutMapping("/users/{userId}/approve")
+    @PostMapping("/users/{userId}/approve")
     public ResponseEntity<ApiResponse<User>> approveUser(@PathVariable String userId) {
-        User user = userService.approveUser(userId);
-        return ResponseEntity.ok(ApiResponse.success(user, "User approved successfully"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        user.setActive(true);
+        user.setUpdatedAt(LocalDateTime.now());
+        
+        User updated = userRepository.save(user);
+        return ResponseEntity.ok(ApiResponse.success(updated, "User approved successfully"));
     }
     
-    @PutMapping("/users/{userId}/reject")
-    public ResponseEntity<ApiResponse<Void>> rejectUser(@PathVariable String userId) {
-        userService.rejectUser(userId);
+    @PostMapping("/users/{userId}/reject")
+    public ResponseEntity<ApiResponse<Void>> rejectUser(
+            @PathVariable String userId,
+            @RequestBody(required = false) String reason) {
+        
+        userRepository.deleteById(userId);
         return ResponseEntity.ok(ApiResponse.success(null, "User rejected"));
     }
     
-    @PostMapping("/sync-publishers")
-    public ResponseEntity<ApiResponse<Void>> syncPublishers() {
-        publisherIntegrationService.syncAllPublishers();
-        return ResponseEntity.ok(ApiResponse.success(null, "Publisher sync initiated"));
+    @GetMapping("/users")
+    public ResponseEntity<ApiResponse<Page<User>>> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        
+        Page<User> users = userRepository.findAll(PageRequest.of(page, size));
+        return ResponseEntity.ok(ApiResponse.success(users));
     }
 }
