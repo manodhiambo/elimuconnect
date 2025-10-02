@@ -1,121 +1,102 @@
 package ke.elimuconnect.backend.controller;
 
-import ke.elimuconnect.backend.entity.Content;
-import ke.elimuconnect.backend.service.ContentService;
-import ke.elimuconnect.backend.service.FileStorageService;
+import ke.elimuconnect.domain.Content;
+import ke.elimuconnect.backend.repository.ContentRepository;
 import ke.elimuconnect.domain.common.ApiResponse;
-import ke.elimuconnect.domain.content.ContentUploadRequest;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
 @RestController
-@RequestMapping("/api/v1/content")
+@RequestMapping("/api/admin/content")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+@PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
 public class ContentController {
     
-    private final ContentService contentService;
-    private final FileStorageService fileStorageService;
+    private final ContentRepository contentRepository;
     
-    @PostMapping("/upload/file")
-    public ResponseEntity<ApiResponse<String>> uploadFile(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("category") String category) {
-        String fileUrl = fileStorageService.uploadFile(file, category);
-        return ResponseEntity.ok(ApiResponse.success(fileUrl, "File uploaded successfully"));
+    @GetMapping
+    public ResponseEntity<ApiResponse<Page<Content>>> getAllContent(
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size) {
+        
+        Page<Content> content = contentRepository.findAll(PageRequest.of(page, size));
+        return ResponseEntity.ok(ApiResponse.success(content));
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<Content>> getContent(@PathVariable String id) {
+        Content content = contentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Content not found"));
+        return ResponseEntity.ok(ApiResponse.success(content));
     }
     
     @PostMapping("/upload")
     public ResponseEntity<ApiResponse<Content>> uploadContent(
-            @Valid @RequestBody ContentUploadRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        String userId = userDetails.getUsername();
-        Content content = contentService.uploadContent(request, userId);
-        return ResponseEntity.ok(ApiResponse.success(content, 
-                "Content uploaded successfully. Pending approval."));
-    }
-    
-    @GetMapping
-    public ResponseEntity<ApiResponse<Page<Content>>> getAllContent(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "DESC") String direction) {
+            @RequestParam(name = "title") String title,
+            @RequestParam(name = "description") String description,
+            @RequestParam(name = "subject") String subject,
+            @RequestParam(name = "grade") String grade,
+            @RequestParam(name = "contentType") String contentType,
+            @RequestParam(name = "file", required = false) MultipartFile file) {
         
-        Sort.Direction sortDirection = Sort.Direction.fromString(direction);
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        Content content = Content.builder()
+                .title(title)
+                .description(description)
+                .subject(subject)
+                .grade(grade)
+                .contentType(contentType)
+                .published(false)
+                .viewCount(0)
+                .downloadCount(0)
+                .createdAt(LocalDateTime.now().toString())
+                .updatedAt(LocalDateTime.now().toString())
+                .build();
         
-        Page<Content> content = contentService.getPublishedContent(pageable);
-        return ResponseEntity.ok(ApiResponse.success(content));
+        Content saved = contentRepository.save(content);
+        return ResponseEntity.ok(ApiResponse.success(saved, "Content uploaded successfully"));
     }
     
-    @GetMapping("/filter")
-    public ResponseEntity<ApiResponse<Page<Content>>> getContentBySubjectAndGrade(
-            @RequestParam String subject,
-            @RequestParam String grade,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Content> content = contentService.getContentBySubjectAndGrade(subject, grade, pageable);
-        return ResponseEntity.ok(ApiResponse.success(content));
-    }
-    
-    @GetMapping("/search")
-    public ResponseEntity<ApiResponse<Page<Content>>> searchContent(
-            @RequestParam String query,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Content> content = contentService.searchContent(query, pageable);
-        return ResponseEntity.ok(ApiResponse.success(content));
-    }
-    
-    @GetMapping("/my-content")
-    public ResponseEntity<ApiResponse<List<Content>>> getMyContent(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        String userId = userDetails.getUsername();
-        List<Content> content = contentService.getMyContent(userId);
-        return ResponseEntity.ok(ApiResponse.success(content));
-    }
-    
-    @PutMapping("/{id}/approve")
-    public ResponseEntity<ApiResponse<Content>> approveContent(
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<Content>> updateContent(
             @PathVariable String id,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        String adminId = userDetails.getUsername();
-        Content content = contentService.approveContent(id, adminId);
-        return ResponseEntity.ok(ApiResponse.success(content, "Content approved successfully"));
-    }
-    
-    @GetMapping("/pending-approval")
-    public ResponseEntity<ApiResponse<Page<Content>>> getPendingApprovalContent(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestBody Content contentUpdate) {
         
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Content> content = contentService.getPendingApprovalContent(pageable);
-        return ResponseEntity.ok(ApiResponse.success(content));
+        Content content = contentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Content not found"));
+        
+        content.setTitle(contentUpdate.getTitle());
+        content.setDescription(contentUpdate.getDescription());
+        content.setSubject(contentUpdate.getSubject());
+        content.setGrade(contentUpdate.getGrade());
+        content.setUpdatedAt(LocalDateTime.now().toString());
+        
+        Content updated = contentRepository.save(content);
+        return ResponseEntity.ok(ApiResponse.success(updated, "Content updated successfully"));
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteContent(
-            @PathVariable String id,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        String userId = userDetails.getUsername();
-        contentService.deleteContent(id, userId);
+    public ResponseEntity<ApiResponse<Void>> deleteContent(@PathVariable String id) {
+        contentRepository.deleteById(id);
         return ResponseEntity.ok(ApiResponse.success(null, "Content deleted successfully"));
+    }
+    
+    @PostMapping("/{id}/publish")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Content>> publishContent(@PathVariable String id) {
+        Content content = contentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Content not found"));
+        
+        content.setPublished(true);
+        content.setUpdatedAt(LocalDateTime.now().toString());
+        
+        Content updated = contentRepository.save(content);
+        return ResponseEntity.ok(ApiResponse.success(updated, "Content published successfully"));
     }
 }

@@ -22,8 +22,8 @@ public class SchoolController {
     
     @GetMapping
     public ResponseEntity<ApiResponse<Page<School>>> getAllSchools(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size) {
         
         Page<School> schools = schoolRepository.findAll(PageRequest.of(page, size));
         return ResponseEntity.ok(ApiResponse.success(schools));
