@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Building2, Plus, X } from 'lucide-react';
-import axios from 'axios';
+import axiosInstance from '../../../lib/axios';
 import toast from 'react-hot-toast';
-
-const API_URL = import.meta.env.VITE_API_URL || 'https://elimuconnect.onrender.com';
 
 export const SchoolsListPage: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
@@ -20,23 +18,18 @@ export const SchoolsListPage: React.FC = () => {
   });
 
   const queryClient = useQueryClient();
-  const token = localStorage.getItem('admin_token');
 
   const { data: schools, isLoading } = useQuery({
     queryKey: ['schools'],
     queryFn: async () => {
-      const response = await axios.get(`${API_URL}/api/admin/schools`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axiosInstance.get('/api/admin/schools');
       return response.data.data?.content || [];
     },
   });
 
   const createSchoolMutation = useMutation({
     mutationFn: async (schoolData: typeof formData) => {
-      const response = await axios.post(`${API_URL}/api/admin/schools`, schoolData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axiosInstance.post('/api/admin/schools', schoolData);
       return response.data;
     },
     onSuccess: () => {
