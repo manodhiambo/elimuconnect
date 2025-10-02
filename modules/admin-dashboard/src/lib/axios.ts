@@ -2,12 +2,12 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://elimuconnect.onrender.com';
 
-const axiosInstance = axios.create({
+const apiClient = axios.create({
   baseURL: API_URL,
 });
 
 // Add token to all requests
-axiosInstance.interceptors.request.use(
+apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('admin_token');
     if (token) {
@@ -20,4 +20,6 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-export default axiosInstance;
+// Export as both default and named export
+export { apiClient };
+export default apiClient;
