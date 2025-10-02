@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Builder
@@ -21,6 +22,7 @@ public class Content {
     private String mimeType;
     private String language;
     private String difficultyLevel;
+    private Integer estimatedDurationMinutes;
     private String fileUrl;
     private String thumbnailUrl;
     private String author;
@@ -29,6 +31,7 @@ public class Content {
     private String edition;
     private String publishedYear;
     private String externalApiSource;
+    private Map<String, Object> publisherMetadata;
     private boolean published;
     private String publishedAt;
     private boolean approved;
@@ -44,5 +47,6 @@ public class Content {
     private List<String> tags;
     private List<String> learningAreas;
     private List<String> strands;
+    private List<String> subStrands;
     private boolean isPublisherContent;
 }
