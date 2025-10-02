@@ -1,6 +1,6 @@
 package ke.elimuconnect.backend.controller;
 
-import ke.elimuconnect.backend.entity.School;
+import ke.elimuconnect.domain.School;
 import ke.elimuconnect.backend.repository.SchoolRepository;
 import ke.elimuconnect.domain.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +38,6 @@ public class SchoolController {
     
     @PostMapping
     public ResponseEntity<ApiResponse<School>> createSchool(@RequestBody School school) {
-        // Check if school code already exists
         if (schoolRepository.findByCode(school.getCode()).isPresent()) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("School with this code already exists"));
