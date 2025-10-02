@@ -38,14 +38,14 @@ public class SchoolController {
     
     @PostMapping
     public ResponseEntity<ApiResponse<School>> createSchool(@RequestBody School school) {
-        if (schoolRepository.findByCode(school.getCode()).isPresent()) {
+        if (school.getNemisCode() != null && schoolRepository.findByCode(school.getNemisCode()).isPresent()) {
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("School with this code already exists"));
+                    .body(ApiResponse.error("School with this NEMIS code already exists"));
         }
         
         school.setActive(true);
-        school.setCreatedAt(LocalDateTime.now());
-        school.setUpdatedAt(LocalDateTime.now());
+        school.setCreatedAt(LocalDateTime.now().toString());
+        school.setUpdatedAt(LocalDateTime.now().toString());
         
         School saved = schoolRepository.save(school);
         return ResponseEntity.ok(ApiResponse.success(saved, "School created successfully"));
@@ -60,12 +60,13 @@ public class SchoolController {
                 .orElseThrow(() -> new RuntimeException("School not found"));
         
         school.setName(schoolUpdate.getName());
-        school.setAddress(schoolUpdate.getAddress());
         school.setCounty(schoolUpdate.getCounty());
-        school.setPrincipal(schoolUpdate.getPrincipal());
+        school.setSubCounty(schoolUpdate.getSubCounty());
         school.setPhoneNumber(schoolUpdate.getPhoneNumber());
         school.setEmail(schoolUpdate.getEmail());
-        school.setUpdatedAt(LocalDateTime.now());
+        school.setPrincipalName(schoolUpdate.getPrincipalName());
+        school.setPrincipalContact(schoolUpdate.getPrincipalContact());
+        school.setUpdatedAt(LocalDateTime.now().toString());
         
         School updated = schoolRepository.save(school);
         return ResponseEntity.ok(ApiResponse.success(updated, "School updated successfully"));
