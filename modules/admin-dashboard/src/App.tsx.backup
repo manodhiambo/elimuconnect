@@ -22,7 +22,6 @@ import { ContentDetailsPage } from './features/content/pages/ContentDetailsPage'
 
 // Schools
 import { SchoolsListPage } from './features/schools/pages/SchoolsListPage';
-import { SettingsPage } from './features/settings/pages/SettingsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -62,7 +61,6 @@ function App() {
                     
                     {/* Schools */}
                     <Route path="/schools" element={<SchoolsListPage />} />
-                    <Route path="/settings" element={<SettingsPage />} />
                     
                     {/* Catch all */}
                     <Route path="*" element={<Navigate to="/dashboard" replace />} />
