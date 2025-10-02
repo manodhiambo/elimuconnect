@@ -53,13 +53,4 @@ public class AdminController {
         userRepository.deleteById(userId);
         return ResponseEntity.ok(ApiResponse.success(null, "User rejected"));
     }
-    
-    @GetMapping("/users")
-    public ResponseEntity<ApiResponse<Page<User>>> getAllUsers(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        
-        Page<User> users = userRepository.findAll(PageRequest.of(page, size));
-        return ResponseEntity.ok(ApiResponse.success(users));
-    }
 }
