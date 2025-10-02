@@ -82,7 +82,7 @@ public class AdminContentService {
             .averageRating(0.0)
             .ratingCount(0)
             .offlineAvailable(false)
-            .createdAt(LocalDateTime.now())
+            .createdAt(LocalDateTime.now().toString())
             .createdBy("admin") // Get from security context
             .build();
         
