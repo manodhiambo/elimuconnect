@@ -25,7 +25,7 @@ public class AdminController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         
-        Page<User> pendingUsers = userRepository.findByActiveAndRole(
+        Page<User> pendingUsers = userRepository.findByActive(
                 false, 
                 PageRequest.of(page, size)
         );
