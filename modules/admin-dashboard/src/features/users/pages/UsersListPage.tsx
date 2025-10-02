@@ -1,165 +1,169 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { format } from 'date-fns';
-import { Header } from '@/components/layout/Header';
-import { Card } from '@/components/ui/Card';
-import { Table } from '@/components/ui/Table';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { userService } from '../services/userService';
-import { User, UserRole } from '@/types';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Users, CheckCircle, XCircle } from 'lucide-react';
+import axiosInstance from '../../../lib/axios';
+import toast from 'react-hot-toast';
 
 export const UsersListPage: React.FC = () => {
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'all';
-  
-  const [page, setPage] = useState(0);
-  const [roleFilter, setRoleFilter] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'pending' | 'all'>('pending');
+  const queryClient = useQueryClient();
 
-  const { data: usersData, isLoading } = useQuery({
-    queryKey: ['users', activeTab, page, roleFilter],
-    queryFn: () => {
-      if (activeTab === 'pending') {
-        return userService.getPendingUsers(page, 20);
-      }
-      return userService.getAllUsers(page, 20, roleFilter);
+  const { data: pendingUsers, isLoading: loadingPending } = useQuery({
+    queryKey: ['users', 'pending'],
+    queryFn: async () => {
+      const response = await axiosInstance.get('/api/admin/users/pending');
+      return response.data.data?.content || [];
     },
   });
 
-  const users = usersData?.data?.content || [];
+  const { data: allUsers, isLoading: loadingAll } = useQuery({
+    queryKey: ['users', 'all'],
+    queryFn: async () => {
+      const response = await axiosInstance.get('/api/admin/users');
+      return response.data.data?.content || [];
+    },
+    enabled: activeTab === 'all',
+  });
 
-  const columns = [
-    {
-      key: 'name',
-      header: 'Name',
-      render: (user: User) => (
-        <div>
-          <p className="font-medium">{user.name}</p>
-          <p className="text-xs text-gray-500">{user.email}</p>
-        </div>
-      ),
+  const approveMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await axiosInstance.post(`/api/admin/users/${userId}/approve`);
+      return response.data;
     },
-    {
-      key: 'role',
-      header: 'Role',
-      render: (user: User) => {
-        const roleColors: Record<UserRole, 'info' | 'success' | 'warning' | 'default'> = {
-          [UserRole.ADMIN]: 'default',
-          [UserRole.TEACHER]: 'info',
-          [UserRole.STUDENT]: 'success',
-          [UserRole.PARENT]: 'warning',
-        };
-        return (
-          <Badge variant={roleColors[user.role]}>
-            {user.role.replace('ROLE_', '')}
-          </Badge>
-        );
-      },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('User approved successfully');
     },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (user: User) => (
-        <Badge variant={user.active ? 'success' : 'warning'}>
-          {user.active ? 'Active' : 'Pending'}
-        </Badge>
-      ),
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to approve user');
     },
-    {
-      key: 'school',
-      header: 'School',
-      render: (user: User) => user.schoolId || '-',
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await axiosInstance.post(`/api/admin/users/${userId}/reject`);
+      return response.data;
     },
-    {
-      key: 'createdAt',
-      header: 'Registered',
-      render: (user: User) => format(new Date(user.createdAt), 'MMM dd, yyyy'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('User rejected successfully');
     },
-  ];
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to reject user');
+    },
+  });
+
+  const users = activeTab === 'pending' ? pendingUsers : allUsers;
+  const isLoading = activeTab === 'pending' ? loadingPending : loadingAll;
 
   return (
-    <div>
-      <Header 
-        title="User Management" 
-        subtitle="Manage and approve user registrations"
-      />
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+        <p className="text-gray-600 mt-2">Review and manage user accounts</p>
+      </div>
 
-      <div className="p-6">
-        <div className="mb-6 flex space-x-4 border-b border-gray-200">
+      {/* Tabs */}
+      <div className="border-b border-gray-200 mb-6">
+        <nav className="-mb-px flex space-x-8">
           <button
-            onClick={() => setSearchParams({ tab: 'all' })}
-            className={`px-4 py-2 font-medium ${
+            onClick={() => setActiveTab('pending')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'pending'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Pending Approval
+            {pendingUsers && pendingUsers.length > 0 && (
+              <span className="ml-2 bg-red-100 text-red-600 py-0.5 px-2 rounded-full text-xs">
+                {pendingUsers.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'all'
-                ? 'text-primary-600 border-b-2 border-primary-600'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
             All Users
           </button>
-          <button
-            onClick={() => setSearchParams({ tab: 'pending' })}
-            className={`px-4 py-2 font-medium ${
-              activeTab === 'pending'
-                ? 'text-primary-600 border-b-2 border-primary-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Pending Approval
-          </button>
-        </div>
-
-        <Card>
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <select
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="">All Roles</option>
-                <option value="TEACHER">Teachers</option>
-                <option value="STUDENT">Students</option>
-                <option value="PARENT">Parents</option>
-              </select>
-            </div>
-            <p className="text-sm text-gray-600">
-              Total: {usersData?.data?.totalElements || 0} users
-            </p>
-          </div>
-
-          <Table
-            data={users}
-            columns={columns}
-            onRowClick={(user) => navigate(`/users/${user.id}`)}
-            isLoading={isLoading}
-            emptyMessage="No users found"
-          />
-
-          {usersData?.data && usersData.data.totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between">
-              <Button
-                variant="outline"
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-                disabled={page === 0}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-gray-600">
-                Page {page + 1} of {usersData.data.totalPages}
-              </span>
-              <Button
-                variant="outline"
-                onClick={() => setPage((p) => p + 1)}
-                disabled={page >= usersData.data.totalPages - 1}
-              >
-                Next
-              </Button>
-            </div>
-          )}
-        </Card>
+        </nav>
       </div>
+
+      {isLoading ? (
+        <div className="text-center py-8">Loading users...</div>
+      ) : users && users.length > 0 ? (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                {activeTab === 'pending' && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                )}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {users.map((user: any) => (
+                <tr key={user.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="font-medium text-gray-900">{user.fullName}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">{user.email}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                      {user.role}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        user.active
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}
+                    >
+                      {user.active ? 'Active' : 'Pending'}
+                    </span>
+                  </td>
+                  {activeTab === 'pending' && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button
+                        onClick={() => approveMutation.mutate(user.id)}
+                        disabled={approveMutation.isPending}
+                        className="text-green-600 hover:text-green-900 mr-4"
+                      >
+                        <CheckCircle className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => rejectMutation.mutate(user.id)}
+                        disabled={rejectMutation.isPending}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        <XCircle className="w-5 h-5" />
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow p-6 text-center">
+          <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600">
+            {activeTab === 'pending' ? 'No pending users to approve.' : 'No users found.'}
+          </p>
+        </div>
+      )}
     </div>
   );
 };
