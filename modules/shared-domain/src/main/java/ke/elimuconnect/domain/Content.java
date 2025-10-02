@@ -18,23 +18,23 @@ public class Content {
     private String subject;
     private String grade;
     private String contentType;
+    private String mimeType;
     private String fileUrl;
     private String thumbnailUrl;
     private String author;
+    private String publisher;
+    private String isbn;
     private boolean published;
-    private int viewCount;
-    private int downloadCount;
-    private String createdAt;
-    private String updatedAt;
-    
-    // Additional fields needed by services
-    private Long fileSizeBytes;
+    private String publishedAt;
     private boolean approved;
     private String approvedBy;
     private String approvedAt;
-    private String publishedAt;
+    private int viewCount;
+    private int downloadCount;
+    private Long fileSizeBytes;
     private String uploadedBy;
     private String createdBy;
-    private String publisher;
+    private String createdAt;
+    private String updatedAt;
     private List<String> tags;
 }
