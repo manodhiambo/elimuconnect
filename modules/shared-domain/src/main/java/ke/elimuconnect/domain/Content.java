@@ -51,5 +51,7 @@ public class Content {
     private List<String> strands;
     private List<String> subStrands;
     private List<String> learningOutcomes;
+    private List<String> allowedSchoolIds;
+    private List<String> allowedGrades;
     private boolean isPublisherContent;
 }
