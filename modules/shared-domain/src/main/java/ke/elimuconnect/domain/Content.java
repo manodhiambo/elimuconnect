@@ -22,7 +22,9 @@ public class Content {
     private String mimeType;
     private String language;
     private String difficultyLevel;
+    private String accessLevel;
     private Integer estimatedDurationMinutes;
+    private boolean featured;
     private String fileUrl;
     private String thumbnailUrl;
     private String author;
@@ -48,5 +50,6 @@ public class Content {
     private List<String> learningAreas;
     private List<String> strands;
     private List<String> subStrands;
+    private List<String> learningOutcomes;
     private boolean isPublisherContent;
 }
