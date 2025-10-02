@@ -1,35 +1,80 @@
 package ke.elimuconnect.backend.controller;
 
-import ke.elimuconnect.domain.School;
-import ke.elimuconnect.backend.service.SchoolService;
+import ke.elimuconnect.backend.entity.School;
+import ke.elimuconnect.backend.repository.SchoolRepository;
+import ke.elimuconnect.domain.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
 @RestController
-@RequestMapping("/api/schools")
+@RequestMapping("/api/admin/schools")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+@PreAuthorize("hasRole('ADMIN')")
 public class SchoolController {
     
-    private final SchoolService schoolService;
+    private final SchoolRepository schoolRepository;
     
     @GetMapping
-    public ResponseEntity<List<School>> getAllSchools() {
-        return ResponseEntity.ok(schoolService.getAllSchools());
-    }
-    
-    @GetMapping("/search")
-    public ResponseEntity<List<School>> searchSchools(@RequestParam String query) {
-        return ResponseEntity.ok(schoolService.searchSchools(query));
+    public ResponseEntity<ApiResponse<Page<School>>> getAllSchools(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        
+        Page<School> schools = schoolRepository.findAll(PageRequest.of(page, size));
+        return ResponseEntity.ok(ApiResponse.success(schools));
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<School> getSchoolById(@PathVariable String id) {
-        return schoolService.getSchoolById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<ApiResponse<School>> getSchool(@PathVariable String id) {
+        School school = schoolRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("School not found"));
+        return ResponseEntity.ok(ApiResponse.success(school));
+    }
+    
+    @PostMapping
+    public ResponseEntity<ApiResponse<School>> createSchool(@RequestBody School school) {
+        // Check if school code already exists
+        if (schoolRepository.findByCode(school.getCode()).isPresent()) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("School with this code already exists"));
+        }
+        
+        school.setActive(true);
+        school.setCreatedAt(LocalDateTime.now());
+        school.setUpdatedAt(LocalDateTime.now());
+        
+        School saved = schoolRepository.save(school);
+        return ResponseEntity.ok(ApiResponse.success(saved, "School created successfully"));
+    }
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<School>> updateSchool(
+            @PathVariable String id,
+            @RequestBody School schoolUpdate) {
+        
+        School school = schoolRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("School not found"));
+        
+        school.setName(schoolUpdate.getName());
+        school.setAddress(schoolUpdate.getAddress());
+        school.setCounty(schoolUpdate.getCounty());
+        school.setPrincipal(schoolUpdate.getPrincipal());
+        school.setPhoneNumber(schoolUpdate.getPhoneNumber());
+        school.setEmail(schoolUpdate.getEmail());
+        school.setUpdatedAt(LocalDateTime.now());
+        
+        School updated = schoolRepository.save(school);
+        return ResponseEntity.ok(ApiResponse.success(updated, "School updated successfully"));
+    }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteSchool(@PathVariable String id) {
+        schoolRepository.deleteById(id);
+        return ResponseEntity.ok(ApiResponse.success(null, "School deleted successfully"));
     }
 }
