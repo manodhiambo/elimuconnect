@@ -1,7 +1,7 @@
 package ke.elimuconnect.backend.service;
 
 import ke.elimuconnect.backend.entity.User;
-import ke.elimuconnect.backend.entity.Content;
+import ke.elimuconnect.domain.Content;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

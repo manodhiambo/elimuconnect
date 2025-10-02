@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -24,4 +26,15 @@ public class Content {
     private int downloadCount;
     private String createdAt;
     private String updatedAt;
+    
+    // Additional fields needed by services
+    private Long fileSizeBytes;
+    private boolean approved;
+    private String approvedBy;
+    private String approvedAt;
+    private String publishedAt;
+    private String uploadedBy;
+    private String createdBy;
+    private String publisher;
+    private List<String> tags;
 }

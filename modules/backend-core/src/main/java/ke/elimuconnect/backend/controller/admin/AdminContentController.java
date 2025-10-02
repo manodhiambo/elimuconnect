@@ -1,6 +1,6 @@
 package ke.elimuconnect.backend.controller.admin;
 
-import ke.elimuconnect.backend.entity.Content;
+import ke.elimuconnect.domain.Content;
 import ke.elimuconnect.backend.service.AdminContentService;
 import ke.elimuconnect.domain.common.ApiResponse;
 import lombok.RequiredArgsConstructor;

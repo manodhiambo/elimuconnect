@@ -1,6 +1,6 @@
 package ke.elimuconnect.backend.service;
 
-import ke.elimuconnect.backend.entity.Content;
+import ke.elimuconnect.domain.Content;
 import ke.elimuconnect.backend.entity.User;
 import ke.elimuconnect.backend.exception.ResourceNotFoundException;
 import ke.elimuconnect.backend.repository.ContentRepository;
