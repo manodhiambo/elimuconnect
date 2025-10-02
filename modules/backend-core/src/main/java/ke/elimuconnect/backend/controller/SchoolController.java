@@ -38,7 +38,8 @@ public class SchoolController {
     
     @PostMapping
     public ResponseEntity<ApiResponse<School>> createSchool(@RequestBody School school) {
-        if (school.getNemisCode() != null && schoolRepository.findByCode(school.getNemisCode()).isPresent()) {
+        if (school.getNemisCode() != null && 
+            schoolRepository.findByNemisCode(school.getNemisCode()).isPresent()) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("School with this NEMIS code already exists"));
         }

@@ -12,7 +12,7 @@ import java.util.Optional;
 @Repository
 public interface SchoolRepository extends MongoRepository<School, String> {
     
-    Optional<School> findByCode(String code);
+    Optional<School> findByNemisCode(String nemisCode);
     
     Page<School> findByActive(boolean active, Pageable pageable);
     
