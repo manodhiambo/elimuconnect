@@ -67,9 +67,9 @@ public class ContentService {
         
         if (user.getRole() == UserRole.ADMIN) {
             content.setApprovedBy(userId);
-            content.setApprovedAt(LocalDateTime.now());
+            content.setApprovedAt(LocalDateTime.now().toString());
             content.setPublished(true);
-            content.setPublishedAt(LocalDateTime.now());
+            content.setPublishedAt(LocalDateTime.now().toString());
         }
         
         Content savedContent = contentRepository.save(content);
@@ -87,9 +87,9 @@ public class ContentService {
         
         content.setApproved(true);
         content.setApprovedBy(adminId);
-        content.setApprovedAt(LocalDateTime.now());
+        content.setApprovedAt(LocalDateTime.now().toString());
         content.setPublished(true);
-        content.setPublishedAt(LocalDateTime.now());
+        content.setPublishedAt(LocalDateTime.now().toString());
         
         return contentRepository.save(content);
     }

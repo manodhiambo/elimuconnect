@@ -102,7 +102,7 @@ public class AdminContentService {
     public Content approveContent(String id) {
         Content content = getContentById(id);
         content.setPublished(true);
-        content.setPublishedAt(LocalDateTime.now());
+        content.setPublishedAt(LocalDateTime.now().toString());
         Content savedContent = contentRepository.save(content);
         
         // Send approval email to uploader
@@ -135,7 +135,7 @@ public class AdminContentService {
     public Content publishContent(String id) {
         Content content = getContentById(id);
         content.setPublished(true);
-        content.setPublishedAt(LocalDateTime.now());
+        content.setPublishedAt(LocalDateTime.now().toString());
         return contentRepository.save(content);
     }
     
@@ -156,7 +156,7 @@ public class AdminContentService {
         if (updatedContent.getGrade() != null) content.setGrade(updatedContent.getGrade());
         if (updatedContent.getTags() != null) content.setTags(updatedContent.getTags());
         
-        content.setUpdatedAt(LocalDateTime.now());
+        content.setUpdatedAt(LocalDateTime.now().toString());
         
         return contentRepository.save(content);
     }
