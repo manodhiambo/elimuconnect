@@ -6,25 +6,15 @@ import toast from 'react-hot-toast';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://elimuconnect.onrender.com';
 
-interface School {
-  id: string;
-  name: string;
-  code: string;
-  address: string;
-  county: string;
-  principal: string;
-  phoneNumber: string;
-  email: string;
-}
-
 export const SchoolsListPage: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
+    nemisCode: '',
     name: '',
-    code: '',
-    address: '',
     county: '',
-    principal: '',
+    subCounty: '',
+    principalName: '',
+    principalContact: '',
     phoneNumber: '',
     email: '',
   });
@@ -38,7 +28,7 @@ export const SchoolsListPage: React.FC = () => {
       const response = await axios.get(`${API_URL}/api/admin/schools`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return response.data.data || [];
+      return response.data.data?.content || [];
     },
   });
 
@@ -54,11 +44,12 @@ export const SchoolsListPage: React.FC = () => {
       toast.success('School added successfully');
       setShowModal(false);
       setFormData({
+        nemisCode: '',
         name: '',
-        code: '',
-        address: '',
         county: '',
-        principal: '',
+        subCounty: '',
+        principalName: '',
+        principalContact: '',
         phoneNumber: '',
         email: '',
       });
@@ -93,20 +84,20 @@ export const SchoolsListPage: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">NEMIS Code</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">School Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">County</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Principal</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {schools.map((school: School) => (
+              {schools.map((school: any) => (
                 <tr key={school.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">{school.nemisCode}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{school.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{school.code}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{school.county}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{school.principal}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{school.principalName}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{school.phoneNumber}</td>
                 </tr>
               ))}
@@ -117,14 +108,13 @@ export const SchoolsListPage: React.FC = () => {
         <div className="bg-white rounded-lg shadow p-6 text-center">
           <Building2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-600">No schools registered yet.</p>
-          <p className="text-sm text-gray-500 mt-2">Click "Add School" to register your first school.</p>
+          <p className="text-sm text-gray-500 mt-2">Click Add School to register your first school.</p>
         </div>
       )}
 
-      {/* Add School Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">Add New School</h2>
               <button onClick={() => setShowModal(false)}>
@@ -134,23 +124,23 @@ export const SchoolsListPage: React.FC = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">NEMIS Code</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.nemisCode}
+                  onChange={(e) => setFormData({ ...formData, nemisCode: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">School Name</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">School Code</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.code}
-                  onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 />
               </div>
@@ -167,21 +157,41 @@ export const SchoolsListPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Principal Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sub County</label>
                 <input
                   type="text"
-                  required
-                  value={formData.principal}
-                  onChange={(e) => setFormData({ ...formData, principal: e.target.value })}
+                  value={formData.subCounty}
+                  onChange={(e) => setFormData({ ...formData, subCounty: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Principal Name</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.principalName}
+                  onChange={(e) => setFormData({ ...formData, principalName: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Principal Contact</label>
                 <input
                   type="tel"
                   required
+                  value={formData.principalContact}
+                  onChange={(e) => setFormData({ ...formData, principalContact: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">School Phone</label>
+                <input
+                  type="tel"
                   value={formData.phoneNumber}
                   onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
@@ -192,21 +202,9 @@ export const SchoolsListPage: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <input
                   type="email"
-                  required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                <textarea
-                  required
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  rows={3}
                 />
               </div>
 
