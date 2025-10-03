@@ -62,8 +62,10 @@ public class AdminUserController {
     }
     
     @PostMapping("/{id}/reject")
-    public ResponseEntity<ApiResponse<Void>> rejectUser(@PathVariable String id) {
-        adminUserService.rejectUser(id);
+    public ResponseEntity<ApiResponse<Void>> rejectUser(
+            @PathVariable String id,
+            @RequestBody(required = false) String reason) {
+        adminUserService.rejectUser(id, reason != null ? reason : "Registration rejected by admin");
         return ResponseEntity.ok(ApiResponse.success(null, "User rejected successfully"));
     }
 }
