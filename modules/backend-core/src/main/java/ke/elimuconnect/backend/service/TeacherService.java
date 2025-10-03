@@ -41,7 +41,7 @@ public class TeacherService {
         dashboard.put("totalContent", totalContent);
         dashboard.put("publishedContent", publishedContent);
         dashboard.put("pendingContent", pendingContent);
-        dashboard.put("teacherName", teacher.getFullName());
+        dashboard.put("teacherName", teacher.getName());
         dashboard.put("teacherEmail", teacher.getEmail());
         
         return dashboard;

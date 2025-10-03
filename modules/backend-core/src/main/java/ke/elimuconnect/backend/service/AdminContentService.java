@@ -31,7 +31,7 @@ public class AdminContentService {
     }
     
     public Page<Content> getPendingContent(Pageable pageable) {
-        return contentRepository.findByPublished(false, pageable);
+        return contentRepository.findByApprovedFalse(pageable);
     }
     
     public Content getContentById(String id) {
