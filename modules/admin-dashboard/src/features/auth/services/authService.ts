@@ -3,12 +3,12 @@ import { ApiResponse, LoginRequest, User } from '@/types';
 
 export const authService = {
   login: async (data: LoginRequest): Promise<ApiResponse<{ token: string; user: User }>> => {
-    const response = await apiClient.post('/api/auth/login', data);
+    const response = await apiClient.post('/auth/login', data);
     return response.data;
   },
 
   getCurrentUser: async (): Promise<ApiResponse<User>> => {
-    const response = await apiClient.get('/api/auth/me');
+    const response = await apiClient.get('/auth/me');
     return response.data;
   },
 
