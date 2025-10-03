@@ -42,14 +42,20 @@ export const StudentRegistrationForm = () => {
   const [success, setSuccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const { data: schoolsData } = useQuery({
+  const { data: schoolsData, isLoading: loadingSchools } = useQuery({
     queryKey: ['schools', searchQuery],
-    queryFn: () => searchQuery 
-      ? schoolService.searchSchools(searchQuery) 
-      : schoolService.getAllSchools(),
+    queryFn: async () => {
+      const result = searchQuery
+        ? await schoolService.searchSchools(searchQuery)
+        : await schoolService.getAllSchools();
+      console.log('Schools API response:', result);
+      return result;
+    },
   });
 
-  const schools = schoolsData?.data || [];
+  // Handle different possible response structures
+  const schools = schoolsData?.data?.content || schoolsData?.data || [];
+  console.log('Parsed schools:', schools);
 
   const { register, handleSubmit, formState: { errors } } = useForm<StudentFormData>({
     resolver: zodResolver(studentSchema),
@@ -98,83 +104,88 @@ export const StudentRegistrationForm = () => {
             </Alert>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input
+            label="Full Name"
+            placeholder="John Doe"
+            error={errors.name?.message}
+            {...register('name')}
+          />
+
+          <Input
+            label="Email"
+            type="email"
+            placeholder="student@example.com"
+            error={errors.email?.message}
+            {...register('email')}
+          />
+
+          <Input
+            label="Password"
+            type="password"
+            placeholder="••••••••"
+            error={errors.password?.message}
+            {...register('password')}
+          />
+
+          <Input
+            label="Admission Number"
+            placeholder="ADM001"
+            error={errors.admissionNumber?.message}
+            {...register('admissionNumber')}
+          />
+
+          <div className="space-y-2">
             <Input
-              label="Full Name"
-              placeholder="Jane Doe"
-              error={errors.name?.message}
-              {...register('name')}
+              label="Search School"
+              placeholder="Type to search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
-
-            <Input
-              label="Email"
-              type="email"
-              placeholder="student@email.com"
-              error={errors.email?.message}
-              {...register('email')}
-            />
-
-            <Input
-              label="Password"
-              type="password"
-              placeholder="••••••••"
-              error={errors.password?.message}
-              {...register('password')}
-            />
-
-            <Input
-              label="Admission Number"
-              placeholder="ADM2024001"
-              error={errors.admissionNumber?.message}
-              {...register('admissionNumber')}
-            />
-
-            <div className="md:col-span-2">
-              <Input
-                label="Search School"
-                placeholder="Type to search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <Select
-                label="Select School *"
-                error={errors.schoolId?.message}
-                options={schools.map((school: any) => ({ 
-                  value: school.id, 
-                  label: `${school.name} (${school.nemisCode})` 
-                }))}
-                {...register('schoolId')}
-              />
-            </div>
-
             <Select
-              label="Class *"
-              error={errors.className?.message}
-              options={CLASSES.map(c => ({ value: c, label: c }))}
-              {...register('className')}
-            />
-
-            <Input
-              label="Date of Birth"
-              type="date"
-              error={errors.dateOfBirth?.message}
-              {...register('dateOfBirth')}
-            />
-
-            <Input
-              label="Parent/Guardian Contact"
-              placeholder="+254712345678"
-              error={errors.parentGuardianContact?.message}
-              {...register('parentGuardianContact')}
-            />
-
-            <Select
-              label="County of Residence"
-              error={errors.countyOfResidence?.message}
-              options={KENYAN_COUNTIES.map(county => ({ value: county, label: county }))}
-              {...register('countyOfResidence')}
+              label="Select School *"
+              error={errors.schoolId?.message}
+              disabled={loadingSchools}
+              options={
+                loadingSchools
+                  ? [{ value: '', label: 'Loading schools...' }]
+                  : schools.length > 0
+                  ? schools.map((school: any) => ({
+                      value: school.id,
+                      label: `${school.name} ${school.nemisCode ? `(${school.nemisCode})` : ''}`
+                    }))
+                  : [{ value: '', label: 'No schools found' }]
+              }
+              {...register('schoolId')}
             />
           </div>
+
+          <Select
+            label="Class *"
+            error={errors.className?.message}
+            options={CLASSES.map(c => ({ value: c, label: c }))}
+            {...register('className')}
+          />
+
+          <Input
+            label="Date of Birth"
+            type="date"
+            error={errors.dateOfBirth?.message}
+            {...register('dateOfBirth')}
+          />
+
+          <Input
+            label="Parent/Guardian Contact"
+            placeholder="+254712345678"
+            error={errors.parentGuardianContact?.message}
+            {...register('parentGuardianContact')}
+          />
+
+          <Select
+            label="County of Residence"
+            error={errors.countyOfResidence?.message}
+            options={KENYAN_COUNTIES.map(c => ({ value: c, label: c }))}
+            {...register('countyOfResidence')}
+          />
 
           <Button
             type="submit"
@@ -184,11 +195,12 @@ export const StudentRegistrationForm = () => {
             {registerMutation.isPending ? 'Registering...' : 'Register as Student'}
           </Button>
 
-          <div className="text-center text-sm">
-            <a href="/login" className="text-primary hover:underline">
-              Already have an account? Login
+          <p className="text-sm text-center text-gray-600">
+            Already have an account?{' '}
+            <a href="/login" className="text-primary-600 hover:underline">
+              Login
             </a>
-          </div>
+          </p>
         </form>
       </CardContent>
     </Card>
