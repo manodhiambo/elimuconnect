@@ -2,13 +2,13 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BookOpen, Upload, CheckCircle, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import axiosInstance from '../../../lib/axios';
+import { apiClient } from '../../../lib/axios';
 
 export const TeacherDashboard: React.FC = () => {
   const { data: dashboardData, isLoading } = useQuery({
     queryKey: ['teacher-dashboard'],
     queryFn: async () => {
-      const response = await axiosInstance.get('/api/teacher/dashboard');
+      const response = await apiClient.get('/teacher/dashboard');
       return response.data.data;
     },
   });
@@ -16,7 +16,7 @@ export const TeacherDashboard: React.FC = () => {
   const { data: myContent } = useQuery({
     queryKey: ['teacher-content'],
     queryFn: async () => {
-      const response = await axiosInstance.get('/api/teacher/content?page=0&size=5');
+      const response = await apiClient.get('/teacher/content?page=0&size=5');
       return response.data.data?.content || [];
     },
   });
