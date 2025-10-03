@@ -18,3 +18,7 @@ public interface SchoolRepository extends MongoRepository<School, String> {
     
     List<School> findByNameContainingIgnoreCase(String name);
 }
+
+    List<School> findByActiveTrue();
+    Page<School> findByActiveTrue(Pageable pageable);
+    List<School> findByNameContainingIgnoreCaseAndActiveTrue(String name);
