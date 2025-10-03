@@ -50,22 +50,24 @@ public class AdminUserController {
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<User>> getUserById(@PathVariable String id) {
+    public ResponseEntity<ApiResponse<User>> getUserById(@PathVariable(name = "id") String id) {
         User user = adminUserService.getUserById(id);
         return ResponseEntity.ok(ApiResponse.success(user));
     }
     
     @PostMapping("/{id}/approve")
-    public ResponseEntity<ApiResponse<User>> approveUser(@PathVariable String id) {
+    public ResponseEntity<ApiResponse<User>> approveUser(@PathVariable(name = "id") String id) {
+        log.info("Approving user: {}", id);
         User user = adminUserService.approveUser(id);
         return ResponseEntity.ok(ApiResponse.success(user));
     }
     
     @PostMapping("/{id}/reject")
     public ResponseEntity<ApiResponse<Void>> rejectUser(
-            @PathVariable String id,
-            @RequestBody(required = false) String reason) {
-        adminUserService.rejectUser(id, reason != null ? reason : "Registration rejected by admin");
+            @PathVariable(name = "id") String id,
+            @RequestParam(name = "reason", required = false, defaultValue = "Registration rejected by admin") String reason) {
+        log.info("Rejecting user: {} with reason: {}", id, reason);
+        adminUserService.rejectUser(id, reason);
         return ResponseEntity.ok(ApiResponse.success(null, "User rejected successfully"));
     }
 }
