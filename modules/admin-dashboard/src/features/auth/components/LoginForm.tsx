@@ -2,9 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '../store/authStore';
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'https://elimuconnect.onrender.com';
+import { authService } from '../services/authService';
 
 export const LoginForm: React.FC = () => {
   const navigate = useNavigate();
@@ -15,8 +13,7 @@ export const LoginForm: React.FC = () => {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
-      const response = await axios.post(`${API_URL}/api/auth/login`, credentials);
-      return response.data;
+      return await authService.login(credentials);
     },
     onSuccess: (data) => {
       if (data.success && data.data) {
@@ -28,18 +25,16 @@ export const LoginForm: React.FC = () => {
             setError('Access denied. Admin privileges required.');
             return;
           }
-          
+
           const user = {
             id: payload.sub,
             email: payload.email,
             name: payload.name,
             role: payload.role,
           };
-          
-          // This will store using admin_token and admin_user keys
+
           setAuth(user as any, token);
           
-          // Navigate after a brief delay to ensure state is saved
           setTimeout(() => {
             navigate('/dashboard', { replace: true });
           }, 100);
@@ -67,7 +62,7 @@ export const LoginForm: React.FC = () => {
           {error}
         </div>
       )}
-
+      
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
         <input
