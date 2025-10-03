@@ -36,8 +36,8 @@ public class DataSeeder implements CommandLineRunner {
                 .subCounty("Westlands")
                 .ward("Parklands")
                 .location("Parklands, Nairobi")
-                .latitude(-1.2634)
-                .longitude(36.8081)
+                
+                
                 .phoneNumber("+254701234567")
                 .email("info@nairobiprimary.ac.ke")
                 .principalName("John Kamau")
@@ -65,8 +65,8 @@ public class DataSeeder implements CommandLineRunner {
                 .subCounty("Mvita")
                 .ward("Tononoka")
                 .location("Tononoka, Mombasa")
-                .latitude(-4.0435)
-                .longitude(39.6682)
+                
+                
                 .phoneNumber("+254702345678")
                 .email("info@mombasasecondary.ac.ke")
                 .principalName("Mary Otieno")
