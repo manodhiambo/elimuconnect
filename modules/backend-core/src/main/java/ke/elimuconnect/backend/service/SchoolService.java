@@ -18,7 +18,7 @@ public class SchoolService {
     }
 
     public List<School> searchSchools(String query) {
-        return schoolRepository.findByNameContainingIgnoreCase(query);
+        return schoolRepository.findByNameContainingIgnoreCaseAndActiveTrue(query);
     }
 
     public Optional<School> getSchoolById(String id) {
