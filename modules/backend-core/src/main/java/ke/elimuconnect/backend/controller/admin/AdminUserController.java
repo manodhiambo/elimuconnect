@@ -4,12 +4,14 @@ import ke.elimuconnect.backend.entity.User;
 import ke.elimuconnect.backend.service.AdminUserService;
 import ke.elimuconnect.domain.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
@@ -20,9 +22,9 @@ public class AdminUserController {
     
     @GetMapping
     public ResponseEntity<ApiResponse<Page<User>>> getAllUsers(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String role) {
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size,
+            @RequestParam(name = "role", required = false) String role) {
         
         Page<User> users = adminUserService.getAllUsers(
             PageRequest.of(page, size), role);
@@ -31,12 +33,20 @@ public class AdminUserController {
     
     @GetMapping("/pending")
     public ResponseEntity<ApiResponse<Page<User>>> getPendingUsers(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size) {
         
-        Page<User> users = adminUserService.getPendingUsers(
-            PageRequest.of(page, size));
-        return ResponseEntity.ok(ApiResponse.success(users));
+        try {
+            log.info("Fetching pending users - page: {}, size: {}", page, size);
+            Page<User> users = adminUserService.getPendingUsers(
+                PageRequest.of(page, size));
+            log.info("Found {} pending users", users.getTotalElements());
+            return ResponseEntity.ok(ApiResponse.success(users));
+        } catch (Exception e) {
+            log.error("Error fetching pending users", e);
+            return ResponseEntity.internalServerError()
+                .body(ApiResponse.error("Error fetching pending users: " + e.getMessage()));
+        }
     }
     
     @GetMapping("/{id}")
@@ -52,40 +62,8 @@ public class AdminUserController {
     }
     
     @PostMapping("/{id}/reject")
-    public ResponseEntity<ApiResponse<Void>> rejectUser(
-            @PathVariable String id,
-            @RequestBody RejectRequest request) {
-        adminUserService.rejectUser(id, request.getReason());
-        return ResponseEntity.ok(ApiResponse.success(null));
-    }
-    
-    @PostMapping("/{id}/activate")
-    public ResponseEntity<ApiResponse<User>> activateUser(@PathVariable String id) {
-        User user = adminUserService.activateUser(id);
-        return ResponseEntity.ok(ApiResponse.success(user));
-    }
-    
-    @PostMapping("/{id}/deactivate")
-    public ResponseEntity<ApiResponse<User>> deactivateUser(@PathVariable String id) {
-        User user = adminUserService.deactivateUser(id);
-        return ResponseEntity.ok(ApiResponse.success(user));
-    }
-    
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable String id) {
-        adminUserService.deleteUser(id);
-        return ResponseEntity.ok(ApiResponse.success(null));
-    }
-    
-    public static class RejectRequest {
-        private String reason;
-        
-        public String getReason() {
-            return reason;
-        }
-        
-        public void setReason(String reason) {
-            this.reason = reason;
-        }
+    public ResponseEntity<ApiResponse<Void>> rejectUser(@PathVariable String id) {
+        adminUserService.rejectUser(id);
+        return ResponseEntity.ok(ApiResponse.success(null, "User rejected successfully"));
     }
 }
