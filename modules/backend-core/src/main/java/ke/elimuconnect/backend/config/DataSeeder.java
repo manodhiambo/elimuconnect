@@ -31,7 +31,7 @@ public class DataSeeder implements CommandLineRunner {
                 .nemisCode("001001001")
                 .name("Nairobi Primary School")
                 .type("PRIMARY")
-                .category("PUBLIC")
+                
                 .county("Nairobi")
                 .subCounty("Westlands")
                 .ward("Parklands")
@@ -60,7 +60,7 @@ public class DataSeeder implements CommandLineRunner {
                 .nemisCode("002002002")
                 .name("Mombasa Secondary School")
                 .type("SECONDARY")
-                .category("PUBLIC")
+                
                 .county("Mombasa")
                 .subCounty("Mvita")
                 .ward("Tononoka")
