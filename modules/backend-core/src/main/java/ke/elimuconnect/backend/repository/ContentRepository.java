@@ -14,14 +14,25 @@ public interface ContentRepository extends MongoRepository<Content, String> {
     
     Page<Content> findByPublishedTrue(Pageable pageable);
     
-    Page<Content> findByPublished(boolean published, Pageable pageable);
-    
     Page<Content> findBySubjectAndGradeAndPublishedTrue(String subject, String grade, Pageable pageable);
     
     Page<Content> findByApprovedFalse(Pageable pageable);
     
     List<Content> findByUploadedByAndPublishedTrue(String uploadedBy);
     
-    @Query("{ $or: [ { 'title': { $regex: ?0, $options: 'i' } }, { 'description': { $regex: ?0, $options: 'i' } } ] }")
+    List<Content> findByUploadedBy(String uploadedBy);
+    
+    Page<Content> findByUploadedBy(String uploadedBy, Pageable pageable);
+    
+    Page<Content> findByUploadedByAndPublishedTrue(String uploadedBy, Pageable pageable);
+    
+    Page<Content> findByUploadedByAndPublishedFalse(String uploadedBy, Pageable pageable);
+    
+    @Query("{ $or: [ " +
+           "{ 'title': { $regex: ?0, $options: 'i' } }, " +
+           "{ 'description': { $regex: ?0, $options: 'i' } }, " +
+           "{ 'subject': { $regex: ?0, $options: 'i' } }, " +
+           "{ 'tags': { $regex: ?0, $options: 'i' } } " +
+           "], 'published': true }")
     Page<Content> searchByText(String searchText, Pageable pageable);
 }
