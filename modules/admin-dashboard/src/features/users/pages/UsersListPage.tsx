@@ -13,9 +13,7 @@ export const UsersListPage: React.FC = () => {
     queryFn: async () => {
       const response = await axiosInstance.get('/api/admin/users/pending');
       console.log('Pending users response:', response.data);
-      const users = response.data.data?.content || response.data.data || [];
-      console.log('Parsed pending users:', users);
-      return users;
+      return response.data.data?.content || response.data.data || [];
     },
   });
 
@@ -23,10 +21,7 @@ export const UsersListPage: React.FC = () => {
     queryKey: ['users', 'all'],
     queryFn: async () => {
       const response = await axiosInstance.get('/api/admin/users');
-      console.log('All users response:', response.data);
-      const users = response.data.data?.content || response.data.data || [];
-      console.log('Parsed all users:', users);
-      return users;
+      return response.data.data?.content || response.data.data || [];
     },
     enabled: activeTab === 'all',
   });
@@ -63,18 +58,18 @@ export const UsersListPage: React.FC = () => {
   const isLoading = activeTab === 'pending' ? loadingPending : loadingAll;
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">User Management</h1>
         <p className="text-gray-600 mt-2">Review and manage user accounts</p>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-8">
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-4 md:space-x-8 overflow-x-auto">
           <button
             onClick={() => setActiveTab('pending')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
               activeTab === 'pending'
                 ? 'border-primary-500 text-primary-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -89,7 +84,7 @@ export const UsersListPage: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('all')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+            className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
               activeTab === 'all'
                 ? 'border-primary-500 text-primary-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -104,63 +99,67 @@ export const UsersListPage: React.FC = () => {
         <div className="text-center py-8">Loading users...</div>
       ) : users && users.length > 0 ? (
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                {activeTab === 'pending' && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                )}
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {users.map((user: any) => (
-                <tr key={user.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-medium text-gray-900">{user.fullName}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">{user.email}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                      {user.role}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        user.active
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}
-                    >
-                      {user.active ? 'Active' : 'Pending'}
-                    </span>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                   {activeTab === 'pending' && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => approveMutation.mutate(user.id)}
-                        disabled={approveMutation.isPending}
-                        className="text-green-600 hover:text-green-900 mr-4"
-                      >
-                        <CheckCircle className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => rejectMutation.mutate(user.id)}
-                        disabled={rejectMutation.isPending}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        <XCircle className="w-5 h-5" />
-                      </button>
-                    </td>
+                    <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                   )}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {users.map((user: any) => (
+                  <tr key={user.id}>
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                      <div className="font-medium text-gray-900 text-sm">{user.fullName}</div>
+                    </td>
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-gray-500 text-sm">{user.email}</td>
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                        {user.role}
+                      </span>
+                    </td>
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          user.active
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}
+                      >
+                        {user.active ? 'Active' : 'Pending'}
+                      </span>
+                    </td>
+                    {activeTab === 'pending' && (
+                      <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => approveMutation.mutate(user.id)}
+                            disabled={approveMutation.isPending}
+                            className="text-green-600 hover:text-green-900"
+                          >
+                            <CheckCircle className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => rejectMutation.mutate(user.id)}
+                            disabled={rejectMutation.isPending}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            <XCircle className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow p-6 text-center">
@@ -168,7 +167,6 @@ export const UsersListPage: React.FC = () => {
           <p className="text-gray-600">
             {activeTab === 'pending' ? 'No pending users to approve.' : 'No users found.'}
           </p>
-          <p className="text-sm text-gray-500 mt-2">Debug: {JSON.stringify(users)}</p>
         </div>
       )}
     </div>
