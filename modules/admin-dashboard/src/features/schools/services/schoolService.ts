@@ -3,14 +3,14 @@ import { ApiResponse, School, PaginatedResponse } from '@/types';
 
 export const schoolService = {
   getAllSchools: async (page = 0, size = 20): Promise<ApiResponse<PaginatedResponse<School>>> => {
-    const response = await apiClient.get('/api/admin/schools', {
+    const response = await apiClient.get('/api/v1/schools', {
       params: { page, size },
     });
     return response.data;
   },
 
   getSchoolById: async (id: string): Promise<ApiResponse<School>> => {
-    const response = await apiClient.get(`/api/admin/schools/${id}`);
+    const response = await apiClient.get(`/api/v1/schools/${id}`);
     return response.data;
   },
 
@@ -30,7 +30,7 @@ export const schoolService = {
   },
 
   searchSchools: async (query: string): Promise<ApiResponse<School[]>> => {
-    const response = await apiClient.get('/api/schools/search', {
+    const response = await apiClient.get('/api/v1/schools/search', {
       params: { query },
     });
     return response.data;
