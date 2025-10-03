@@ -30,7 +30,7 @@ export const schoolService = {
   },
 
   searchSchools: async (query: string): Promise<ApiResponse<School[]>> => {
-    const response = await apiClient.get('/api/v1/schools/search', {
+    const response = await apiClient.get('/api/schools/search', {
       params: { query },
     });
     return response.data;
