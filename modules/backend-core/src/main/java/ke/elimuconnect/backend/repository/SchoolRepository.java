@@ -11,14 +11,8 @@ import java.util.Optional;
 
 @Repository
 public interface SchoolRepository extends MongoRepository<School, String> {
-    
     Optional<School> findByNemisCode(String nemisCode);
-    
-    Page<School> findByActive(boolean active, Pageable pageable);
-    
-    List<School> findByNameContainingIgnoreCase(String name);
-}
-
     List<School> findByActiveTrue();
     Page<School> findByActiveTrue(Pageable pageable);
     List<School> findByNameContainingIgnoreCaseAndActiveTrue(String name);
+}
