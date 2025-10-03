@@ -42,20 +42,34 @@ export const StudentRegistrationForm = () => {
   const [success, setSuccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const { data: schoolsData, isLoading: loadingSchools } = useQuery({
+  const { data: schoolsData, isLoading: loadingSchools, error: schoolsError } = useQuery({
     queryKey: ['schools', searchQuery],
     queryFn: async () => {
-      const result = searchQuery
-        ? await schoolService.searchSchools(searchQuery)
-        : await schoolService.getAllSchools();
-      console.log('Schools API response:', result);
-      return result;
+      try {
+        const result = searchQuery
+          ? await schoolService.searchSchools(searchQuery)
+          : await schoolService.getAllSchools();
+        console.log('Full Schools API response:', JSON.stringify(result, null, 2));
+        return result;
+      } catch (err) {
+        console.error('Error fetching schools:', err);
+        throw err;
+      }
     },
   });
 
-  // Handle different possible response structures
-  const schools = schoolsData?.data?.content || schoolsData?.data || [];
-  console.log('Parsed schools:', schools);
+  // Try multiple possible paths for the data
+  let schools = [];
+  if (schoolsData) {
+    console.log('schoolsData structure:', Object.keys(schoolsData));
+    schools = schoolsData?.data?.content || 
+              schoolsData?.data || 
+              schoolsData?.content ||
+              (Array.isArray(schoolsData) ? schoolsData : []);
+  }
+  
+  console.log('Final parsed schools:', schools);
+  console.log('Schools error:', schoolsError);
 
   const { register, handleSubmit, formState: { errors } } = useForm<StudentFormData>({
     resolver: zodResolver(studentSchema),
@@ -104,6 +118,12 @@ export const StudentRegistrationForm = () => {
             </Alert>
           )}
 
+          {schoolsError && (
+            <Alert variant="destructive">
+              <AlertDescription>Failed to load schools. Please refresh the page.</AlertDescription>
+            </Alert>
+          )}
+
           <Input
             label="Full Name"
             placeholder="John Doe"
@@ -148,12 +168,12 @@ export const StudentRegistrationForm = () => {
               options={
                 loadingSchools
                   ? [{ value: '', label: 'Loading schools...' }]
-                  : schools.length > 0
+                  : Array.isArray(schools) && schools.length > 0
                   ? schools.map((school: any) => ({
                       value: school.id,
                       label: `${school.name} ${school.nemisCode ? `(${school.nemisCode})` : ''}`
                     }))
-                  : [{ value: '', label: 'No schools found' }]
+                  : [{ value: '', label: 'No schools found - Check console for errors' }]
               }
               {...register('schoolId')}
             />
