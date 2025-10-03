@@ -1,18 +1,20 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://elimuconnect.onrender.com';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
+
+console.log('Admin Dashboard API URL:', API_URL);
 
 const apiClient = axios.create({
   baseURL: API_URL,
 });
 
-// Add token to all requests
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('admin_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    console.log('Request URL:', config.baseURL + config.url);
     return config;
   },
   (error) => {
@@ -20,6 +22,5 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Export as both default and named export
 export { apiClient };
 export default apiClient;
