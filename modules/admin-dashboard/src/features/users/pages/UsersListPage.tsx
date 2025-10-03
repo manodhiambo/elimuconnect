@@ -12,7 +12,10 @@ export const UsersListPage: React.FC = () => {
     queryKey: ['users', 'pending'],
     queryFn: async () => {
       const response = await axiosInstance.get('/api/admin/users/pending');
-      return response.data.data?.content || [];
+      console.log('Pending users response:', response.data);
+      const users = response.data.data?.content || response.data.data || [];
+      console.log('Parsed pending users:', users);
+      return users;
     },
   });
 
@@ -20,7 +23,10 @@ export const UsersListPage: React.FC = () => {
     queryKey: ['users', 'all'],
     queryFn: async () => {
       const response = await axiosInstance.get('/api/admin/users');
-      return response.data.data?.content || [];
+      console.log('All users response:', response.data);
+      const users = response.data.data?.content || response.data.data || [];
+      console.log('Parsed all users:', users);
+      return users;
     },
     enabled: activeTab === 'all',
   });
@@ -162,6 +168,7 @@ export const UsersListPage: React.FC = () => {
           <p className="text-gray-600">
             {activeTab === 'pending' ? 'No pending users to approve.' : 'No users found.'}
           </p>
+          <p className="text-sm text-gray-500 mt-2">Debug: {JSON.stringify(users)}</p>
         </div>
       )}
     </div>
