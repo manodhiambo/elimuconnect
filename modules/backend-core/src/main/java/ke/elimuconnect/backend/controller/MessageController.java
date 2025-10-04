@@ -30,7 +30,6 @@ public class MessageController {
             @AuthenticationPrincipal UserDetails userDetails) {
         
         try {
-            // userDetails.getUsername() is actually the user ID from JWT
             String userId = userDetails.getUsername();
             log.info("Getting conversations for userId: {}", userId);
             
@@ -50,14 +49,22 @@ public class MessageController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
         
-        String userId = userDetails.getUsername();
-        
-        Page<Message> messages = messageService.getConversation(
-            userId, partnerId, 
-            PageRequest.of(page, size, Sort.by("createdAt").descending())
-        );
-        
-        return ResponseEntity.ok(ApiResponse.success(messages));
+        try {
+            String userId = userDetails.getUsername();
+            log.info("Getting conversation between {} and {}", userId, partnerId);
+            
+            Page<Message> messages = messageService.getConversation(
+                userId, partnerId, 
+                PageRequest.of(page, size, Sort.by("createdAt").descending())
+            );
+            
+            log.info("Found {} messages", messages.getTotalElements());
+            return ResponseEntity.ok(ApiResponse.success(messages));
+        } catch (Exception e) {
+            log.error("Error getting conversation between user and partner {}", partnerId, e);
+            return ResponseEntity.internalServerError()
+                .body(ApiResponse.error("Error: " + e.getMessage()));
+        }
     }
     
     @PostMapping("/send")
@@ -65,20 +72,28 @@ public class MessageController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody Map<String, String> request) {
         
-        String senderId = userDetails.getUsername();
-        String receiverId = request.get("receiverId");
-        String content = request.get("content");
-        
-        Message message = messageService.sendMessage(senderId, receiverId, content);
-        
-        // Send to receiver via WebSocket
-        messagingTemplate.convertAndSendToUser(
-            receiverId, 
-            "/queue/messages", 
-            message
-        );
-        
-        return ResponseEntity.ok(ApiResponse.success(message));
+        try {
+            String senderId = userDetails.getUsername();
+            String receiverId = request.get("receiverId");
+            String content = request.get("content");
+            
+            log.info("Sending message from {} to {}", senderId, receiverId);
+            
+            Message message = messageService.sendMessage(senderId, receiverId, content);
+            
+            // Send to receiver via WebSocket
+            messagingTemplate.convertAndSendToUser(
+                receiverId, 
+                "/queue/messages", 
+                message
+            );
+            
+            return ResponseEntity.ok(ApiResponse.success(message));
+        } catch (Exception e) {
+            log.error("Error sending message", e);
+            return ResponseEntity.internalServerError()
+                .body(ApiResponse.error("Error: " + e.getMessage()));
+        }
     }
     
     @PostMapping("/mark-read/{partnerId}")
@@ -86,17 +101,31 @@ public class MessageController {
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable String partnerId) {
         
-        String userId = userDetails.getUsername();
-        messageService.markAsRead(userId, partnerId);
-        return ResponseEntity.ok(ApiResponse.success(null, "Messages marked as read"));
+        try {
+            String userId = userDetails.getUsername();
+            log.info("Marking messages as read between {} and {}", userId, partnerId);
+            
+            messageService.markAsRead(userId, partnerId);
+            return ResponseEntity.ok(ApiResponse.success(null, "Messages marked as read"));
+        } catch (Exception e) {
+            log.error("Error marking messages as read", e);
+            return ResponseEntity.internalServerError()
+                .body(ApiResponse.error("Error: " + e.getMessage()));
+        }
     }
     
     @GetMapping("/unread-count")
     public ResponseEntity<ApiResponse<Long>> getUnreadCount(
             @AuthenticationPrincipal UserDetails userDetails) {
         
-        String userId = userDetails.getUsername();
-        long count = messageService.countUnreadMessages(userId);
-        return ResponseEntity.ok(ApiResponse.success(count));
+        try {
+            String userId = userDetails.getUsername();
+            long count = messageService.countUnreadMessages(userId);
+            return ResponseEntity.ok(ApiResponse.success(count));
+        } catch (Exception e) {
+            log.error("Error getting unread count", e);
+            return ResponseEntity.internalServerError()
+                .body(ApiResponse.error("Error: " + e.getMessage()));
+        }
     }
 }
