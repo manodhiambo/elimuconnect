@@ -12,7 +12,6 @@ export const TeacherDashboard: React.FC = () => {
     totalStudents: 45,
   };
 
-  const myContent = [];
 
   const stats = [
     {
