@@ -84,3 +84,67 @@ public class AssessmentController {
         return ResponseEntity.ok(ApiResponse.success(progress));
     }
 }
+
+    @PostMapping("/seed-sample")
+    public ResponseEntity<ApiResponse<String>> seedSampleAssessment() {
+        Assessment sample = new Assessment();
+        sample.setTitle("Mathematics Quiz - Algebra Basics");
+        sample.setDescription("Test your understanding of basic algebra concepts");
+        sample.setSubject("Mathematics");
+        sample.setGrade("Form 1");
+        sample.setTeacherId("admin");
+        sample.setTeacherName("System Admin");
+        sample.setDuration(30);
+        sample.setTotalMarks(20);
+        sample.setPassingMarks(12);
+        sample.setPublished(true);
+        sample.setCreatedAt(java.time.LocalDateTime.now());
+        
+        List<Assessment.Question> questions = new ArrayList<>();
+        
+        // Question 1
+        Assessment.Question q1 = new Assessment.Question();
+        q1.setId(java.util.UUID.randomUUID().toString());
+        q1.setText("What is the value of x in the equation: 2x + 5 = 15?");
+        q1.setType("MCQ");
+        q1.setOptions(Arrays.asList("3", "5", "7", "10"));
+        q1.setCorrectAnswer("5");
+        q1.setMarks(5);
+        questions.add(q1);
+        
+        // Question 2
+        Assessment.Question q2 = new Assessment.Question();
+        q2.setId(java.util.UUID.randomUUID().toString());
+        q2.setText("Is the statement true or false: x + x = 2x");
+        q2.setType("TRUE_FALSE");
+        q2.setOptions(Arrays.asList("True", "False"));
+        q2.setCorrectAnswer("True");
+        q2.setMarks(5);
+        questions.add(q2);
+        
+        // Question 3
+        Assessment.Question q3 = new Assessment.Question();
+        q3.setId(java.util.UUID.randomUUID().toString());
+        q3.setText("Solve for y: 3y - 6 = 12");
+        q3.setType("MCQ");
+        q3.setOptions(Arrays.asList("2", "4", "6", "8"));
+        q3.setCorrectAnswer("6");
+        q3.setMarks(5);
+        questions.add(q3);
+        
+        // Question 4
+        Assessment.Question q4 = new Assessment.Question();
+        q4.setId(java.util.UUID.randomUUID().toString());
+        q4.setText("What is 5a + 3a?");
+        q4.setType("MCQ");
+        q4.setOptions(Arrays.asList("8a", "15a", "8", "15"));
+        q4.setCorrectAnswer("8a");
+        q4.setMarks(5);
+        questions.add(q4);
+        
+        sample.setQuestions(questions);
+        assessmentService.createAssessment(sample);
+        
+        return ResponseEntity.ok(ApiResponse.success("Sample assessment created successfully"));
+    }
+}
