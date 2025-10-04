@@ -6,6 +6,7 @@ import ke.elimuconnect.backend.repository.UserRepository;
 import ke.elimuconnect.backend.service.MessageService;
 import ke.elimuconnect.domain.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/messages")
 @RequiredArgsConstructor
@@ -30,11 +32,19 @@ public class MessageController {
     public ResponseEntity<ApiResponse<Map<String, Object>>> getConversations(
             @AuthenticationPrincipal UserDetails userDetails) {
         
-        User user = userRepository.findByEmail(userDetails.getUsername())
-            .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        Map<String, Object> conversations = messageService.getConversationList(user.getId());
-        return ResponseEntity.ok(ApiResponse.success(conversations));
+        try {
+            log.info("Getting conversations for user: {}", userDetails.getUsername());
+            User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found: " + userDetails.getUsername()));
+            
+            log.info("Found user with ID: {}", user.getId());
+            Map<String, Object> conversations = messageService.getConversationList(user.getId());
+            return ResponseEntity.ok(ApiResponse.success(conversations));
+        } catch (Exception e) {
+            log.error("Error getting conversations", e);
+            return ResponseEntity.internalServerError()
+                .body(ApiResponse.error("Error: " + e.getMessage()));
+        }
     }
     
     @GetMapping("/conversation/{partnerId}")
