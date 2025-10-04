@@ -11,7 +11,7 @@ export const UsersListPage: React.FC = () => {
   const { data: pendingUsers, isLoading: loadingPending } = useQuery({
     queryKey: ['users', 'pending'],
     queryFn: async () => {
-      const response = await axiosInstance.get('/api/admin/users/pending');
+      const response = await axiosInstance.get('/admin/users/pending');
       console.log('Pending users response:', response.data);
       return response.data.data?.content || response.data.data || [];
     },
@@ -20,7 +20,7 @@ export const UsersListPage: React.FC = () => {
   const { data: allUsers, isLoading: loadingAll } = useQuery({
     queryKey: ['users', 'all'],
     queryFn: async () => {
-      const response = await axiosInstance.get('/api/admin/users');
+      const response = await axiosInstance.get('/admin/users');
       return response.data.data?.content || response.data.data || [];
     },
     enabled: activeTab === 'all',
@@ -28,7 +28,7 @@ export const UsersListPage: React.FC = () => {
 
   const approveMutation = useMutation({
     mutationFn: async (userId: string) => {
-      const response = await axiosInstance.post(`/api/admin/users/${userId}/approve`);
+      const response = await axiosInstance.post(`/admin/users/${userId}/approve`);
       return response.data;
     },
     onSuccess: () => {
@@ -42,7 +42,7 @@ export const UsersListPage: React.FC = () => {
 
   const rejectMutation = useMutation({
     mutationFn: async (userId: string) => {
-      const response = await axiosInstance.post(`/api/admin/users/${userId}/reject`);
+      const response = await axiosInstance.post(`/admin/users/${userId}/reject`);
       return response.data;
     },
     onSuccess: () => {
