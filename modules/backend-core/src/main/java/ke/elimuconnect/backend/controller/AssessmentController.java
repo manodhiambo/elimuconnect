@@ -11,8 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/v1/assessments")
@@ -61,7 +61,7 @@ public class AssessmentController {
             @RequestBody Map<String, String> answers) {
         
         String studentId = userDetails.getUsername();
-        String studentName = userDetails.getUsername(); // You might want to fetch actual name
+        String studentName = userDetails.getUsername();
         
         AssessmentSubmission submission = assessmentService.submitAssessment(
             id, studentId, studentName, answers);
@@ -83,7 +83,6 @@ public class AssessmentController {
         Map<String, Object> progress = assessmentService.getStudentProgress(studentId);
         return ResponseEntity.ok(ApiResponse.success(progress));
     }
-}
 
     @PostMapping("/seed-sample")
     public ResponseEntity<ApiResponse<String>> seedSampleAssessment() {
@@ -102,7 +101,6 @@ public class AssessmentController {
         
         List<Assessment.Question> questions = new ArrayList<>();
         
-        // Question 1
         Assessment.Question q1 = new Assessment.Question();
         q1.setId(java.util.UUID.randomUUID().toString());
         q1.setText("What is the value of x in the equation: 2x + 5 = 15?");
@@ -112,7 +110,6 @@ public class AssessmentController {
         q1.setMarks(5);
         questions.add(q1);
         
-        // Question 2
         Assessment.Question q2 = new Assessment.Question();
         q2.setId(java.util.UUID.randomUUID().toString());
         q2.setText("Is the statement true or false: x + x = 2x");
@@ -122,7 +119,6 @@ public class AssessmentController {
         q2.setMarks(5);
         questions.add(q2);
         
-        // Question 3
         Assessment.Question q3 = new Assessment.Question();
         q3.setId(java.util.UUID.randomUUID().toString());
         q3.setText("Solve for y: 3y - 6 = 12");
@@ -132,7 +128,6 @@ public class AssessmentController {
         q3.setMarks(5);
         questions.add(q3);
         
-        // Question 4
         Assessment.Question q4 = new Assessment.Question();
         q4.setId(java.util.UUID.randomUUID().toString());
         q4.setText("What is 5a + 3a?");
