@@ -28,3 +28,6 @@ public interface UserRepository extends MongoRepository<User, String> {
     
     Page<User> findAll(Pageable pageable);
 }
+
+    long countByApprovalStatus(String status);
+    long countByActive(boolean active);
