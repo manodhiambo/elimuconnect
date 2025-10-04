@@ -23,6 +23,7 @@ import { ContentDetailsPage } from './features/content/pages/ContentDetailsPage'
 // Schools
 import { SchoolsListPage } from './features/schools/pages/SchoolsListPage';
 import { SettingsPage } from './features/settings/pages/SettingsPage';
+import { MessagesPage } from './features/communication/pages/MessagesPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -63,6 +64,7 @@ function App() {
                     {/* Schools */}
                     <Route path="/schools" element={<SchoolsListPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/messages" element={<MessagesPage />} />
                     
                     {/* Catch all */}
                     <Route path="*" element={<Navigate to="/dashboard" replace />} />

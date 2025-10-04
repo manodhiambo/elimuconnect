@@ -8,6 +8,7 @@ import {
   Building2,
   Settings,
   LogOut,
+  MessageSquare,
 } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/store/authStore';
 
@@ -16,6 +17,7 @@ const navigation = [
   { name: 'User Management', href: '/users', icon: Users },
   { name: 'Content Management', href: '/content', icon: FileText },
   { name: 'Schools', href: '/schools', icon: Building2 },
+  { name: 'Messages', href: '/messages', icon: MessageSquare },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
