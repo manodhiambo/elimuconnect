@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { contentService } from '../services/contentService';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card';
 import { Input } from '../../../components/ui/Input';
 import { Select } from '../../../components/ui/Select';
 import { Button } from '../../../components/ui/Button';
-import { Search, BookOpen, Download, Eye } from 'lucide-react';
+import { Search, BookOpen, Download, Eye, FileText, Video, Image as ImageIcon } from 'lucide-react';
 import { formatFileSize } from '../../../lib/utils';
 
 const SUBJECTS = [
@@ -23,6 +23,7 @@ export const LibraryPage = () => {
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedGrade, setSelectedGrade] = useState('');
   const [page, setPage] = useState(0);
+  const queryClient = useQueryClient();
 
   const { data: contentData, isLoading } = useQuery({
     queryKey: ['content', searchQuery, selectedSubject, selectedGrade, page],
@@ -37,7 +38,30 @@ export const LibraryPage = () => {
     },
   });
 
+  const viewMutation = useMutation({
+    mutationFn: (id: string) => contentService.viewContent(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['content'] });
+    },
+  });
+
   const contents = contentData?.data?.content || [];
+
+  const handleView = (content: any) => {
+    viewMutation.mutate(content.id);
+    window.open(content.fileUrl, '_blank');
+  };
+
+  const handleDownload = (content: any) => {
+    viewMutation.mutate(content.id);
+    contentService.downloadContent(content.fileUrl, content.fileName);
+  };
+
+  const getFileIcon = (fileType: string) => {
+    if (fileType.startsWith('image/')) return <ImageIcon className="h-5 w-5" />;
+    if (fileType.startsWith('video/')) return <Video className="h-5 w-5" />;
+    return <FileText className="h-5 w-5" />;
+  };
 
   return (
     <div className="space-y-6">
@@ -62,32 +86,35 @@ export const LibraryPage = () => {
               </div>
             </div>
             <Select
-	       value={selectedSubject}
-	       onChange={(e) => setSelectedSubject(e.target.value)}
-	       options={[
-		       { value: '', label: 'Select Subject' },
-		       ...SUBJECTS.map(s => ({ value: s, label: s }))
-	       ]}
-	       />
-	       <Select
-	       value={selectedGrade}
-	       onChange={(e) => setSelectedGrade(e.target.value)}
-	       options={[
-		       { value: '', label: 'Select Grade' },
-		       ...GRADES.map(g => ({ value: g, label: g }))
-	       ]}
-	       />
+              value={selectedSubject}
+              onChange={(e) => setSelectedSubject(e.target.value)}
+              options={[
+                { value: '', label: 'All Subjects' },
+                ...SUBJECTS.map(s => ({ value: s, label: s }))
+              ]}
+            />
+            <Select
+              value={selectedGrade}
+              onChange={(e) => setSelectedGrade(e.target.value)}
+              options={[
+                { value: '', label: 'All Grades' },
+                ...GRADES.map(g => ({ value: g, label: g }))
+              ]}
+            />
           </div>
         </CardContent>
       </Card>
 
       {/* Content Grid */}
       {isLoading ? (
-        <div className="text-center py-20">Loading...</div>
+        <div className="text-center py-20">
+          <div className="animate-pulse">Loading materials...</div>
+        </div>
       ) : contents.length === 0 ? (
         <div className="text-center py-20">
           <BookOpen className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-          <p className="text-muted-foreground">No content found</p>
+          <p className="text-xl font-semibold mb-2">No content found</p>
+          <p className="text-muted-foreground">Try adjusting your filters or search query</p>
         </div>
       ) : (
         <>
@@ -97,6 +124,12 @@ export const LibraryPage = () => {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        {getFileIcon(content.fileType)}
+                        <span className="text-xs text-muted-foreground uppercase">
+                          {content.fileType.split('/')[1]}
+                        </span>
+                      </div>
                       <CardTitle className="text-lg line-clamp-2">{content.title}</CardTitle>
                       <p className="text-sm text-muted-foreground mt-1">
                         {content.subject} • {content.grade}
@@ -108,21 +141,30 @@ export const LibraryPage = () => {
                   <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
                     {content.description}
                   </p>
-                  
+
                   <div className="flex items-center justify-between text-xs text-muted-foreground mb-4">
                     <span>{formatFileSize(content.fileSizeBytes)}</span>
                     <span className="flex items-center gap-1">
                       <Eye className="h-3 w-3" />
-                      {content.viewCount}
+                      {content.viewCount} views
                     </span>
                   </div>
 
                   <div className="flex gap-2">
-                    <Button size="sm" className="flex-1">
+                    <Button 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => handleView(content)}
+                    >
                       <Eye className="h-4 w-4 mr-1" />
                       View
                     </Button>
-                    <Button size="sm" variant="outline" className="flex-1">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => handleDownload(content)}
+                    >
                       <Download className="h-4 w-4 mr-1" />
                       Download
                     </Button>

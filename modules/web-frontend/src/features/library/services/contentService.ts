@@ -32,7 +32,6 @@ export const contentService = {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('category', category);
-
     const response = await apiClient.post('/content/upload/file', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
@@ -52,5 +51,19 @@ export const contentService = {
   deleteContent: async (id: string): Promise<ApiResponse<void>> => {
     const response = await apiClient.delete(`/content/${id}`);
     return response.data;
+  },
+
+  viewContent: async (id: string): Promise<void> => {
+    await apiClient.post(`/content/${id}/view`);
+  },
+
+  downloadContent: (fileUrl: string, fileName: string): void => {
+    const link = document.createElement('a');
+    link.href = fileUrl;
+    link.download = fileName;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   },
 };
