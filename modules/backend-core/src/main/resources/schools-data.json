@@ -1,0 +1,162 @@
+[
+  {
+    "name": "Alliance High School",
+    "code": "AHS001",
+    "county": "Kiambu",
+    "type": "SECONDARY",
+    "category": "NATIONAL",
+    "address": "Kikuyu, Kiambu County"
+  },
+  {
+    "name": "Mangu High School",
+    "code": "MHS001",
+    "county": "Kiambu",
+    "type": "SECONDARY",
+    "category": "NATIONAL",
+    "address": "Thika, Kiambu County"
+  },
+  {
+    "name": "Starehe Boys Centre",
+    "code": "SBC001",
+    "county": "Nairobi",
+    "type": "SECONDARY",
+    "category": "NATIONAL",
+    "address": "Nairobi"
+  },
+  {
+    "name": "Kenya High School",
+    "code": "KHS001",
+    "county": "Nairobi",
+    "type": "SECONDARY",
+    "category": "NATIONAL",
+    "address": "Nairobi"
+  },
+  {
+    "name": "Mang'u High School",
+    "code": "MGHS001",
+    "county": "Kiambu",
+    "type": "SECONDARY",
+    "category": "NATIONAL",
+    "address": "Thika, Kiambu County"
+  },
+  {
+    "name": "Nairobi School",
+    "code": "NS001",
+    "county": "Nairobi",
+    "type": "SECONDARY",
+    "category": "NATIONAL",
+    "address": "Nairobi"
+  },
+  {
+    "name": "Moi Girls Eldoret",
+    "code": "MGE001",
+    "county": "Uasin Gishu",
+    "type": "SECONDARY",
+    "category": "NATIONAL",
+    "address": "Eldoret, Uasin Gishu County"
+  },
+  {
+    "name": "Moi Girls Nairobi",
+    "code": "MGN001",
+    "county": "Nairobi",
+    "type": "SECONDARY",
+    "category": "NATIONAL",
+    "address": "Nairobi"
+  },
+  {
+    "name": "Kisumu Day Secondary",
+    "code": "KDS001",
+    "county": "Kisumu",
+    "type": "SECONDARY",
+    "category": "COUNTY",
+    "address": "Kisumu"
+  },
+  {
+    "name": "Maseno School",
+    "code": "MS001",
+    "county": "Kisumu",
+    "type": "SECONDARY",
+    "category": "NATIONAL",
+    "address": "Maseno, Kisumu County"
+  },
+  {
+    "name": "St. Mary's School Yala",
+    "code": "SMSY001",
+    "county": "Siaya",
+    "type": "SECONDARY",
+    "category": "NATIONAL",
+    "address": "Yala, Siaya County"
+  },
+  {
+    "name": "Friends School Kamusinga",
+    "code": "FSK001",
+    "county": "Bungoma",
+    "type": "SECONDARY",
+    "category": "NATIONAL",
+    "address": "Bungoma County"
+  },
+  {
+    "name": "Maranda High School",
+    "code": "MHS002",
+    "county": "Siaya",
+    "type": "SECONDARY",
+    "category": "NATIONAL",
+    "address": "Siaya County"
+  },
+  {
+    "name": "Kisii High School",
+    "code": "KHS002",
+    "county": "Kisii",
+    "type": "SECONDARY",
+    "category": "NATIONAL",
+    "address": "Kisii County"
+  },
+  {
+    "name": "Moi Forces Academy",
+    "code": "MFA001",
+    "county": "Nairobi",
+    "type": "SECONDARY",
+    "category": "NATIONAL",
+    "address": "Nairobi"
+  },
+  {
+    "name": "Lenana School",
+    "code": "LS001",
+    "county": "Nairobi",
+    "type": "SECONDARY",
+    "category": "NATIONAL",
+    "address": "Nairobi"
+  },
+  {
+    "name": "Nakuru High School",
+    "code": "NHS001",
+    "county": "Nakuru",
+    "type": "SECONDARY",
+    "category": "COUNTY",
+    "address": "Nakuru"
+  },
+  {
+    "name": "Mombasa High School",
+    "code": "MHS003",
+    "county": "Mombasa",
+    "type": "SECONDARY",
+    "category": "COUNTY",
+    "address": "Mombasa"
+  },
+  {
+    "name": "Jamhuri High School",
+    "code": "JHS001",
+    "county": "Nairobi",
+    "type": "SECONDARY",
+    "category": "NATIONAL",
+    "address": "Nairobi"
+  },
+  {
+    "name": "Agoro Sare High School",
+    "code": "ASHS001",
+    "county": "Migori",
+    "type": "SECONDARY",
+    "category": "NATIONAL",
+    "address": "Migori County"
+  }
+]
