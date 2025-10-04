@@ -56,7 +56,7 @@ export const StudentDashboard: React.FC = () => {
       title: 'Browse Library',
       description: 'Explore learning materials',
       icon: BookOpen,
-      path: '/student/library',
+      path: '/app/library',
       gradient: 'from-primary-500 to-primary-600',
       iconBg: 'bg-primary-100',
       iconColor: 'text-primary-600',
@@ -65,7 +65,7 @@ export const StudentDashboard: React.FC = () => {
       title: 'My Progress',
       description: 'Track your learning journey',
       icon: TrendingUp,
-      path: '/student/assessments',
+      path: '/app/assessments',
       gradient: 'from-indigo-500 to-indigo-600',
       iconBg: 'bg-indigo-100',
       iconColor: 'text-indigo-600',
@@ -162,7 +162,7 @@ export const StudentDashboard: React.FC = () => {
               {dashboardData.recentContent.map((content: any) => (
                 <Link
                   key={content.id}
-                  to={`/student/library`}
+                  to="/app/library"
                   className="group block p-4 border-2 border-gray-200 rounded-xl hover:border-primary-300 hover:shadow-md transition-all duration-300"
                 >
                   <div className="flex items-center justify-between">
@@ -194,7 +194,7 @@ export const StudentDashboard: React.FC = () => {
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No content yet</h3>
               <p className="text-gray-600 mb-6">Start exploring our library to discover amazing learning materials</p>
               <Link
-                to="/student/library"
+                to="/app/library"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg hover:from-primary-700 hover:to-primary-800 transition-all shadow-lg hover:shadow-xl"
               >
                 <BookOpen className="w-5 h-5" />
