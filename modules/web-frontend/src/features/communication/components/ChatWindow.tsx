@@ -39,8 +39,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ partnerId, partnerName }
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [conversationData]);
 
-  // Handle different response structures
-  const messages = conversationData?.data?.content || conversationData?.content || [];
+  // Extract messages from nested data structure
+  const messages = conversationData?.data?.content || [];
 
   const handleSend = () => {
     if (message.trim()) {
