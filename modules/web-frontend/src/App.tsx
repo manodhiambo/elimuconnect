@@ -7,6 +7,7 @@ import { DashboardPage } from './features/dashboard/pages/DashboardPage';
 import { LibraryPage } from './features/library/pages/LibraryPage';
 import { ContentUploadPage } from './features/library/pages/ContentUploadPage';
 import { AssessmentsPage } from './features/assessment/pages/AssessmentsPage';
+import { TakeAssessmentPage } from './features/assessment/pages/TakeAssessmentPage';
 import { CommunicationPage } from './features/communication/pages/CommunicationPage';
 import { AdminPanelPage } from './features/admin/pages/AdminPanelPage';
 import { DashboardLayout } from './components/layout/DashboardLayout';
@@ -45,6 +46,7 @@ function App() {
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="library" element={<LibraryPage />} />
             <Route path="assessments" element={<AssessmentsPage />} />
+            <Route path="assessments/take/:id" element={<TakeAssessmentPage />} />
             <Route path="communication" element={<CommunicationPage />} />
             
             {/* Admin only routes */}
