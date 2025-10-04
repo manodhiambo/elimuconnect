@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, Upload, CheckCircle, Clock, FileText, Users, BarChart, Plus, ArrowRight, Sparkles } from 'lucide-react';
+import { BookOpen, Upload, CheckCircle, Users, BarChart, FileText, ArrowRight, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { apiClient } from '../../../lib/axios';
 
