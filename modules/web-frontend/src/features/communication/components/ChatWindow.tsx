@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Send } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { messageService } from '../services/messageService';
 import { useAuthStore } from '../../../store/authStore';
+import { useWebSocket } from '../../../hooks/useWebSocket';
 import { formatDistanceToNow } from 'date-fns';
 
 interface ChatWindowProps {
@@ -19,8 +20,20 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ partnerId, partnerName }
   const { data: conversationData } = useQuery({
     queryKey: ['conversation', partnerId],
     queryFn: () => messageService.getConversation(partnerId),
-    refetchInterval: 3000, // Poll every 3 seconds for new messages
   });
+
+  // WebSocket for real-time messages
+  const handleNewMessage = useCallback((newMessage: any) => {
+    if (newMessage.senderId === partnerId || newMessage.receiverId === partnerId) {
+      queryClient.invalidateQueries({ queryKey: ['conversation', partnerId] });
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    }
+  }, [partnerId, queryClient]);
+
+  const { connected, sendMessage: sendViaWebSocket } = useWebSocket(
+    user?.id || user?.email || '', 
+    handleNewMessage
+  );
 
   const sendMutation = useMutation({
     mutationFn: (content: string) => messageService.sendMessage(partnerId, content),
@@ -45,15 +58,30 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ partnerId, partnerName }
 
   const handleSend = () => {
     if (message.trim()) {
-      sendMutation.mutate(message);
+      if (connected) {
+        // Use WebSocket if connected
+        sendViaWebSocket(partnerId, message);
+        setMessage('');
+        // Still call REST API as fallback
+        sendMutation.mutate(message);
+      } else {
+        // Fallback to REST API
+        sendMutation.mutate(message);
+      }
     }
   };
 
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b bg-white">
+      <div className="p-4 border-b bg-white flex items-center justify-between">
         <h2 className="text-xl font-semibold">{partnerName}</h2>
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-gray-400'}`} />
+          <span className="text-sm text-gray-600">
+            {connected ? 'Online' : 'Offline'}
+          </span>
+        </div>
       </div>
 
       {/* Messages */}
