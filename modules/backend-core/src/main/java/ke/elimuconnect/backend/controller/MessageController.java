@@ -1,8 +1,6 @@
 package ke.elimuconnect.backend.controller;
 
 import ke.elimuconnect.backend.entity.Message;
-import ke.elimuconnect.backend.entity.User;
-import ke.elimuconnect.backend.repository.UserRepository;
 import ke.elimuconnect.backend.service.MessageService;
 import ke.elimuconnect.domain.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +23,6 @@ import java.util.Map;
 public class MessageController {
     
     private final MessageService messageService;
-    private final UserRepository userRepository;
     private final SimpMessagingTemplate messagingTemplate;
     
     @GetMapping("/conversations")
@@ -33,12 +30,11 @@ public class MessageController {
             @AuthenticationPrincipal UserDetails userDetails) {
         
         try {
-            log.info("Getting conversations for user: {}", userDetails.getUsername());
-            User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found: " + userDetails.getUsername()));
+            // userDetails.getUsername() is actually the user ID from JWT
+            String userId = userDetails.getUsername();
+            log.info("Getting conversations for userId: {}", userId);
             
-            log.info("Found user with ID: {}", user.getId());
-            Map<String, Object> conversations = messageService.getConversationList(user.getId());
+            Map<String, Object> conversations = messageService.getConversationList(userId);
             return ResponseEntity.ok(ApiResponse.success(conversations));
         } catch (Exception e) {
             log.error("Error getting conversations", e);
@@ -54,11 +50,10 @@ public class MessageController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
         
-        User user = userRepository.findByEmail(userDetails.getUsername())
-            .orElseThrow(() -> new RuntimeException("User not found"));
+        String userId = userDetails.getUsername();
         
         Page<Message> messages = messageService.getConversation(
-            user.getId(), partnerId, 
+            userId, partnerId, 
             PageRequest.of(page, size, Sort.by("createdAt").descending())
         );
         
@@ -70,10 +65,7 @@ public class MessageController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody Map<String, String> request) {
         
-        User user = userRepository.findByEmail(userDetails.getUsername())
-            .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        String senderId = user.getId();
+        String senderId = userDetails.getUsername();
         String receiverId = request.get("receiverId");
         String content = request.get("content");
         
@@ -94,10 +86,8 @@ public class MessageController {
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable String partnerId) {
         
-        User user = userRepository.findByEmail(userDetails.getUsername())
-            .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        messageService.markAsRead(user.getId(), partnerId);
+        String userId = userDetails.getUsername();
+        messageService.markAsRead(userId, partnerId);
         return ResponseEntity.ok(ApiResponse.success(null, "Messages marked as read"));
     }
     
@@ -105,10 +95,8 @@ public class MessageController {
     public ResponseEntity<ApiResponse<Long>> getUnreadCount(
             @AuthenticationPrincipal UserDetails userDetails) {
         
-        User user = userRepository.findByEmail(userDetails.getUsername())
-            .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        long count = messageService.countUnreadMessages(user.getId());
+        String userId = userDetails.getUsername();
+        long count = messageService.countUnreadMessages(userId);
         return ResponseEntity.ok(ApiResponse.success(count));
     }
 }
