@@ -125,3 +125,24 @@ export interface PaginatedResponse<T> {
   size: number;
   number: number;
 }
+
+export interface Message {
+  id: string;
+  senderId: string;
+  senderName: string;
+  receiverId: string;
+  receiverName: string;
+  content: string;
+  messageType: string;
+  read: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Conversation {
+  partnerId: string;
+  partnerName: string;
+  lastMessage: string;
+  lastMessageTime: string;
+  unreadCount: number;
+}

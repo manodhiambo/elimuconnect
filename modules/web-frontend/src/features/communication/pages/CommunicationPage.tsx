@@ -1,71 +1,65 @@
-import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card';
-import { MessageSquare, Users, Bell } from 'lucide-react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { messageService } from '../services/messageService';
+import { ConversationList } from '../components/ConversationList';
+import { ChatWindow } from '../components/ChatWindow';
+import { MessageSquare } from 'lucide-react';
 
 export const CommunicationPage = () => {
+  const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
+
+  const { data: conversationsData, isLoading } = useQuery({
+    queryKey: ['conversations'],
+    queryFn: messageService.getConversations,
+    refetchInterval: 5000, // Refresh conversation list every 5 seconds
+  });
+
+  const conversations = conversationsData?.data?.conversations || [];
+  const selectedConversation = conversations.find((c: any) => c.partnerId === selectedPartnerId);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Communication</h1>
-        <p className="text-muted-foreground">Messages and notifications</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
+    <div className="h-[calc(100vh-4rem)]">
+      <div className="grid grid-cols-12 h-full">
+        {/* Conversations List */}
+        <div className="col-span-12 md:col-span-4 lg:col-span-3 border-r bg-white">
+          <div className="p-4 border-b">
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <MessageSquare className="w-6 h-6" />
               Messages
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">5</p>
-            <p className="text-sm text-muted-foreground">Unread</p>
-          </CardContent>
-        </Card>
+            </h1>
+          </div>
+          <ConversationList
+            conversations={conversations}
+            selectedPartnerId={selectedPartnerId}
+            onSelectConversation={setSelectedPartnerId}
+          />
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Groups
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">8</p>
-            <p className="text-sm text-muted-foreground">Active</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
-              Notifications
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">12</p>
-            <p className="text-sm text-muted-foreground">New</p>
-          </CardContent>
-        </Card>
+        {/* Chat Window */}
+        <div className="col-span-12 md:col-span-8 lg:col-span-9">
+          {selectedPartnerId && selectedConversation ? (
+            <ChatWindow
+              partnerId={selectedPartnerId}
+              partnerName={selectedConversation.partnerName}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full bg-gray-50">
+              <div className="text-center text-gray-500">
+                <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                <p>Select a conversation to start messaging</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Coming Soon</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground mb-4">
-            The communication system is under development. Soon you'll be able to:
-          </p>
-          <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-            <li>Send and receive messages</li>
-            <li>Participate in group discussions</li>
-            <li>Join video conferencing sessions</li>
-            <li>Receive real-time notifications</li>
-          </ul>
-        </CardContent>
-      </Card>
     </div>
   );
 };
