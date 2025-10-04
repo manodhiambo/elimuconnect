@@ -1,6 +1,6 @@
 package ke.elimuconnect.backend.repository;
 
-import ke.elimuconnect.domain.User;
+import ke.elimuconnect.backend.entity.User;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
