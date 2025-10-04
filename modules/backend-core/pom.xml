@@ -18,6 +18,18 @@
     <description>Spring Boot Backend Service</description>
 
     <dependencies>
+        <!-- Shared Utils -->
+        <dependency>
+            <groupId>ke.elimuconnect</groupId>
+            <artifactId>shared-utils</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>
+
+        <!-- Jakarta Mail -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
         <!-- Internal dependencies -->
         <dependency>
             <groupId>ke.elimuconnect</groupId>
