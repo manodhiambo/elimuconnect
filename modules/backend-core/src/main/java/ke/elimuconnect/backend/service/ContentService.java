@@ -130,4 +130,6 @@ public class ContentService {
     public Page<Content> searchContent(String searchText, Pageable pageable) {
         return contentRepository.searchByText(searchText, pageable);
     }
+    
+    
 }

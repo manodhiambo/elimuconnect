@@ -14,15 +14,12 @@ import java.util.Optional;
 public interface ContentRepository extends MongoRepository<Content, String> {
     // Basic queries
     List<Content> findByUploadedBy(String uploadedBy);
-    Page<Content> findByUploadedBy(String uploadedBy, Pageable pageable);
     Optional<Content> findByTitleAndUploadedBy(String title, String uploadedBy);
     List<Content> findByPublished(boolean published);
     
     // Published content queries
     Page<Content> findByPublishedTrue(Pageable pageable);
     List<Content> findByUploadedByAndPublishedTrue(String uploadedBy);
-    Page<Content> findByUploadedByAndPublishedTrue(String uploadedBy, Pageable pageable);
-    Page<Content> findByUploadedByAndPublishedFalse(String uploadedBy, Pageable pageable);
     
     // Approval queries (if Content has approved field)
     Page<Content> findByApprovedFalse(Pageable pageable);
@@ -35,3 +32,4 @@ public interface ContentRepository extends MongoRepository<Content, String> {
     @Query("{ $text: { $search: ?0 }, published: true }")
     Page<Content> searchByText(String searchText, Pageable pageable);
 }
+    
