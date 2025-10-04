@@ -1,6 +1,6 @@
 import React from 'react';
 import { MessageSquare } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, parseISO } from 'date-fns';
 
 interface ConversationListProps {
   conversations: any[];
@@ -41,7 +41,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 </div>
                 <p className="text-sm text-gray-600 truncate">{conv.lastMessage}</p>
                 <p className="text-xs text-gray-400 mt-1">
-                  {formatDistanceToNow(new Date(conv.lastMessageTime), { addSuffix: true })}
+                  {formatDistanceToNow(parseISO(conv.lastMessageTime), { addSuffix: true })}
                 </p>
               </div>
             </div>

@@ -3,7 +3,7 @@ import { Send } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { messageService } from '../services/messageService';
 import { useAuthStore } from '../../../store/authStore';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, parseISO } from 'date-fns';
 
 interface ChatWindowProps {
   partnerId: string;
@@ -67,7 +67,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ partnerId, partnerName }
                   <p className="break-words">{msg.content}</p>
                 </div>
                 <p className={`text-xs mt-1 ${isOwn ? 'text-right' : 'text-left'} text-gray-500`}>
-                  {formatDistanceToNow(new Date(msg.createdAt), { addSuffix: true })}
+                  {formatDistanceToNow(parseISO(msg.createdAt), { addSuffix: true })}
                 </p>
               </div>
             </div>
