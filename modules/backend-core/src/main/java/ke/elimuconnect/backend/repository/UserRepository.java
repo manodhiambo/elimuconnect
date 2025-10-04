@@ -17,6 +17,7 @@ public interface UserRepository extends MongoRepository<User, String> {
     Page<User> findByRole(String role, Pageable pageable);
     List<User> findBySchoolId(String schoolId);
     Optional<User> findByAdmissionNumber(String admissionNumber);
+    List<User> findByActive(boolean active);
     Page<User> findByActive(boolean active, Pageable pageable);
     long countByActive(boolean active);
     long countByCreatedAtAfter(LocalDateTime dateTime);
