@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import { assessmentService, Question } from '../services/assessmentService';
 import { Button } from '../../../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card';
-import { Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { Clock, CheckCircle } from 'lucide-react';
 
 export const TakeAssessmentPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -15,26 +15,31 @@ export const TakeAssessmentPage: React.FC = () => {
   const { data: assessmentData, isLoading } = useQuery({
     queryKey: ['assessment', id],
     queryFn: () => assessmentService.getAssessment(id!),
-    onSuccess: (data) => {
-      setTimeLeft(data.data.duration * 60);
-    },
   });
 
   const submitMutation = useMutation({
     mutationFn: () => assessmentService.submitAssessment(id!, answers),
     onSuccess: (result) => {
-      navigate(`/app/assessments/result/${result.data.id}`);
+      if (result?.data?.id) {
+        navigate('/app/assessments');
+      }
     },
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
+    if (assessmentData?.data) {
+      setTimeLeft(assessmentData.data.duration * 60);
+    }
+  }, [assessmentData]);
+
+  useEffect(() => {
     if (timeLeft > 0) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
       return () => clearTimeout(timer);
     } else if (timeLeft === 0 && assessmentData) {
       submitMutation.mutate();
     }
-  }, [timeLeft]);
+  }, [timeLeft, assessmentData]);
 
   const handleAnswerChange = (questionId: string, answer: string) => {
     setAnswers({ ...answers, [questionId]: answer });

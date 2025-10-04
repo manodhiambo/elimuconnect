@@ -8,7 +8,6 @@ import { LibraryPage } from './features/library/pages/LibraryPage';
 import { ContentUploadPage } from './features/library/pages/ContentUploadPage';
 import { AssessmentsPage } from './features/assessment/pages/AssessmentsPage';
 import { TakeAssessmentPage } from './features/assessment/pages/TakeAssessmentPage';
-import { TakeAssessmentPage } from './features/assessment/pages/TakeAssessmentPage';
 import { CommunicationPage } from './features/communication/pages/CommunicationPage';
 import { AdminPanelPage } from './features/admin/pages/AdminPanelPage';
 import { DashboardLayout } from './components/layout/DashboardLayout';
@@ -33,7 +32,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          
+
           {/* Protected Routes */}
           <Route
             path="/app"
@@ -48,9 +47,8 @@ function App() {
             <Route path="library" element={<LibraryPage />} />
             <Route path="assessments" element={<AssessmentsPage />} />
             <Route path="assessments/take/:id" element={<TakeAssessmentPage />} />
-            <Route path="assessments/take/:id" element={<TakeAssessmentPage />} />
             <Route path="communication" element={<CommunicationPage />} />
-            
+
             {/* Admin only routes */}
             <Route
               path="admin"
@@ -60,7 +58,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            
+
             {/* Teacher & Admin routes */}
             <Route
               path="content/upload"

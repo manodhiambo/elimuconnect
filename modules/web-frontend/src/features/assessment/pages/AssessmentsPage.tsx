@@ -5,7 +5,7 @@ import { assessmentService } from '../services/assessmentService';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Select } from '../../../components/ui/Select';
-import { FileText, Clock, Award, TrendingUp, BookOpen, Trophy, Target } from 'lucide-react';
+import { FileText, Clock, CheckCircle, BookOpen, Trophy, Target } from 'lucide-react';
 
 const SUBJECTS = ['Mathematics', 'English', 'Kiswahili', 'Biology', 'Chemistry', 'Physics', 'History', 'Geography'];
 const GRADES = ['Grade 7', 'Grade 8', 'Grade 9', 'Form 1', 'Form 2', 'Form 3', 'Form 4'];
