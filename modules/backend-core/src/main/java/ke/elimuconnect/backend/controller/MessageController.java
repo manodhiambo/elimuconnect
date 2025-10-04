@@ -1,6 +1,8 @@
 package ke.elimuconnect.backend.controller;
 
 import ke.elimuconnect.backend.entity.Message;
+import ke.elimuconnect.backend.entity.User;
+import ke.elimuconnect.backend.repository.UserRepository;
 import ke.elimuconnect.backend.service.MessageService;
 import ke.elimuconnect.domain.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -8,8 +10,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,14 +23,17 @@ import java.util.Map;
 public class MessageController {
     
     private final MessageService messageService;
+    private final UserRepository userRepository;
     private final SimpMessagingTemplate messagingTemplate;
     
     @GetMapping("/conversations")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getConversations(
             @AuthenticationPrincipal UserDetails userDetails) {
         
-        String userId = userDetails.getUsername();
-        Map<String, Object> conversations = messageService.getConversationList(userId);
+        User user = userRepository.findByEmail(userDetails.getUsername())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        Map<String, Object> conversations = messageService.getConversationList(user.getId());
         return ResponseEntity.ok(ApiResponse.success(conversations));
     }
     
@@ -41,9 +44,11 @@ public class MessageController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
         
-        String userId = userDetails.getUsername();
+        User user = userRepository.findByEmail(userDetails.getUsername())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        
         Page<Message> messages = messageService.getConversation(
-            userId, partnerId, 
+            user.getId(), partnerId, 
             PageRequest.of(page, size, Sort.by("createdAt").descending())
         );
         
@@ -55,7 +60,10 @@ public class MessageController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody Map<String, String> request) {
         
-        String senderId = userDetails.getUsername();
+        User user = userRepository.findByEmail(userDetails.getUsername())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        String senderId = user.getId();
         String receiverId = request.get("receiverId");
         String content = request.get("content");
         
@@ -71,29 +79,15 @@ public class MessageController {
         return ResponseEntity.ok(ApiResponse.success(message));
     }
     
-    @MessageMapping("/chat.send")
-    public void sendMessageViaWebSocket(@Payload Map<String, String> message) {
-        String senderId = message.get("senderId");
-        String receiverId = message.get("receiverId");
-        String content = message.get("content");
-        
-        Message savedMessage = messageService.sendMessage(senderId, receiverId, content);
-        
-        // Broadcast to receiver
-        messagingTemplate.convertAndSendToUser(
-            receiverId,
-            "/queue/messages",
-            savedMessage
-        );
-    }
-    
     @PostMapping("/mark-read/{partnerId}")
     public ResponseEntity<ApiResponse<Void>> markAsRead(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable String partnerId) {
         
-        String userId = userDetails.getUsername();
-        messageService.markAsRead(userId, partnerId);
+        User user = userRepository.findByEmail(userDetails.getUsername())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        messageService.markAsRead(user.getId(), partnerId);
         return ResponseEntity.ok(ApiResponse.success(null, "Messages marked as read"));
     }
     
@@ -101,8 +95,10 @@ public class MessageController {
     public ResponseEntity<ApiResponse<Long>> getUnreadCount(
             @AuthenticationPrincipal UserDetails userDetails) {
         
-        String userId = userDetails.getUsername();
-        long count = messageService.countUnreadMessages(userId);
+        User user = userRepository.findByEmail(userDetails.getUsername())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        long count = messageService.countUnreadMessages(user.getId());
         return ResponseEntity.ok(ApiResponse.success(count));
     }
 }
