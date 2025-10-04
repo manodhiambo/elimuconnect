@@ -1,162 +1,184 @@
 [
   {
     "name": "Alliance High School",
-    "code": "AHS001",
-    "county": "Kiambu",
+    "nemisCode": "AHS001",
     "type": "SECONDARY",
-    "category": "NATIONAL",
-    "address": "Kikuyu, Kiambu County"
+    "level": "NATIONAL",
+    "county": "Kiambu",
+    "subCounty": "Kikuyu",
+    "location": "Kikuyu, Kiambu County",
+    "active": true
   },
   {
     "name": "Mangu High School",
-    "code": "MHS001",
-    "county": "Kiambu",
+    "nemisCode": "MHS001",
     "type": "SECONDARY",
-    "category": "NATIONAL",
-    "address": "Thika, Kiambu County"
+    "level": "NATIONAL",
+    "county": "Kiambu",
+    "subCounty": "Thika",
+    "location": "Thika, Kiambu County",
+    "active": true
   },
   {
     "name": "Starehe Boys Centre",
-    "code": "SBC001",
-    "county": "Nairobi",
+    "nemisCode": "SBC001",
     "type": "SECONDARY",
-    "category": "NATIONAL",
-    "address": "Nairobi"
+    "level": "NATIONAL",
+    "county": "Nairobi",
+    "location": "Nairobi",
+    "active": true
   },
   {
     "name": "Kenya High School",
-    "code": "KHS001",
+    "nemisCode": "KHS001",
+    "type": "SECONDARY",
+    "level": "NATIONAL",
     "county": "Nairobi",
-    "type": "SECONDARY",
-    "category": "NATIONAL",
-    "address": "Nairobi"
-  },
-  {
-    "name": "Mang'u High School",
-    "code": "MGHS001",
-    "county": "Kiambu",
-    "type": "SECONDARY",
-    "category": "NATIONAL",
-    "address": "Thika, Kiambu County"
+    "location": "Nairobi",
+    "active": true
   },
   {
     "name": "Nairobi School",
-    "code": "NS001",
-    "county": "Nairobi",
+    "nemisCode": "NS001",
     "type": "SECONDARY",
-    "category": "NATIONAL",
-    "address": "Nairobi"
+    "level": "NATIONAL",
+    "county": "Nairobi",
+    "location": "Nairobi",
+    "active": true
   },
   {
     "name": "Moi Girls Eldoret",
-    "code": "MGE001",
-    "county": "Uasin Gishu",
+    "nemisCode": "MGE001",
     "type": "SECONDARY",
-    "category": "NATIONAL",
-    "address": "Eldoret, Uasin Gishu County"
+    "level": "NATIONAL",
+    "county": "Uasin Gishu",
+    "location": "Eldoret",
+    "active": true
   },
   {
     "name": "Moi Girls Nairobi",
-    "code": "MGN001",
-    "county": "Nairobi",
+    "nemisCode": "MGN001",
     "type": "SECONDARY",
-    "category": "NATIONAL",
-    "address": "Nairobi"
+    "level": "NATIONAL",
+    "county": "Nairobi",
+    "location": "Nairobi",
+    "active": true
   },
   {
     "name": "Kisumu Day Secondary",
-    "code": "KDS001",
-    "county": "Kisumu",
+    "nemisCode": "KDS001",
     "type": "SECONDARY",
-    "category": "COUNTY",
-    "address": "Kisumu"
+    "level": "COUNTY",
+    "county": "Kisumu",
+    "location": "Kisumu",
+    "active": true
   },
   {
     "name": "Maseno School",
-    "code": "MS001",
-    "county": "Kisumu",
+    "nemisCode": "MS001",
     "type": "SECONDARY",
-    "category": "NATIONAL",
-    "address": "Maseno, Kisumu County"
+    "level": "NATIONAL",
+    "county": "Kisumu",
+    "location": "Maseno, Kisumu County",
+    "active": true
   },
   {
     "name": "St. Mary's School Yala",
-    "code": "SMSY001",
-    "county": "Siaya",
+    "nemisCode": "SMSY001",
     "type": "SECONDARY",
-    "category": "NATIONAL",
-    "address": "Yala, Siaya County"
+    "level": "NATIONAL",
+    "county": "Siaya",
+    "location": "Yala, Siaya County",
+    "active": true
   },
   {
     "name": "Friends School Kamusinga",
-    "code": "FSK001",
-    "county": "Bungoma",
+    "nemisCode": "FSK001",
     "type": "SECONDARY",
-    "category": "NATIONAL",
-    "address": "Bungoma County"
+    "level": "NATIONAL",
+    "county": "Bungoma",
+    "location": "Bungoma County",
+    "active": true
   },
   {
     "name": "Maranda High School",
-    "code": "MHS002",
-    "county": "Siaya",
+    "nemisCode": "MHS002",
     "type": "SECONDARY",
-    "category": "NATIONAL",
-    "address": "Siaya County"
+    "level": "NATIONAL",
+    "county": "Siaya",
+    "location": "Siaya County",
+    "active": true
   },
   {
     "name": "Kisii High School",
-    "code": "KHS002",
-    "county": "Kisii",
+    "nemisCode": "KHS002",
     "type": "SECONDARY",
-    "category": "NATIONAL",
-    "address": "Kisii County"
+    "level": "NATIONAL",
+    "county": "Kisii",
+    "location": "Kisii County",
+    "active": true
   },
   {
     "name": "Moi Forces Academy",
-    "code": "MFA001",
-    "county": "Nairobi",
+    "nemisCode": "MFA001",
     "type": "SECONDARY",
-    "category": "NATIONAL",
-    "address": "Nairobi"
+    "level": "NATIONAL",
+    "county": "Nairobi",
+    "location": "Nairobi",
+    "active": true
   },
   {
     "name": "Lenana School",
-    "code": "LS001",
-    "county": "Nairobi",
+    "nemisCode": "LS001",
     "type": "SECONDARY",
-    "category": "NATIONAL",
-    "address": "Nairobi"
+    "level": "NATIONAL",
+    "county": "Nairobi",
+    "location": "Nairobi",
+    "active": true
   },
   {
     "name": "Nakuru High School",
-    "code": "NHS001",
-    "county": "Nakuru",
+    "nemisCode": "NHS001",
     "type": "SECONDARY",
-    "category": "COUNTY",
-    "address": "Nakuru"
+    "level": "COUNTY",
+    "county": "Nakuru",
+    "location": "Nakuru",
+    "active": true
   },
   {
     "name": "Mombasa High School",
-    "code": "MHS003",
-    "county": "Mombasa",
+    "nemisCode": "MHS003",
     "type": "SECONDARY",
-    "category": "COUNTY",
-    "address": "Mombasa"
+    "level": "COUNTY",
+    "county": "Mombasa",
+    "location": "Mombasa",
+    "active": true
   },
   {
     "name": "Jamhuri High School",
-    "code": "JHS001",
-    "county": "Nairobi",
+    "nemisCode": "JHS001",
     "type": "SECONDARY",
-    "category": "NATIONAL",
-    "address": "Nairobi"
+    "level": "NATIONAL",
+    "county": "Nairobi",
+    "location": "Nairobi",
+    "active": true
   },
   {
     "name": "Agoro Sare High School",
-    "code": "ASHS001",
-    "county": "Migori",
+    "nemisCode": "ASHS001",
     "type": "SECONDARY",
-    "category": "NATIONAL",
-    "address": "Migori County"
+    "level": "NATIONAL",
+    "county": "Migori",
+    "location": "Migori County",
+    "active": true
+  },
+  {
+    "name": "Kagumo High School",
+    "nemisCode": "KGHS001",
+    "type": "SECONDARY",
+    "level": "NATIONAL",
+    "county": "Nyeri",
+    "location": "Nyeri County",
+    "active": true
   }
 ]

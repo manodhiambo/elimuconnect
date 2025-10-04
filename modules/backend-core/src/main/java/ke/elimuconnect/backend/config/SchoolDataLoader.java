@@ -2,7 +2,7 @@ package ke.elimuconnect.backend.config;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ke.elimuconnect.backend.entity.School;
+import ke.elimuconnect.domain.School;
 import ke.elimuconnect.backend.repository.SchoolRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
