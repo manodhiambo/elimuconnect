@@ -36,3 +36,7 @@ public interface ContentRepository extends MongoRepository<Content, String> {
            "], 'published': true }")
     Page<Content> searchByText(String searchText, Pageable pageable);
 }
+
+    Page<Content> findByPublishedTrue(Pageable pageable);
+    Page<Content> findByTitleContainingIgnoreCaseAndPublishedTrue(String title, Pageable pageable);
+    Page<Content> findBySubjectAndGradeAndPublishedTrue(String subject, String grade, Pageable pageable);
