@@ -3,7 +3,7 @@ import { Send } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { messageService } from '../services/messageService';
 import { useAuthStore } from '../../../store/authStore';
-import { formatDistanceToNow, parseISO } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 
 interface ChatWindowProps {
   partnerId: string;
@@ -39,12 +39,21 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ partnerId, partnerName }
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [conversationData]);
 
-  // Extract messages from nested data structure
   const messages = conversationData?.data?.content || [];
 
   const handleSend = () => {
     if (message.trim()) {
       sendMutation.mutate(message);
+    }
+  };
+
+  const formatMessageTime = (timestamp: string) => {
+    try {
+      // Parse the timestamp and convert to local time
+      const date = new Date(timestamp);
+      return formatDistanceToNow(date, { addSuffix: true });
+    } catch (e) {
+      return 'just now';
     }
   };
 
@@ -89,7 +98,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ partnerId, partnerName }
                     <p className="break-words">{msg.content}</p>
                   </div>
                   <p className={`text-xs mt-1 ${isOwn ? 'text-right' : 'text-left'} text-gray-500`}>
-                    {msg.createdAt && formatDistanceToNow(parseISO(msg.createdAt), { addSuffix: true })}
+                    {msg.createdAt && formatMessageTime(msg.createdAt)}
                   </p>
                 </div>
               </div>
