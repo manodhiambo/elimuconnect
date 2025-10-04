@@ -14,7 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 
 @RestController
-@RequestMapping("/api/admin/content")
+@RequestMapping("/api/v1/admin/content")
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
 public class ContentController {
