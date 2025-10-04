@@ -1,6 +1,8 @@
 package ke.elimuconnect.backend.controller;
 
+import ke.elimuconnect.backend.entity.User;
 import ke.elimuconnect.backend.service.StudentService;
+import ke.elimuconnect.backend.repository.UserRepository;
 import ke.elimuconnect.domain.Content;
 import ke.elimuconnect.domain.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -23,6 +26,7 @@ import java.util.Map;
 public class StudentController {
 
     private final StudentService studentService;
+    private final UserRepository userRepository;
 
     @GetMapping("/dashboard")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getDashboard(
@@ -50,5 +54,12 @@ public class StudentController {
         Page<Content> content = studentService.searchContent(
             query, PageRequest.of(page, size));
         return ResponseEntity.ok(ApiResponse.success(content));
+    }
+
+    @GetMapping("/users")
+    public ResponseEntity<ApiResponse<List<User>>> getUsers() {
+        // Return all active users (teachers and students) that can be messaged
+        List<User> users = userRepository.findByActive(true);
+        return ResponseEntity.ok(ApiResponse.success(users));
     }
 }
