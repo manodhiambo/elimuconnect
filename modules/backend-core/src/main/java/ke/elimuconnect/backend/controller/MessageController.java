@@ -8,6 +8,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -20,12 +23,13 @@ import java.util.Map;
 public class MessageController {
     
     private final MessageService messageService;
+    private final SimpMessagingTemplate messagingTemplate;
     
     @GetMapping("/conversations")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getConversations(
             @AuthenticationPrincipal UserDetails userDetails) {
         
-        String userId = userDetails.getUsername(); // Assuming email is username
+        String userId = userDetails.getUsername();
         Map<String, Object> conversations = messageService.getConversationList(userId);
         return ResponseEntity.ok(ApiResponse.success(conversations));
     }
@@ -56,7 +60,31 @@ public class MessageController {
         String content = request.get("content");
         
         Message message = messageService.sendMessage(senderId, receiverId, content);
+        
+        // Send to receiver via WebSocket
+        messagingTemplate.convertAndSendToUser(
+            receiverId, 
+            "/queue/messages", 
+            message
+        );
+        
         return ResponseEntity.ok(ApiResponse.success(message));
+    }
+    
+    @MessageMapping("/chat.send")
+    public void sendMessageViaWebSocket(@Payload Map<String, String> message) {
+        String senderId = message.get("senderId");
+        String receiverId = message.get("receiverId");
+        String content = message.get("content");
+        
+        Message savedMessage = messageService.sendMessage(senderId, receiverId, content);
+        
+        // Broadcast to receiver
+        messagingTemplate.convertAndSendToUser(
+            receiverId,
+            "/queue/messages",
+            savedMessage
+        );
     }
     
     @PostMapping("/mark-read/{partnerId}")
