@@ -60,7 +60,7 @@ public class ContentService {
                 .accessLevel(request.getAccessLevel())
                 .allowedSchoolIds(request.getAllowedSchoolIds())
                 .allowedGrades(request.getAllowedGrades())
-                .published(false) // Requires approval
+                .published(user.getRole() == UserRole.ADMIN) // Auto-publish for admins
                 .approved(user.getRole() == UserRole.ADMIN) // Auto-approve for admins
                 .isPublisherContent(false)
                 .build();
